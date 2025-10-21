@@ -18,4 +18,4 @@ Then follow [How to run](./backend/README.md#how-to-run) in backend folder
 cd frontend/
 ```
 
-Then follow [How to run](./backend/README.md#how-to-run) in frontend folder
+Then follow [How to run](./frontend/README.md#how-to-run) in frontend folder
