@@ -23,7 +23,14 @@ class AgentResponse:
     focus_map: bool = False
 
 
-def route_prompt(prompt: str, layers: PragueLayers, index: GeoIndex, aoi: BBox) -> AgentResponse:
+def route_prompt(
+    prompt: str,
+    *,
+    layers: PragueLayers,
+    index: GeoIndex,
+    aoi: BBox,
+    view_center: dict[str, float] | None = None,
+) -> AgentResponse:
     p = (prompt or "").strip().lower()
     flood_union = index.flood_union_for_aoi(aoi)
 
@@ -45,17 +52,22 @@ def route_prompt(prompt: str, layers: PragueLayers, index: GeoIndex, aoi: BBox) 
 
     if ("dry" in p or "safe" in p) and "metro" in p:
         top_n = _extract_number(p, default=20, clamp=(1, 200))
-        ranked = _rank_dry_by_metro_station(
+        ranked = _find_local_dry_pubs_near_metro(
             layers.beer_pois,
             flood_union_4326=flood_union,
             index=index,
             top_n=top_n,
+            prefer_center=view_center or {
+                "lat": (aoi.min_lat + aoi.max_lat) / 2.0,
+                "lon": (aoi.min_lon + aoi.max_lon) / 2.0,
+            },
+            metro_near_m=500.0,
         )
         ids = {pt.id for pt, _ in ranked}
         return AgentResponse(
             message=(
-                f"Here are {len(ranked)} dry beer places closest to the nearest metro station "
-                "(distance computed in meters using a Prague-friendly projection)."
+                f"Here are {len(ranked)} dry beer places near the nearest metro station (meters), "
+                "preferring results local to your current viewport."
             ),
             highlight=Highlight(point_ids=ids, title=f"Top {len(ranked)} dry + near metro"),
             focus_map=True,
@@ -124,6 +136,57 @@ def _rank_dry_by_metro_station(
         for pt in dry
     ]
     scored.sort(key=lambda x: x[1])
+    return scored[:top_n]
+
+
+def _find_local_dry_pubs_near_metro(
+    points: list[PointFeature],
+    *,
+    flood_union_4326,
+    index: GeoIndex,
+    top_n: int,
+    prefer_center: dict[str, float],
+    metro_near_m: float,
+) -> list[tuple[PointFeature, float]]:
+    """
+    Return dry pubs "near metro" that feel local to the current viewport.
+
+    Rationale:
+    - Purely sorting by distance-to-station can pick pubs spread across Prague (many are near some station).
+    - When the user is zoomed in, they expect results within/near the visible area.
+
+    Policy:
+    - Compute metro-station distance (meters).
+    - If there are enough pubs within `metro_near_m`, pick the most viewport-local ones first.
+    - Otherwise fall back to "closest-to-station" while still using viewport locality as a tiebreak.
+    """
+    _, dry = _split_flooded(points, flood_union_4326)
+    if not dry:
+        return []
+
+    scored = [
+        (
+            pt,
+            distance_to_nearest_station_m(
+                pt,
+                station_tree_32633=index.metro_station_tree_32633,
+                station_points_32633=index.metro_station_points_32633,
+            ),
+        )
+        for pt in dry
+    ]
+
+    cx, cy = _project_4326_to_32633(prefer_center["lon"], prefer_center["lat"])
+
+    def local_key(pt: PointFeature) -> tuple[float, str]:
+        return (_dist_to_center_m(pt, cx, cy), pt.id)
+
+    near = [(pt, d) for pt, d in scored if d <= metro_near_m]
+    if len(near) >= top_n:
+        near.sort(key=lambda x: (local_key(x[0]), x[1]))
+        return near[:top_n]
+
+    scored.sort(key=lambda x: (x[1], local_key(x[0])))
     return scored[:top_n]
 
 

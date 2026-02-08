@@ -324,7 +324,13 @@ async def handle_incoming_message(thread: ApiThread):
         index = result.index
 
         t1 = time.perf_counter()
-        response = route_prompt(prompt, layers=aoi_layers, index=index, aoi=aoi)
+        response = route_prompt(
+            prompt,
+            layers=aoi_layers,
+            index=index,
+            aoi=aoi,
+            view_center=ctx.view_center,
+        )
         t_route_ms = (time.perf_counter() - t1) * 1000.0
 
         # Stream a short explanation.
