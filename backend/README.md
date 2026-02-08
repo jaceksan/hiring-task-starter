@@ -6,6 +6,8 @@ In `main.py` you will find a FastAPI endpoint definition `POST /invoke` which is
 - `commit` adds text to and commits the buffer
 - `plot_data` send stringified JSON with Plotly data
 
+Note: this MVP expects an AOI viewport bbox to be sent by the frontend in the request body as `map.bbox` (`minLon`, `minLat`, `maxLon`, `maxLat`).
+
 ## How to run
 
 You need `Python` installed and `uv` ideally

@@ -5,10 +5,15 @@
   "scripts": {
     "dev": "vite --port 3000",
     "build": "vite build && tsc",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "validate": "npm run -s typecheck && npm run -s e2e",
     "serve": "vite preview",
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check"
+    "check": "biome check",
+    "e2e:install": "playwright install chromium",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@radix-ui/react-scroll-area": "^1.2.10",
@@ -35,6 +40,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
+    "@playwright/test": "^1.58.2",
     "@types/node": "^22.10.2",
     "@types/plotly.js": "^3.0.6",
     "@types/react": "^19.0.8",

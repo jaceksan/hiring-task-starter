@@ -154,6 +154,24 @@ const createThreadMessage = (
   return success(newMessage);
 };
 
+const clearThreadMessages = (threadId: number) => {
+  const getResult = getThread(threadId);
+
+  if (isFailure(getResult)) {
+    return getResult;
+  }
+
+  const thread = getResult.data;
+  thread.messages = [];
+
+  const saveDetailResult = saveThreadDetail(thread);
+  if (isFailure(saveDetailResult)) {
+    return saveDetailResult;
+  }
+
+  return success(void 0);
+};
+
 /// DB
 
 export const DB = {
@@ -164,6 +182,7 @@ export const DB = {
     updateTitle: updateThreadTitle,
     messages: {
       create: createThreadMessage,
+      clear: clearThreadMessages,
     },
   },
 };

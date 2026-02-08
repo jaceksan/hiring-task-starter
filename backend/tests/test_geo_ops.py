@@ -4,7 +4,7 @@ from layers.load_prague import load_prague_layers
 
 def test_point_in_polygon_returns_bool():
     layers = load_prague_layers()
-    index = build_geo_index(layers.flood_q100, layers.metro_ways)
+    index = build_geo_index(layers)
 
     pt = layers.beer_pois[0]
     flooded = is_point_flooded(pt, index.flood_union_4326)
@@ -13,7 +13,7 @@ def test_point_in_polygon_returns_bool():
 
 def test_distance_to_metro_is_non_negative_meters():
     layers = load_prague_layers()
-    index = build_geo_index(layers.flood_q100, layers.metro_ways)
+    index = build_geo_index(layers)
 
     pt = layers.beer_pois[0]
     d = distance_to_metro_m(pt, index.metro_union_32633)

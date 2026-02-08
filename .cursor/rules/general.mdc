@@ -1,0 +1,39 @@
+---
+description: MVP dev principle: break freely, restart locally
+alwaysApply: true
+---
+
+# MVP local-only (break anything)
+
+- This repo is **MVP that must work only on Jacek’s laptop**.
+- **Backward compatibility is not required** during development.
+- It’s OK to **break previously working behavior**, change APIs/schemas, and refactor aggressively.
+- Assume the user can **restart backend/frontend and reset local state** at any time.
+- Prefer **simpler designs** over compatibility layers, migrations, or long-lived stability.
+
+## Validation routine (how to validate changes fast)
+
+- Prefer **fast checks** over production builds.
+- Do **not** start/stop dev servers as part of validation unless explicitly asked; assume Jacek runs them.
+- Default validation after changes:
+  - **backend**: `cd backend && uv run pytest -q`
+  - **frontend**: `cd frontend && npm run -s typecheck && npm run -s e2e`
+- Only run `cd frontend && npm run -s build` when:
+  - changes affect bundling/build output (Vite config, deps, import paths), or
+  - you see TS/build-only failures not caught by `typecheck`.
+
+## Hot reload and when to ask for a restart
+
+Hot reload should normally work (`npm run dev` + `uv run fastapi dev main.py`).
+Notify Jacek to restart **frontend dev server** when changes include:
+
+- `frontend/package.json` / `package-lock.json` (deps changed)
+- `frontend/vite.config.ts` (Vite config/plugins)
+- env var changes (`frontend/.env*`) that the app reads at build time
+- if HMR gets stuck (UI doesn’t reflect changes after refresh)
+
+Notify Jacek to restart **backend dev server** when changes include:
+
+- `backend/requirements.txt`, `backend/pyproject.toml`, `backend/uv.lock` (deps changed)
+- environment variable changes that are read at import/startup
+- if the reloader gets into a bad state (import errors, stuck process, or changes not taking effect)

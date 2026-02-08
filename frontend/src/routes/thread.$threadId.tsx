@@ -10,8 +10,8 @@ import { streamToAsyncGenerator } from "@/lib/streamToAsyncGenerator";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { EventSourceParserStream } from "eventsource-parser/stream";
-import { ArrowLeft, Home } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Home, Trash2 } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 import Plotly, { type PlotParams } from "react-plotly.js";
 import z from "zod";
 
@@ -47,6 +47,17 @@ function RouteComponent() {
     QUERIES.threads.detail(threadId)
   );
 
+  const examplePrompts = useMemo(
+    () => [
+      "show layers",
+      "how many pubs are flooded?",
+      "find 20 dry pubs near metro",
+      "recommend 5 safe pubs",
+    ],
+    []
+  );
+
+  const plotContainerRef = useRef<HTMLDivElement | null>(null);
   const [partialMessage, setPartialMessage] = useState<string | null>(null);
   const [plotData, setPlotData] = useState<Pick<PlotParams, "data" | "layout">>(
     () => {
@@ -63,8 +74,10 @@ function RouteComponent() {
           ],
           layout: {
             mapbox: {
-              center: { lat: 20, lon: 0 },
-              zoom: 2,
+              // Prague default: we want the first prompt to be immediately meaningful
+              // without requiring the user to manually zoom/pan first.
+              center: { lat: 50.0755, lon: 14.4378 },
+              zoom: 10.5,
               style: "carto-positron",
             },
           },
@@ -72,6 +85,87 @@ function RouteComponent() {
       );
     }
   );
+
+  const initialCenter = useMemo(() => {
+    const center = (plotData.layout as any)?.mapbox?.center;
+    if (center && typeof center.lat === "number" && typeof center.lon === "number") {
+      return { lat: center.lat as number, lon: center.lon as number };
+    }
+    return { lat: 50.0755, lon: 14.4378 };
+  }, [plotData.layout]);
+
+  const initialZoom = useMemo(() => {
+    const zoom = (plotData.layout as any)?.mapbox?.zoom;
+    return typeof zoom === "number" ? (zoom as number) : 10.5;
+  }, [plotData.layout]);
+
+  const [mapView, setMapView] = useState<{
+    center: { lat: number; lon: number };
+    zoom: number;
+    bbox: { minLon: number; minLat: number; maxLon: number; maxLat: number } | null;
+  }>(() => ({
+    center: initialCenter,
+    zoom: initialZoom,
+    bbox: null,
+  }));
+
+  const getViewportSize = () => {
+    const el = plotContainerRef.current;
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { width: Math.max(1, Math.floor(r.width)), height: Math.max(1, Math.floor(r.height)) };
+  };
+
+  const calcBboxFromCenterZoom = (
+    center: { lat: number; lon: number },
+    zoom: number,
+    viewport: { width: number; height: number }
+  ) => {
+    // Approximate Mapbox/Plotly viewport bounds using Web Mercator math.
+    // This does not need to be perfect: a slightly-larger-than-visible bbox is fine for AOI clipping.
+    const R = 6378137;
+    const tileSize = 256;
+    const lonRad = (center.lon * Math.PI) / 180;
+    const latRad = (center.lat * Math.PI) / 180;
+    const x = R * lonRad;
+    const y = R * Math.log(Math.tan(Math.PI / 4 + latRad / 2));
+    const metersPerPixel = (2 * Math.PI * R) / (tileSize * 2 ** zoom);
+
+    const halfW = (viewport.width * metersPerPixel) / 2;
+    const halfH = (viewport.height * metersPerPixel) / 2;
+
+    const minX = x - halfW;
+    const maxX = x + halfW;
+    const minY = y - halfH;
+    const maxY = y + halfH;
+
+    const minLon = (minX / R) * (180 / Math.PI);
+    const maxLon = (maxX / R) * (180 / Math.PI);
+    const minLat = (2 * Math.atan(Math.exp(minY / R)) - Math.PI / 2) * (180 / Math.PI);
+    const maxLat = (2 * Math.atan(Math.exp(maxY / R)) - Math.PI / 2) * (180 / Math.PI);
+
+    return {
+      minLon,
+      minLat,
+      maxLon,
+      maxLat,
+    };
+  };
+
+  const getCurrentBbox = () => {
+    if (mapView.bbox) return mapView.bbox;
+    const viewport = getViewportSize();
+    if (!viewport) {
+      // Fallback: tiny bbox around center (should only happen during initial render).
+      return {
+        minLon: mapView.center.lon - 0.05,
+        minLat: mapView.center.lat - 0.03,
+        maxLon: mapView.center.lon + 0.05,
+        maxLat: mapView.center.lat + 0.03,
+      };
+    }
+    return calcBboxFromCenterZoom(mapView.center, mapView.zoom, viewport);
+  };
 
   const { mutate, isPending } = useMutation({
     mutationKey: ["thread", threadId, "create-message"],
@@ -91,9 +185,13 @@ function RouteComponent() {
 
       const { data: threadWithNewHumanMessage } = await refetch();
 
+      const bbox = getCurrentBbox();
       const response = await fetch("http://localhost:8000/invoke", {
         method: "POST",
-        body: JSON.stringify(threadWithNewHumanMessage),
+        body: JSON.stringify({
+          ...threadWithNewHumanMessage,
+          map: { bbox, view: { center: mapView.center, zoom: mapView.zoom } },
+        }),
         headers: {
           "Content-Type": "application/json",
           Accept: "text/event-stream",
@@ -115,35 +213,74 @@ function RouteComponent() {
       const generator = streamToAsyncGenerator(stream);
 
       let message = "";
-      let data = undefined;
+      let data: unknown;
       setPartialMessage(message);
 
       for await (const event of generator) {
         switch (event.event) {
           case "append": {
-            message += " " + event.data;
+            message += ` ${event.data}`;
             setPartialMessage(message);
             break;
           }
 
           case "commit": {
             message += event.data;
-            DB.threads.messages.create(threadId, {
+            // Persist the AI message text, but avoid storing huge Plotly payloads in localStorage.
+            // Otherwise messages may "disappear" due to quota errors on save.
+            const saveWithData = DB.threads.messages.create(threadId, {
               text: message,
               data,
               author: "ai",
             });
-            refetch();
+            if (isFailure(saveWithData)) {
+              const saveWithoutData = DB.threads.messages.create(threadId, {
+                text: message,
+                author: "ai",
+              });
+              if (isFailure(saveWithoutData)) {
+                throw new Error(saveWithoutData.error);
+              }
+            }
+            // Important: don't clear the partial message until the thread data refreshes,
+            // otherwise the answer can appear to "disappear" briefly (or permanently if refresh fails).
+            await refetch();
             message = "";
             data = undefined;
-            setPartialMessage(message);
+            setPartialMessage(null);
             break;
           }
 
           case "plot_data": {
             try {
-              data = JSON.parse(event.data);
-              setPlotData(data);
+              const plot = JSON.parse(event.data) as Pick<PlotParams, "data" | "layout">;
+              // Storing Plotly payload per-message can exceed localStorage quota quickly.
+              // Keep it in React state always; persist only if reasonably small.
+              const MAX_PERSISTED_PLOT_CHARS = 200_000;
+              data = event.data.length <= MAX_PERSISTED_PLOT_CHARS ? plot : undefined;
+              setPlotData(plot);
+              // Keep mapView in sync with server-provided layout (important when backend recenters/zooms).
+              const center = (plot as any)?.layout?.mapbox?.center;
+              const zoom = (plot as any)?.layout?.mapbox?.zoom;
+              if (
+                center &&
+                typeof center.lat === "number" &&
+                typeof center.lon === "number" &&
+                typeof zoom === "number"
+              ) {
+                const viewport = getViewportSize();
+                setMapView({
+                  center: { lat: center.lat, lon: center.lon },
+                  zoom,
+                  bbox: viewport
+                    ? calcBboxFromCenterZoom(
+                        { lat: center.lat, lon: center.lon },
+                        zoom,
+                        viewport
+                      )
+                    : null,
+                });
+              }
             } catch (error) {
               console.error("ERROR_PARSING_PLOT_DATA", { error, event });
             }
@@ -174,6 +311,25 @@ function RouteComponent() {
             <h1 className="font-bold grow-1 whitespace-nowrap overflow-ellipsis overflow-hidden">
               {thread.title}
             </h1>
+            <div className="mr-2">
+              <Button
+                size="icon"
+                variant="ghost"
+                title="Clear messages"
+                disabled={isPending || partialMessage !== null}
+                onClick={async () => {
+                  const result = DB.threads.messages.clear(threadId);
+                  if (isFailure(result)) {
+                    console.error("ERROR_CLEARING_THREAD_MESSAGES", { result });
+                    return;
+                  }
+                  setPartialMessage(null);
+                  await refetch();
+                }}
+              >
+                <Trash2 />
+              </Button>
+            </div>
             <div className="text-sm text-muted-foreground shrink-0">
               {formatDate(thread.createdAt)}
             </div>
@@ -198,6 +354,24 @@ function RouteComponent() {
             </ScrollArea>
           </div>
           <div className="p-3">
+            <div className="mb-2">
+              <div className="text-xs text-muted-foreground mb-1">
+                Example questions
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {examplePrompts.map((prompt) => (
+                  <Button
+                    key={prompt}
+                    size="sm"
+                    variant="secondary"
+                    disabled={isPending || partialMessage !== null}
+                    onClick={() => mutate(prompt)}
+                  >
+                    {prompt}
+                  </Button>
+                ))}
+              </div>
+            </div>
             <DefaultComposer
               onSubmit={(message) => {
                 mutate(message);
@@ -208,7 +382,10 @@ function RouteComponent() {
         </div>
       </div>
       <div className="col-span-6 h-full">
-        <div className="w-full h-full flex justify-center items-center bg-accent">
+        <div
+          ref={plotContainerRef}
+          className="w-full h-full flex justify-center items-center bg-accent"
+        >
           <Plotly
             data={plotData.data}
             layout={{
@@ -217,6 +394,34 @@ function RouteComponent() {
             }}
             config={{ scrollZoom: true, displayModeBar: false }}
             className="w-full h-full overflow-hidden"
+            onRelayout={(event) => {
+              // Plotly relayout event payload is a shallow object with keys like:
+              // - "mapbox.center": {lat, lon}
+              // - "mapbox.zoom": number
+              const nextCenter =
+                (event as any)["mapbox.center"] ??
+                ((typeof (event as any)["mapbox.center.lat"] === "number" &&
+                  typeof (event as any)["mapbox.center.lon"] === "number" &&
+                  {
+                    lat: (event as any)["mapbox.center.lat"],
+                    lon: (event as any)["mapbox.center.lon"],
+                  }) ||
+                  null);
+              const nextZoom = (event as any)["mapbox.zoom"];
+
+              setMapView((prev) => {
+                const center =
+                  nextCenter &&
+                  typeof nextCenter.lat === "number" &&
+                  typeof nextCenter.lon === "number"
+                    ? { lat: nextCenter.lat as number, lon: nextCenter.lon as number }
+                    : prev.center;
+                const zoom = typeof nextZoom === "number" ? (nextZoom as number) : prev.zoom;
+                const viewport = getViewportSize();
+                const bbox = viewport ? calcBboxFromCenterZoom(center, zoom, viewport) : prev.bbox;
+                return { center, zoom, bbox };
+              });
+            }}
           />
         </div>
       </div>

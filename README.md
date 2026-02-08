@@ -24,6 +24,15 @@ Try these in a thread:
 - `find 20 dry pubs near metro`
 - `recommend 5 safe pubs`
 
+### AOI-first (viewport) performance
+
+This MVP now runs **AOI-first**: the frontend sends the current map viewport as a WGS84 bbox `(minLon, minLat, maxLon, maxLat)` with each prompt, and the backend:
+
+- clips all 3 layers to that bbox before building Plotly traces
+- computes answers (flooded count, “dry near metro”) only over AOI-sliced candidates
+
+How to observe it: zoom in and pan — the number of rendered POIs/lines should drop and responses should stay snappy.
+
 ### Data sources
 
 See `data/prague/README.md` for provenance + download links.

@@ -7,3 +7,7 @@ count.txt
 .env
 .nitro
 .tanstack
+.playwright
+playwright-report
+test-results
+.tsbuildinfo

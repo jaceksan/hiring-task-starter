@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from agent.router import route_prompt
+from geo.aoi import BBox
 from geo.ops import build_geo_index
 from layers.load_prague import load_prague_layers
 from plotly.build_plot import build_prague_plot
@@ -19,7 +20,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,10 +38,33 @@ class ApiMessage(BaseModel):
     text: str
 
 
+class ApiBbox(BaseModel):
+    minLon: float
+    minLat: float
+    maxLon: float
+    maxLat: float
+
+
+class ApiCenter(BaseModel):
+    lat: float
+    lon: float
+
+
+class ApiMapView(BaseModel):
+    center: ApiCenter
+    zoom: float
+
+
+class ApiMapContext(BaseModel):
+    bbox: ApiBbox
+    view: ApiMapView
+
+
 class ApiThread(BaseModel):
     id: int
     title: str
     messages: list[ApiMessage]
+    map: ApiMapContext
 
 
 @app.post("/invoke")
@@ -63,7 +87,7 @@ def format_event(type: EventType, data: str):
 @lru_cache(maxsize=1)
 def _layers_and_index():
     layers = load_prague_layers()
-    index = build_geo_index(layers.flood_q100, layers.metro_ways)
+    index = build_geo_index(layers)
     return layers, index
 
 
@@ -72,7 +96,16 @@ async def handle_incoming_message(thread: ApiThread):
 
     try:
         layers, index = _layers_and_index()
-        response = route_prompt(prompt, layers=layers, index=index)
+        bbox = thread.map.bbox
+        aoi = BBox(
+            min_lon=bbox.minLon,
+            min_lat=bbox.minLat,
+            max_lon=bbox.maxLon,
+            max_lat=bbox.maxLat,
+        ).normalized()
+
+        aoi_layers = index.slice_layers(aoi)
+        response = route_prompt(prompt, layers=aoi_layers, index=index, aoi=aoi)
 
         # Stream a short explanation.
         for word in response.message.replace("\n", " \n ").split():
@@ -80,7 +113,14 @@ async def handle_incoming_message(thread: ApiThread):
             await sleep(0.02)
 
         # Send the map payload before commit so frontend attaches it to the message.
-        plot = build_prague_plot(layers, highlight=response.highlight)
+        plot = build_prague_plot(
+            aoi_layers,
+            highlight=response.highlight,
+            aoi=aoi,
+            view_center={"lat": thread.map.view.center.lat, "lon": thread.map.view.center.lon},
+            view_zoom=thread.map.view.zoom,
+            focus_map=response.focus_map,
+        )
         yield format_event(EventType.plot_data, json.dumps(plot))
 
         # Commit the message (punctuation ends the buffer on frontend).
