@@ -72,14 +72,14 @@ The core “PangeAI-ish” value demonstrated:
 
 ## TODOs (restored for copy/paste)
 
-- [ ] Simplify and standardize Makefile targets + update Cursor rules accordingly
+- [x] Simplify and standardize Makefile targets + update Cursor rules accordingly
   - current targets like `fix-backend` vs `backend-lint` vs calling `make lint` are confusing; it’s unclear what runs
-  - propose only these targets for both backend/frontend:
+  - done: standardized Makefile targets to:
     - `lint-all` / `lint-backend` / `lint-frontend`
     - `types-all` / `types-backend` / `types-frontend` (only where applicable)
     - `test-all` / `test-backend` / `test-frontend`
     - `test-integration-all` / `test-integration-backend` / `test-integration-frontend` (only where applicable)
-  - `.cursor/rules/general.mdc` must be updated to instruct running these targets
+  - done: updated `.cursor/rules/general.mdc` to instruct running these targets
 
 - [x] Rename `thread.$threadId.tsx` file and related folder (terrible name)
   - done: moved to folder-based route `routes/thread/$threadId.tsx` + `routes/thread/$threadId/*`

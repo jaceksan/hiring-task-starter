@@ -1,40 +1,61 @@
 .PHONY: help \
-	lint types test test-integration test-all \
-	fix fix-backend fix-frontend fix-all \
-	backend-lint backend-test backend-test-integration \
-	frontend-lint frontend-types
+	lint-all lint-backend lint-frontend \
+	types-all types-backend types-frontend \
+	test-all test-backend test-frontend \
+	test-integration-all test-integration-backend test-integration-frontend \
+	fix-backend fix-frontend fix-all
 
 help:
 	@printf "%s\n" \
 		"Targets:" \
-		"  lint             Run backend lint/sanity (fast)" \
-		"  types            Run typechecks (frontend)" \
-		"  test             Run fast tests (backend unit)" \
-		"  test-integration Run integration tests (backend -m integration)" \
-		"  test-all         Run fast backend tests + frontend types" \
-		"  fix              Auto-fix backend (fast)" \
+		"  lint-all                 Lint backend + frontend" \
+		"  lint-backend             Lint backend" \
+		"  lint-frontend            Lint frontend" \
+		"  types-all                Run typechecks (where available)" \
+		"  types-frontend           Run frontend typechecks" \
+		"  types-backend            Run backend typechecks (currently no-op)" \
+		"  test-all                 Run tests (where available)" \
+		"  test-backend             Run backend unit tests" \
+		"  test-frontend            Run frontend tests (currently no-op)" \
+		"  test-integration-all     Run integration tests (where available)" \
+		"  test-integration-backend Run backend integration tests" \
+		"  test-integration-frontend Run frontend integration tests (currently no-op)" \
 		"  fix-backend      Auto-fix backend (ruff format)" \
 		"  fix-frontend     Auto-fix frontend (biome --write)" \
 		"  fix-all          Auto-fix backend + frontend" \
-		"" \
-		"Lower-level targets:" \
-		"  backend-lint" \
-		"  backend-test" \
-		"  backend-test-integration" \
-		"  frontend-lint" \
-		"  frontend-types"
+		""
 
-lint: backend-lint
+lint-all: lint-backend lint-frontend
 
-types: frontend-types
+lint-backend:
+	@cd backend && uv run python -m compileall -q .
 
-test: backend-test
+lint-frontend:
+	@cd frontend && npm run -s lint
 
-test-integration: backend-test-integration
+types-all: types-backend types-frontend
 
-test-all: backend-test frontend-types
+types-backend:
+	@:
 
-fix: fix-backend
+types-frontend:
+	@cd frontend && npm run -s typecheck
+
+test-all: test-backend test-frontend
+
+test-backend:
+	@cd backend && uv run pytest -q
+
+test-frontend:
+	@:
+
+test-integration-all: test-integration-backend test-integration-frontend
+
+test-integration-backend:
+	@cd backend && uv run pytest -q -m integration
+
+test-integration-frontend:
+	@:
 
 fix-backend:
 	@cd backend && uv run ruff format .
@@ -43,19 +64,3 @@ fix-frontend:
 	@cd frontend && npm run -s check -- --write
 
 fix-all: fix-backend fix-frontend
-
-backend-lint:
-	@cd backend && uv run python -m compileall -q .
-
-backend-test:
-	@cd backend && uv run pytest -q
-
-backend-test-integration:
-	@cd backend && uv run pytest -q -m integration
-
-frontend-lint:
-	@cd frontend && npm run -s lint
-
-frontend-types:
-	@cd frontend && npm run -s typecheck
-
