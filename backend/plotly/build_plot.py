@@ -33,6 +33,9 @@ def build_prague_plot(
         traces.append(_trace_aoi_bbox(aoi))
     traces.append(_trace_flood_polygons(layers.flood_q100))
     traces.append(_trace_metro_lines(layers.metro_ways))
+    traces.append(_trace_metro_stations(layers.metro_stations))
+    traces.append(_trace_tram_lines(layers.tram_ways))
+    traces.append(_trace_tram_stops(layers.tram_stops))
     if beer_clusters is not None:
         traces.append(_trace_beer_clusters(beer_clusters))
     else:
@@ -69,7 +72,7 @@ def build_prague_plot(
         }
 
     rendered_markers = len(beer_clusters) if beer_clusters is not None else len(layers.beer_pois)
-    line_vertices = sum(len(l.coords) for l in layers.metro_ways)
+    line_vertices = sum(len(l.coords) for l in layers.metro_ways) + sum(len(l.coords) for l in layers.tram_ways)
     poly_vertices = sum(len(r) for p in layers.flood_q100 for r in p.rings)
     highlight_count = 0
     if highlight and highlight.point_ids:
@@ -84,6 +87,9 @@ def build_prague_plot(
         "polyVertices": poly_vertices,
         "floodPolygons": len(layers.flood_q100),
         "metroLines": len(layers.metro_ways),
+        "metroStations": len(layers.metro_stations),
+        "tramLines": len(layers.tram_ways),
+        "tramStops": len(layers.tram_stops),
     }
 
     return {
@@ -170,6 +176,110 @@ def _trace_metro_lines(lines: Iterable[LineFeature]) -> dict[str, Any]:
         "mode": "lines",
         "line": {"color": "rgba(67, 160, 71, 0.9)", "width": 2},
         "hoverinfo": "skip",
+    }
+
+
+def _trace_metro_stations(points: list[PointFeature]) -> dict[str, Any]:
+    texts: list[str] = []
+    hovertexts: list[str] = []
+    for p in points:
+        props = p.props or {}
+        name = str(props.get("label") or props.get("name") or "").strip()
+        railway = str(props.get("railway") or "").strip()
+
+        # UX polish:
+        # - station nodes should show just the station name (e.g. "Můstek")
+        # - entrances/exits should show "Exit E102" (based on OSM `ref`) to avoid many duplicate
+        #   station-name labels clustered around the same station.
+        if railway == "subway_entrance":
+            ref = str(props.get("ref") or "").strip()
+            if ref:
+                title = f"Exit {ref}"
+            elif name:
+                title = f"Exit {name}"
+            else:
+                title = "Exit"
+        else:
+            title = name or "Metro station"
+
+        texts.append(title)
+        hovertexts.append(f"<b>{title}</b>")
+
+    return {
+        "type": "scattermapbox",
+        "name": "Metro stations/entrances",
+        "lon": [p.lon for p in points],
+        "lat": [p.lat for p in points],
+        "mode": "markers",
+        "text": texts,
+        "hovertext": hovertexts,
+        "marker": {
+            "size": 8,
+            "color": "rgba(27, 94, 32, 0.85)",
+            "line": {"color": "rgba(27, 94, 32, 1.0)", "width": 1},
+        },
+        "hovertemplate": "%{hovertext}<extra></extra>",
+    }
+
+
+def _trace_tram_lines(lines: Iterable[LineFeature]) -> dict[str, Any]:
+    lons: list[float | None] = []
+    lats: list[float | None] = []
+    for f in lines:
+        if len(f.coords) < 2:
+            continue
+        for lon, lat in f.coords:
+            lons.append(lon)
+            lats.append(lat)
+        lons.append(None)
+        lats.append(None)
+
+    return {
+        "type": "scattermapbox",
+        "name": "Tram tracks (OSM tram ways)",
+        "lon": lons,
+        "lat": lats,
+        "mode": "lines",
+        "line": {"color": "rgba(156, 39, 176, 0.75)", "width": 1},
+        "hoverinfo": "skip",
+    }
+
+
+def _trace_tram_stops(points: list[PointFeature]) -> dict[str, Any]:
+    texts: list[str] = []
+    hovertexts: list[str] = []
+    for p in points:
+        props = p.props or {}
+        name = str(props.get("label") or props.get("name") or "").strip()
+        title = name or "Tram stop"
+        texts.append(title)
+
+        lines: list[str] = [f"<b>{title}</b>"]
+        ref = str(props.get("ref") or "").strip()
+        if ref:
+            lines.append(f"ref={ref}")
+        operator = str(props.get("operator") or "").strip()
+        if operator:
+            lines.append(f"operator={operator}")
+        network = str(props.get("network") or "").strip()
+        if network:
+            lines.append(f"network={network}")
+        hovertexts.append("<br>".join(lines))
+
+    return {
+        "type": "scattermapbox",
+        "name": "Tram stops/platforms",
+        "lon": [p.lon for p in points],
+        "lat": [p.lat for p in points],
+        "mode": "markers",
+        "text": texts,
+        "hovertext": hovertexts,
+        "marker": {
+            "size": 6,
+            "color": "rgba(106, 27, 154, 0.80)",
+            "line": {"color": "rgba(106, 27, 154, 1.0)", "width": 1},
+        },
+        "hovertemplate": "%{hovertext}<extra></extra>",
     }
 
 

@@ -105,6 +105,9 @@ class _DuckDbBase:
 
         flood_by_id: dict[str, PolygonFeature] = {}
         metro_by_id: dict[str, LineFeature] = {}
+        metro_station_by_id: dict[str, PointFeature] = {}
+        tram_by_id: dict[str, LineFeature] = {}
+        tram_stop_by_id: dict[str, PointFeature] = {}
         beer_by_id: dict[str, PointFeature] = {}
 
         for z, x, y in tiles:
@@ -119,13 +122,29 @@ class _DuckDbBase:
                 flood_by_id.setdefault(f.id, f)
             for f in cached.metro_ways:
                 metro_by_id.setdefault(f.id, f)
+            for f in cached.metro_stations:
+                metro_station_by_id.setdefault(f.id, f)
+            for f in cached.tram_ways:
+                tram_by_id.setdefault(f.id, f)
+            for f in cached.tram_stops:
+                tram_stop_by_id.setdefault(f.id, f)
             for f in cached.beer_pois:
                 beer_by_id.setdefault(f.id, f)
 
         flood = [flood_by_id[k] for k in sorted(flood_by_id.keys())]
         metro = [metro_by_id[k] for k in sorted(metro_by_id.keys())]
+        metro_stations = [metro_station_by_id[k] for k in sorted(metro_station_by_id.keys())]
+        tram = [tram_by_id[k] for k in sorted(tram_by_id.keys())]
+        tram_stops = [tram_stop_by_id[k] for k in sorted(tram_stop_by_id.keys())]
         beer = [beer_by_id[k] for k in sorted(beer_by_id.keys())]
-        return PragueLayers(flood_q100=flood, metro_ways=metro, beer_pois=beer)
+        return PragueLayers(
+            flood_q100=flood,
+            metro_ways=metro,
+            metro_stations=metro_stations,
+            tram_ways=tram,
+            tram_stops=tram_stops,
+            beer_pois=beer,
+        )
 
 
 @lru_cache(maxsize=2)
@@ -188,6 +207,47 @@ def _init_schema(conn: duckdb.DuckDBPyConnection) -> None:
     )
     conn.execute(
         """
+        CREATE TABLE IF NOT EXISTS metro_stations (
+          id TEXT PRIMARY KEY,
+          lon DOUBLE,
+          lat DOUBLE,
+          props_json TEXT,
+          min_lon DOUBLE,
+          min_lat DOUBLE,
+          max_lon DOUBLE,
+          max_lat DOUBLE
+        );
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS tram_ways (
+          id TEXT PRIMARY KEY,
+          coords_json TEXT,
+          props_json TEXT,
+          min_lon DOUBLE,
+          min_lat DOUBLE,
+          max_lon DOUBLE,
+          max_lat DOUBLE
+        );
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS tram_stops (
+          id TEXT PRIMARY KEY,
+          lon DOUBLE,
+          lat DOUBLE,
+          props_json TEXT,
+          min_lon DOUBLE,
+          min_lat DOUBLE,
+          max_lon DOUBLE,
+          max_lat DOUBLE
+        );
+        """
+    )
+    conn.execute(
+        """
         CREATE TABLE IF NOT EXISTS flood_q100 (
           id TEXT PRIMARY KEY,
           rings_json TEXT,
@@ -202,67 +262,132 @@ def _init_schema(conn: duckdb.DuckDBPyConnection) -> None:
 
 
 def _load_layers(conn: duckdb.DuckDBPyConnection, layers: PragueLayers) -> None:
-    # Keep it idempotent: skip load if already populated.
-    n = int(conn.execute("SELECT COUNT(*) FROM beer_pois").fetchone()[0])
-    if n > 0:
-        return
+    # Keep it idempotent: populate missing tables (supports upgrades of existing DB files).
+    def _count(table: str) -> int:
+        try:
+            return int(conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0])
+        except Exception:
+            return 0
 
-    beer_rows = []
-    for p in layers.beer_pois:
-        beer_rows.append(
-            (
-                p.id,
-                float(p.lon),
-                float(p.lat),
-                json.dumps(p.props, ensure_ascii=False),
-                float(p.lon),
-                float(p.lat),
-                float(p.lon),
-                float(p.lat),
+    if _count("beer_pois") == 0:
+        beer_rows = []
+        for p in layers.beer_pois:
+            beer_rows.append(
+                (
+                    p.id,
+                    float(p.lon),
+                    float(p.lat),
+                    json.dumps(p.props, ensure_ascii=False),
+                    float(p.lon),
+                    float(p.lat),
+                    float(p.lon),
+                    float(p.lat),
+                )
             )
+        conn.executemany(
+            "INSERT INTO beer_pois VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            beer_rows,
         )
-    conn.executemany(
-        "INSERT INTO beer_pois VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        beer_rows,
-    )
 
-    metro_rows = []
-    for l in layers.metro_ways:
-        min_lon, min_lat, max_lon, max_lat = _bbox_coords(l.coords)
-        metro_rows.append(
-            (
-                l.id,
-                json.dumps(l.coords),
-                json.dumps(l.props, ensure_ascii=False),
-                min_lon,
-                min_lat,
-                max_lon,
-                max_lat,
+    if _count("metro_ways") == 0:
+        metro_rows = []
+        for l in layers.metro_ways:
+            min_lon, min_lat, max_lon, max_lat = _bbox_coords(l.coords)
+            metro_rows.append(
+                (
+                    l.id,
+                    json.dumps(l.coords),
+                    json.dumps(l.props, ensure_ascii=False),
+                    min_lon,
+                    min_lat,
+                    max_lon,
+                    max_lat,
+                )
             )
+        conn.executemany(
+            "INSERT INTO metro_ways VALUES (?, ?, ?, ?, ?, ?, ?)",
+            metro_rows,
         )
-    conn.executemany(
-        "INSERT INTO metro_ways VALUES (?, ?, ?, ?, ?, ?, ?)",
-        metro_rows,
-    )
 
-    flood_rows = []
-    for p in layers.flood_q100:
-        min_lon, min_lat, max_lon, max_lat = _bbox_rings(p.rings)
-        flood_rows.append(
-            (
-                p.id,
-                json.dumps(p.rings),
-                json.dumps(p.props, ensure_ascii=False),
-                min_lon,
-                min_lat,
-                max_lon,
-                max_lat,
+    if _count("metro_stations") == 0:
+        station_rows = []
+        for p in layers.metro_stations:
+            station_rows.append(
+                (
+                    p.id,
+                    float(p.lon),
+                    float(p.lat),
+                    json.dumps(p.props, ensure_ascii=False),
+                    float(p.lon),
+                    float(p.lat),
+                    float(p.lon),
+                    float(p.lat),
+                )
             )
+        conn.executemany(
+            "INSERT INTO metro_stations VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            station_rows,
         )
-    conn.executemany(
-        "INSERT INTO flood_q100 VALUES (?, ?, ?, ?, ?, ?, ?)",
-        flood_rows,
-    )
+
+    if _count("tram_ways") == 0:
+        tram_rows = []
+        for l in layers.tram_ways:
+            min_lon, min_lat, max_lon, max_lat = _bbox_coords(l.coords)
+            tram_rows.append(
+                (
+                    l.id,
+                    json.dumps(l.coords),
+                    json.dumps(l.props, ensure_ascii=False),
+                    min_lon,
+                    min_lat,
+                    max_lon,
+                    max_lat,
+                )
+            )
+        conn.executemany(
+            "INSERT INTO tram_ways VALUES (?, ?, ?, ?, ?, ?, ?)",
+            tram_rows,
+        )
+
+    if _count("tram_stops") == 0:
+        stop_rows = []
+        for p in layers.tram_stops:
+            stop_rows.append(
+                (
+                    p.id,
+                    float(p.lon),
+                    float(p.lat),
+                    json.dumps(p.props, ensure_ascii=False),
+                    float(p.lon),
+                    float(p.lat),
+                    float(p.lon),
+                    float(p.lat),
+                )
+            )
+        conn.executemany(
+            "INSERT INTO tram_stops VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            stop_rows,
+        )
+
+    if _count("flood_q100") == 0:
+        flood_rows = []
+        for p in layers.flood_q100:
+            min_lon, min_lat, max_lon, max_lat = _bbox_rings(p.rings)
+            flood_rows.append(
+                (
+                    p.id,
+                    json.dumps(p.rings),
+                    json.dumps(p.props, ensure_ascii=False),
+                    min_lon,
+                    min_lat,
+                    max_lon,
+                    max_lat,
+                )
+            )
+        conn.executemany(
+            "INSERT INTO flood_q100 VALUES (?, ?, ?, ?, ?, ?, ?)",
+            flood_rows,
+        )
 
 
 def _query_layers_bbox(conn: duckdb.DuckDBPyConnection, aoi: BBox) -> PragueLayers:
@@ -292,6 +417,37 @@ def _query_layers_bbox(conn: duckdb.DuckDBPyConnection, aoi: BBox) -> PragueLaye
         for row in metros
     ]
 
+    stations = conn.execute(
+        f"SELECT id, lon, lat, props_json FROM metro_stations WHERE {where}",
+        params,
+    ).fetchall()
+    metro_stations = [
+        PointFeature(id=row[0], lon=float(row[1]), lat=float(row[2]), props=json.loads(row[3]))
+        for row in stations
+    ]
+
+    trams = conn.execute(
+        f"SELECT id, coords_json, props_json FROM tram_ways WHERE {where}",
+        params,
+    ).fetchall()
+    tram_ways = [
+        LineFeature(
+            id=row[0],
+            coords=[(float(lon), float(lat)) for lon, lat in json.loads(row[1])],
+            props=json.loads(row[2]),
+        )
+        for row in trams
+    ]
+
+    stops = conn.execute(
+        f"SELECT id, lon, lat, props_json FROM tram_stops WHERE {where}",
+        params,
+    ).fetchall()
+    tram_stops = [
+        PointFeature(id=row[0], lon=float(row[1]), lat=float(row[2]), props=json.loads(row[3]))
+        for row in stops
+    ]
+
     floods = conn.execute(
         f"SELECT id, rings_json, props_json FROM flood_q100 WHERE {where}",
         params,
@@ -307,7 +463,14 @@ def _query_layers_bbox(conn: duckdb.DuckDBPyConnection, aoi: BBox) -> PragueLaye
         for row in floods
     ]
 
-    return PragueLayers(flood_q100=flood_q100, metro_ways=metro_ways, beer_pois=beer_pois)
+    return PragueLayers(
+        flood_q100=flood_q100,
+        metro_ways=metro_ways,
+        metro_stations=metro_stations,
+        tram_ways=tram_ways,
+        tram_stops=tram_stops,
+        beer_pois=beer_pois,
+    )
 
 
 def _bbox_coords(coords: list[tuple[float, float]]) -> tuple[float, float, float, float]:

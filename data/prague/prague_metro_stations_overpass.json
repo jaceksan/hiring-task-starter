@@ -1,0 +1,6261 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.10 2d4cfc48",
+  "osm3s": {
+    "timestamp_osm_base": "2026-02-08T16:46:16Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "node",
+  "id": 24567914,
+  "lat": 50.0750996,
+  "lon": 14.4373685,
+  "tags": {
+    "alt_name": "Náměstí Míru",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U476S1E2",
+    "wheelchair": "no",
+    "wikidata": "Q1972106",
+    "wikipedia": "cs:Náměstí Míru (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 24568223,
+  "lat": 50.0840897,
+  "lon": 14.4241416,
+  "tags": {
+    "name": "E105",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E105",
+    "source": "IPR Praha:DMP"
+  }
+},
+{
+  "type": "node",
+  "id": 24568258,
+  "lat": 50.0819871,
+  "lon": 14.4255724,
+  "tags": {
+    "name": "E110",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E110",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 24568278,
+  "lat": 50.0830325,
+  "lon": 14.4223961,
+  "tags": {
+    "name": "E204",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E204",
+    "source": "IPR Praha:DMP",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 24568424,
+  "lat": 50.0726767,
+  "lon": 14.4912081,
+  "tags": {
+    "door": "hinged",
+    "door:wings": "4",
+    "level": "0",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U713S1E2",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 24568582,
+  "lat": 50.0468280,
+  "lon": 14.3079602,
+  "tags": {
+    "name": "Výstup Šostakovičovo náměstí",
+    "railway": "subway_entrance",
+    "ref": "E4",
+    "ref:PID": "U1140S1E4",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 24568667,
+  "lat": 50.0445227,
+  "lon": 14.3315818,
+  "tags": {
+    "railway": "subway_entrance",
+    "ref": "E1",
+    "ref:PID": "U258S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 24568719,
+  "lat": 50.0499866,
+  "lon": 14.3418055,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U1154S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 24568792,
+  "lat": 50.0508823,
+  "lon": 14.3533050,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U602S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 24568993,
+  "lat": 50.0685438,
+  "lon": 14.4041278,
+  "tags": {
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U1040S1E4",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 24569649,
+  "lat": 50.0910838,
+  "lon": 14.4396683,
+  "tags": {
+    "name": "E301",
+    "railway": "subway_entrance",
+    "ref:PID": "U689S1E301",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 24569666,
+  "lat": 50.0753401,
+  "lon": 14.4304439,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U190S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 24569684,
+  "lat": 50.0743299,
+  "lon": 14.4303111,
+  "tags": {
+    "colour": "red",
+    "name": "I. P. Pavlova",
+    "name:cs": "I. P. Pavlova",
+    "name:ru": "И. П. Павлова",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q1880944",
+    "wikipedia": "cs:I. P. Pavlova (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 24569759,
+  "lat": 50.1241376,
+  "lon": 14.4542345,
+  "tags": {
+    "colour": "red",
+    "name": "Kobylisy",
+    "name:cs": "Kobylisy",
+    "name:de": "Kobilis",
+    "name:ru": "Кобылисы",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "ref": "U675N46",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 24569842,
+  "lat": 50.0992478,
+  "lon": 14.4385329,
+  "tags": {
+    "alt_name": "metro Vltaská E1",
+    "name": "Vltavská",
+    "railway": "subway_entrance",
+    "ref": "E1",
+    "ref:PID": "U100S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 24569880,
+  "lat": 50.0831594,
+  "lon": 14.4339891,
+  "tags": {
+    "level": "-2",
+    "name": "Hlavní nádraží, metro C",
+    "name:de": "Hauptbahnhof, U-Bahn C",
+    "railway": "subway_entrance",
+    "ref:PID": "U142S1E311",
+    "wheelchair": "limited"
+  }
+},
+{
+  "type": "node",
+  "id": 24569897,
+  "lat": 50.0835035,
+  "lon": 14.4341259,
+  "tags": {
+    "colour": "red",
+    "name": "Hlavní nádraží",
+    "name:cs": "Hlavní nádraží",
+    "name:de": "Hauptbahnhof",
+    "name:en": "Main Station",
+    "name:it": "Stazione centrale",
+    "name:nl": "Hoofdstation",
+    "name:pl": "Dworzec Główny",
+    "name:ru": "Главни надражи",
+    "network": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "ref:PID": "U142Z101",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2383883"
+  }
+},
+{
+  "type": "node",
+  "id": 24569945,
+  "lat": 50.0794164,
+  "lon": 14.4313389,
+  "tags": {
+    "name": "E6",
+    "operator": "cz:DPP",
+    "railway": "subway_entrance",
+    "ref:PID": "U400S1E6",
+    "wheelchair": "no",
+    "wikidata": "Q2655155",
+    "wikipedia": "cs:Muzeum (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 24569983,
+  "lat": 50.0631724,
+  "lon": 14.4305202,
+  "tags": {
+    "alt_name:de": "Wyschehrad",
+    "colour": "red",
+    "name": "Vyšehrad",
+    "name:cs": "Vyšehrad",
+    "name:de": "Hochburg",
+    "name:ru": "Вышеград",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "old_name": "Gottwaldova",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2013931",
+    "wikipedia": "cs:Vyšehrad (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 24570070,
+  "lat": 50.0510768,
+  "lon": 14.4396298,
+  "tags": {
+    "colour": "red",
+    "name": "Pankrác",
+    "name:cs": "Pankrác",
+    "name:de": "Pankratz",
+    "name:ru": "Панкрац",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "old_name": "Mládežnická",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2618245"
+  }
+},
+{
+  "type": "node",
+  "id": 24570126,
+  "lat": 50.0444173,
+  "lon": 14.4487606,
+  "tags": {
+    "colour": "red",
+    "name": "Budějovická",
+    "name:cs": "Budějovická",
+    "name:de": "Budweiser Straße",
+    "name:ru": "Будейовицка",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2657773"
+  }
+},
+{
+  "type": "node",
+  "id": 24570143,
+  "lat": 50.0418449,
+  "lon": 14.4592925,
+  "tags": {
+    "colour": "red",
+    "name": "Kačerov",
+    "name:cs": "Kačerov",
+    "name:ru": "Качеров",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q586457"
+  }
+},
+{
+  "type": "node",
+  "id": 24570180,
+  "lat": 50.0375574,
+  "lon": 14.4770932,
+  "tags": {
+    "colour": "red",
+    "name": "Roztyly",
+    "name:cs": "Roztyly",
+    "name:de": "Rostil",
+    "name:ru": "Розтылы",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "old_name": "Primátora Vacka",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2552037"
+  }
+},
+{
+  "type": "node",
+  "id": 24570253,
+  "lat": 50.0315824,
+  "lon": 14.4911419,
+  "tags": {
+    "colour": "red",
+    "name": "Chodov",
+    "name:cs": "Chodov",
+    "name:de": "Chodau",
+    "name:ru": "Ходов",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "old_name": "Budovatelů",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2038287"
+  }
+},
+{
+  "type": "node",
+  "id": 24570269,
+  "lat": 50.0278977,
+  "lon": 14.5092069,
+  "tags": {
+    "colour": "red",
+    "name": "Opatov",
+    "name:cs": "Opatov",
+    "name:de": "Opatow",
+    "name:ru": "Опатов",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "old_name": "Družby",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2446909"
+  }
+},
+{
+  "type": "node",
+  "id": 25314934,
+  "lat": 50.1091912,
+  "lon": 14.5775503,
+  "tags": {
+    "entrance": "yes",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U897S1E2",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 55320587,
+  "lat": 50.1006952,
+  "lon": 14.3920096,
+  "tags": {
+    "alt_name": "Dejvická, metro A",
+    "alt_name:de": "Dejwitz, U-Bahn A",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U321S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 55320589,
+  "lat": 50.1002117,
+  "lon": 14.3916586,
+  "tags": {
+    "alt_name": "Dejvická, metro A",
+    "alt_name:de": "Dejwitz, U-Bahn A",
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U321S1E5",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 60653058,
+  "lat": 50.0756757,
+  "lon": 14.5154573,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U1071S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 61821915,
+  "lat": 50.0756018,
+  "lon": 14.4304751,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U190S1E3",
+    "toilets:wheelchair": "no",
+    "wheelchair": "yes",
+    "wheelchair:description": "There is an elevator to enter this station. The entrance is from Legerova street- away from the main entrance."
+  }
+},
+{
+  "type": "node",
+  "id": 75713562,
+  "lat": 50.1067009,
+  "lon": 14.5376832,
+  "tags": {
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U135S1E5",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 141388024,
+  "lat": 50.0630283,
+  "lon": 14.4307218,
+  "tags": {
+    "layer": "-1",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U527S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 141388025,
+  "lat": 50.0630282,
+  "lon": 14.4303343,
+  "tags": {
+    "entrance": "exit",
+    "layer": "-1",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U527S1E2",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 141388026,
+  "lat": 50.0753475,
+  "lon": 14.4299087,
+  "tags": {
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U190S1E4",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 141388027,
+  "lat": 50.0754657,
+  "lon": 14.4305894,
+  "tags": {
+    "level": "0",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U190S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 141388031,
+  "lat": 50.0795085,
+  "lon": 14.4295676,
+  "tags": {
+    "name": "E4",
+    "operator": "cz:DPP",
+    "railway": "subway_entrance",
+    "ref:PID": "U400S1E4",
+    "wheelchair": "no",
+    "wikidata": "Q2655155",
+    "wikipedia": "cs:Muzeum (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 223505004,
+  "lat": 50.0304596,
+  "lon": 14.5259119,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U286S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 246576928,
+  "lat": 50.0818723,
+  "lon": 14.4257534,
+  "tags": {
+    "entrance": "main",
+    "name": "E111",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E111",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 246576929,
+  "lat": 50.0823604,
+  "lon": 14.4265573,
+  "tags": {
+    "name": "E115",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E115",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 246576930,
+  "lat": 50.0828423,
+  "lon": 14.4264893,
+  "tags": {
+    "name": "E117",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E117",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 246576931,
+  "lat": 50.0819761,
+  "lon": 14.4262027,
+  "tags": {
+    "name": "E112",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E112",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 248123930,
+  "lat": 50.0989174,
+  "lon": 14.4384951,
+  "tags": {
+    "alt_name": "metro Vltaská E4",
+    "name": "Vltavská",
+    "railway": "subway_entrance",
+    "ref": "E4",
+    "ref:PID": "U100S1E4",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 248123941,
+  "lat": 50.0896291,
+  "lon": 14.4385163,
+  "tags": {
+    "local_ref": "E306",
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U689S1E306",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 248123942,
+  "lat": 50.0911897,
+  "lon": 14.4393601,
+  "tags": {
+    "name": "E201",
+    "railway": "subway_entrance",
+    "ref:PID": "U689S1E201",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 248124134,
+  "lat": 50.0828581,
+  "lon": 14.4217409,
+  "tags": {
+    "name": "E203",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E203",
+    "source": "IPR Praha:DMP",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 248124227,
+  "lat": 50.0754644,
+  "lon": 14.4378743,
+  "tags": {
+    "alt_name": "Náměstí Míru, metro A",
+    "check_date:wheelchair": "2025-10-13",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U476S1E1",
+    "wheelchair": "no",
+    "wikidata": "Q1972106",
+    "wikipedia": "cs:Náměstí Míru (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 248124228,
+  "lat": 50.0751969,
+  "lon": 14.4379183,
+  "tags": {
+    "alt_name": "Náměstí Míru, metro A",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U476S1E4",
+    "wheelchair": "no",
+    "wikidata": "Q1972106",
+    "wikipedia": "cs:Náměstí Míru (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 248124305,
+  "lat": 50.0772731,
+  "lon": 14.4494791,
+  "tags": {
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U209S1E5",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 248124306,
+  "lat": 50.0776478,
+  "lon": 14.4489627,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U209S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 248124307,
+  "lat": 50.0770539,
+  "lon": 14.4492682,
+  "tags": {
+    "entrance": "yes",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U209S1E4",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 248124334,
+  "lat": 50.0778296,
+  "lon": 14.4614561,
+  "tags": {
+    "access": "no",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U118S1E4",
+    "source": "cuzk:ruian",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 248124363,
+  "lat": 50.0760435,
+  "lon": 14.4189342,
+  "tags": {
+    "layer": "-1",
+    "level": "0",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U237S1E4",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 248124364,
+  "lat": 50.0731601,
+  "lon": 14.4145605,
+  "tags": {
+    "check_date:wheelchair": "2025-02-25",
+    "name": "E8",
+    "railway": "subway_entrance",
+    "ref:PID": "U237S1E8",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 248124365,
+  "lat": 50.0733268,
+  "lon": 14.4145544,
+  "tags": {
+    "name": "E7",
+    "railway": "subway_entrance",
+    "ref:PID": "U237S1E7",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 248124629,
+  "lat": 50.0614910,
+  "lon": 14.4092938,
+  "tags": {
+    "level": "0",
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U458S1E5",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 248124655,
+  "lat": 50.0884754,
+  "lon": 14.4160955,
+  "tags": {
+    "door": "hinged",
+    "name": "Staroměstská, metro A",
+    "note": "subway entrance not wheelchair accessible (steps), but the ATMs on ground floor are",
+    "railway": "subway_entrance",
+    "ref": "E2",
+    "ref:PID": "U703S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 248124657,
+  "lat": 50.0883484,
+  "lon": 14.4167119,
+  "tags": {
+    "automatic_door": "no",
+    "door": "hinged",
+    "name": "Staroměstská, metro A",
+    "open": "full",
+    "railway": "subway_entrance",
+    "ref": "E3",
+    "ref:PID": "U703S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 248182635,
+  "lat": 50.1031093,
+  "lon": 14.4732239,
+  "tags": {
+    "name": "E8",
+    "railway": "subway_entrance",
+    "ref:PID": "U529S1E8",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 248182636,
+  "lat": 50.1035955,
+  "lon": 14.4728549,
+  "tags": {
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U529S1E6",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 248182637,
+  "lat": 50.1034523,
+  "lon": 14.4737644,
+  "tags": {
+    "name": "E9",
+    "railway": "subway_entrance",
+    "ref:PID": "U529S1E9",
+    "source": "Bing;cuzk",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 248182638,
+  "lat": 50.1038210,
+  "lon": 14.4734550,
+  "tags": {
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U529S1E5",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 248440717,
+  "lat": 50.0784239,
+  "lon": 14.4741995,
+  "tags": {
+    "check_date:wheelchair": "2025-08-28",
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U921S1E6",
+    "source": "Bing",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 248441501,
+  "lat": 50.0680078,
+  "lon": 14.5083966,
+  "tags": {
+    "name": "E41",
+    "railway": "subway_entrance",
+    "ref:PID": "U953S1E41",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 249235870,
+  "lat": 50.0970059,
+  "lon": 14.4044288,
+  "tags": {
+    "alt_name": "Hradčanská, metro A",
+    "level": "0",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U163S1E1",
+    "source": "cuzk:km"
+  }
+},
+{
+  "type": "node",
+  "id": 249253381,
+  "lat": 50.0683508,
+  "lon": 14.5076419,
+  "tags": {
+    "name": "E11",
+    "railway": "subway_entrance",
+    "ref:PID": "U953S1E11",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 255617353,
+  "lat": 50.0786103,
+  "lon": 14.4736772,
+  "tags": {
+    "check_date:wheelchair": "2025-04-12",
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U921S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 263891378,
+  "lat": 50.1261737,
+  "lon": 14.4895918,
+  "tags": {
+    "colour": "red",
+    "departures_board": "realtime",
+    "departures_board:speech_output": "no",
+    "name": "Střížkov",
+    "name:cs": "Střížkov",
+    "name:de": "Strischkau",
+    "name:ru": "Стршижков",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2657248"
+  }
+},
+{
+  "type": "node",
+  "id": 263891381,
+  "lat": 50.1193336,
+  "lon": 14.4984970,
+  "tags": {
+    "colour": "red",
+    "name": "Prosek",
+    "name:cs": "Prosek",
+    "name:de": "Prossek",
+    "name:ru": "Просек",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "platforms": "2",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2321857"
+  }
+},
+{
+  "type": "node",
+  "id": 263891398,
+  "lat": 50.1247337,
+  "lon": 14.5162153,
+  "tags": {
+    "colour": "red",
+    "internet_access": "no",
+    "name": "Letňany",
+    "name:cs": "Letňany",
+    "name:de": "Letnian",
+    "name:ru": "Летняны",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2205581"
+  }
+},
+{
+  "type": "node",
+  "id": 263891402,
+  "lat": 50.1188790,
+  "lon": 14.4994461,
+  "tags": {
+    "bicycle": "yes",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U603S1E4",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 263891404,
+  "lat": 50.1186861,
+  "lon": 14.4997650,
+  "tags": {
+    "bicycle": "yes",
+    "check_date:wheelchair": "2025-07-10",
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U603S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 263891406,
+  "lat": 50.1189850,
+  "lon": 14.4981729,
+  "tags": {
+    "check_date:wheelchair": "2025-04-28",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U603S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 263891408,
+  "lat": 50.1191717,
+  "lon": 14.4984994,
+  "tags": {
+    "check_date:wheelchair": "2024-04-23",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U603S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 263891409,
+  "lat": 50.1193119,
+  "lon": 14.4987472,
+  "tags": {
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U603S1E5",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 263904708,
+  "lat": 50.1256959,
+  "lon": 14.5156734,
+  "tags": {
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U1000S1E5",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 263904710,
+  "lat": 50.1253896,
+  "lon": 14.5163140,
+  "tags": {
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U1000S1E4",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 263904711,
+  "lat": 50.1248165,
+  "lon": 14.5167607,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U1000S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 263904713,
+  "lat": 50.1252706,
+  "lon": 14.5168615,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U1000S1E3",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 263904715,
+  "lat": 50.1248810,
+  "lon": 14.5163564,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U1000S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 268726089,
+  "lat": 50.0772369,
+  "lon": 14.4485779,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U209S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 271275399,
+  "lat": 50.0880267,
+  "lon": 14.4288042,
+  "tags": {
+    "name": "E7",
+    "railway": "subway_entrance",
+    "ref:PID": "U480S1E7",
+    "source": "IPR Praha:DMP",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 279090372,
+  "lat": 50.0508272,
+  "lon": 14.3510097,
+  "tags": {
+    "name": "E8",
+    "railway": "subway_entrance",
+    "ref:PID": "U602S1E8",
+    "wheelchair": "limited"
+  }
+},
+{
+  "type": "node",
+  "id": 290015924,
+  "lat": 50.0419293,
+  "lon": 14.4604506,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U228S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 290620570,
+  "lat": 50.0726873,
+  "lon": 14.4151083,
+  "tags": {
+    "name": "E9",
+    "railway": "subway_entrance",
+    "ref:PID": "U237S1E9",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 299756345,
+  "lat": 50.0677924,
+  "lon": 14.5079420,
+  "tags": {
+    "level": "0",
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U953S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 299834352,
+  "lat": 50.0277026,
+  "lon": 14.5075555,
+  "tags": {
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U106S1E6",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 299834353,
+  "lat": 50.0277997,
+  "lon": 14.5084651,
+  "tags": {
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U106S1E5",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 303877074,
+  "lat": 50.0418820,
+  "lon": 14.4605951,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U228S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 305306877,
+  "lat": 50.0310047,
+  "lon": 14.5283671,
+  "tags": {
+    "level": "1",
+    "name": "E1",
+    "name:de": "Haj, U-Bahn C",
+    "railway": "subway_entrance",
+    "ref:PID": "U286S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 305770657,
+  "lat": 50.1001635,
+  "lon": 14.3920149,
+  "tags": {
+    "alt_name": "Dejvická, metro A",
+    "alt_name:de": "Dejwitz, U-Bahn A",
+    "name": "E51",
+    "note": "bezbariérový vstup",
+    "railway": "subway_entrance",
+    "ref:PID": "U321S1E51",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 305817024,
+  "lat": 50.0749707,
+  "lon": 14.4376568,
+  "tags": {
+    "alt_name": "Náměstí Míru, metro A",
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U476S1E3",
+    "wheelchair": "no",
+    "wikidata": "Q1972106",
+    "wikipedia": "cs:Náměstí Míru (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 306040164,
+  "lat": 50.0781666,
+  "lon": 14.4612929,
+  "tags": {
+    "access": "no",
+    "door": "yes",
+    "layer": "-1",
+    "name": "E7",
+    "railway": "subway_entrance",
+    "ref:PID": "U118S1E7",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 306043579,
+  "lat": 50.0781616,
+  "lon": 14.4609556,
+  "tags": {
+    "access": "no",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U118S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 306470922,
+  "lat": 50.0824288,
+  "lon": 14.4256274,
+  "tags": {
+    "entrance": "main",
+    "name": "E109",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E109"
+  }
+},
+{
+  "type": "node",
+  "id": 306471016,
+  "lat": 50.0826295,
+  "lon": 14.4266240,
+  "tags": {
+    "name": "E116",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E116"
+  }
+},
+{
+  "type": "node",
+  "id": 307318779,
+  "lat": 50.0908902,
+  "lon": 14.4092916,
+  "tags": {
+    "alt_name": "Malostranská, metro A",
+    "alt_name:de": "Kleinseite, U-Bahn A",
+    "name": "E2",
+    "public_transport": "entrance",
+    "railway": "subway_entrance",
+    "ref:PID": "U360S1E2",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 308172951,
+  "lat": 50.0787111,
+  "lon": 14.4745043,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U921S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 308585030,
+  "lat": 50.0782413,
+  "lon": 14.4735884,
+  "tags": {
+    "entrance": "yes",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U921S1E4",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 308641508,
+  "lat": 50.1268056,
+  "lon": 14.4696769,
+  "tags": {
+    "bicycle": "yes",
+    "name": "E7",
+    "railway": "subway_entrance",
+    "ref:PID": "U78S1E7",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 310326858,
+  "lat": 50.0371964,
+  "lon": 14.4776686,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U601S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 317122815,
+  "lat": 50.0447942,
+  "lon": 14.4476933,
+  "tags": {
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U50S1E6",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 320048836,
+  "lat": 50.0770068,
+  "lon": 14.4488244,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U209S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 331940395,
+  "lat": 50.0310233,
+  "lon": 14.4917719,
+  "tags": {
+    "name": "E2",
+    "name:de": "Chodau, U-Bahn C",
+    "railway": "subway_entrance",
+    "ref:PID": "U52S1E2",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 331940396,
+  "lat": 50.0312470,
+  "lon": 14.4922745,
+  "tags": {
+    "name": "E3",
+    "name:de": "Chodau, U-Bahn C",
+    "railway": "subway_entrance",
+    "ref:PID": "U52S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 332147140,
+  "lat": 50.0315040,
+  "lon": 14.4916160,
+  "tags": {
+    "name": "E32",
+    "name:de": "Chodau, U-Bahn C",
+    "railway": "subway_entrance",
+    "ref:PID": "U52S1E32",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 332147145,
+  "lat": 50.0312435,
+  "lon": 14.4917846,
+  "tags": {
+    "highway": "elevator",
+    "name": "Chodov, metro C",
+    "name:de": "Chodau, U-Bahn C",
+    "railway": "subway_entrance",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 334349284,
+  "lat": 50.0792214,
+  "lon": 14.4320014,
+  "tags": {
+    "highway": "elevator",
+    "level": "0;-2",
+    "name": "E8",
+    "railway": "subway_entrance",
+    "ref:PID": "U400S1E108",
+    "wheelchair": "yes",
+    "wikidata": "Q2655155",
+    "wikipedia": "cs:Muzeum (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 345837145,
+  "lat": 50.0451798,
+  "lon": 14.3221434,
+  "tags": {
+    "layer": "1",
+    "level": "1",
+    "railway": "subway_entrance",
+    "ref": "E1",
+    "ref:PID": "U1007S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 345837147,
+  "lat": 50.0453154,
+  "lon": 14.3223132,
+  "tags": {
+    "level": "0",
+    "railway": "subway_entrance",
+    "ref": "E3",
+    "ref:PID": "U1007S1E3"
+  }
+},
+{
+  "type": "node",
+  "id": 355624086,
+  "lat": 50.0681494,
+  "lon": 14.5075446,
+  "tags": {
+    "level": "0",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U953S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 355624087,
+  "lat": 50.0679820,
+  "lon": 14.5074294,
+  "tags": {
+    "level": "0",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U953S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 355624089,
+  "lat": 50.0680411,
+  "lon": 14.5081156,
+  "tags": {
+    "check_date:wheelchair": "2025-11-15",
+    "level": "0",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U953S1E4",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 366158136,
+  "lat": 50.1066066,
+  "lon": 14.4927941,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U510S1E3",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 366158148,
+  "lat": 50.1063939,
+  "lon": 14.4929763,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U510S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 366158158,
+  "lat": 50.1066080,
+  "lon": 14.4930290,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U510S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 366718103,
+  "lat": 50.0782866,
+  "lon": 14.4741735,
+  "tags": {
+    "check_date:wheelchair": "2025-08-28",
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U921S1E5",
+    "source": "Bing",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 369371481,
+  "lat": 50.0788199,
+  "lon": 14.4739468,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U921S1E21"
+  }
+},
+{
+  "type": "node",
+  "id": 383821718,
+  "lat": 50.0886988,
+  "lon": 14.4323146,
+  "tags": {
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U480S1E4"
+  }
+},
+{
+  "type": "node",
+  "id": 385367075,
+  "lat": 50.0686592,
+  "lon": 14.4040883,
+  "tags": {
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U1040S1E5",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 385367079,
+  "lat": 50.0683569,
+  "lon": 14.4041926,
+  "tags": {
+    "access": "no",
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U1040S1E3",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 386378806,
+  "lat": 50.1062433,
+  "lon": 14.5375859,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U135S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 386378811,
+  "lat": 50.1061727,
+  "lon": 14.5375972,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U135S1E3",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 386606019,
+  "lat": 50.1258842,
+  "lon": 14.4890094,
+  "tags": {
+    "access": "permissive",
+    "bicycle": "no",
+    "goods": "no",
+    "highway": "elevator",
+    "maxweight": "1.6",
+    "name": "E9",
+    "railway": "subway_entrance",
+    "ref": "V413",
+    "ref:PID": "U332S1E9",
+    "surveillance": "indoor;outdoor",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 386606020,
+  "lat": 50.1260395,
+  "lon": 14.4889365,
+  "tags": {
+    "check_date:wheelchair": "2024-02-01",
+    "name": "E10",
+    "railway": "subway_entrance",
+    "ref:PID": "U332S1E10",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 386606037,
+  "lat": 50.1263871,
+  "lon": 14.4700262,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U78S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 386606038,
+  "lat": 50.1264727,
+  "lon": 14.4700148,
+  "tags": {
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U78S1E4",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 386606040,
+  "lat": 50.1266440,
+  "lon": 14.4702138,
+  "tags": {
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U78S1E6",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 386606108,
+  "lat": 50.0806511,
+  "lon": 14.4315530,
+  "tags": {
+    "highway": "elevator",
+    "name": "E308",
+    "railway": "subway_entrance",
+    "ref:PID": "U400S1E308",
+    "wheelchair": "yes",
+    "wikidata": "Q2655155",
+    "wikipedia": "cs:Muzeum (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 391537581,
+  "lat": 50.1243841,
+  "lon": 14.4550775,
+  "tags": {
+    "bicycle": "no",
+    "fee": "no",
+    "name": "E10",
+    "railway": "subway_entrance",
+    "ref:PID": "U675S1E9",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 393725630,
+  "lat": 50.1068260,
+  "lon": 14.5609596,
+  "tags": {
+    "entrance": "main",
+    "level": "1",
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U818S1E3"
+  }
+},
+{
+  "type": "node",
+  "id": 403878170,
+  "lat": 50.0737193,
+  "lon": 14.4151823,
+  "tags": {
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U237S1E6",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 403878171,
+  "lat": 50.0757055,
+  "lon": 14.4184198,
+  "tags": {
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U237S1E5",
+    "source": "IPR Praha:DMP",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 403878218,
+  "lat": 50.1051882,
+  "lon": 14.4755143,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U529S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 403878219,
+  "lat": 50.1048211,
+  "lon": 14.4761237,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U529S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 403878220,
+  "lat": 50.1046884,
+  "lon": 14.4754891,
+  "tags": {
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U529S1E4"
+  }
+},
+{
+  "type": "node",
+  "id": 403878221,
+  "lat": 50.1044221,
+  "lon": 14.4765416,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U529S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 475078393,
+  "lat": 50.1100395,
+  "lon": 14.4991219,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U474S1E3"
+  }
+},
+{
+  "type": "node",
+  "id": 524515736,
+  "lat": 50.0935608,
+  "lon": 14.4516052,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U758S1E3",
+    "toilets:wheelchair": "no",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 658879399,
+  "lat": 50.1261900,
+  "lon": 14.4695489,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U78S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 660025847,
+  "lat": 50.0990505,
+  "lon": 14.4382030,
+  "tags": {
+    "alt_name": "metro Vltaská E3",
+    "name": "Vltavská",
+    "railway": "subway_entrance",
+    "ref": "E3",
+    "ref:PID": "U100S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 660025850,
+  "lat": 50.0991870,
+  "lon": 14.4382850,
+  "tags": {
+    "alt_name": "metro Vltaská E2",
+    "name": "Vltavská",
+    "railway": "subway_entrance",
+    "ref": "E2",
+    "ref:PID": "U100S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 660025851,
+  "lat": 50.0990180,
+  "lon": 14.4386443,
+  "tags": {
+    "alt_name": "metro Vltaská E5",
+    "name": "Vltavská",
+    "railway": "subway_entrance",
+    "ref": "E5",
+    "ref:PID": "U100S1E5",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 661436990,
+  "lat": 50.0728598,
+  "lon": 14.4913816,
+  "tags": {
+    "door": "yes",
+    "level": "0",
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U713S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 740241596,
+  "lat": 50.1267218,
+  "lon": 14.4890614,
+  "tags": {
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U332S1E6",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 766908045,
+  "lat": 50.1263122,
+  "lon": 14.4897977,
+  "tags": {
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U332S1E4",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 766908048,
+  "lat": 50.1258190,
+  "lon": 14.4903246,
+  "tags": {
+    "check_date:wheelchair": "2025-04-22",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U332S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 859301614,
+  "lat": 50.0813841,
+  "lon": 14.4202521,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U539S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 882113170,
+  "lat": 50.0971760,
+  "lon": 14.4052918,
+  "tags": {
+    "level": "0",
+    "name": "Hradčanská, metro A",
+    "railway": "subway_entrance",
+    "ref:PID": "U163S1E2",
+    "source": "cuzk:km",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 882113203,
+  "lat": 50.0974012,
+  "lon": 14.4041852,
+  "tags": {
+    "alt_name": "Hradčanská, metro A",
+    "highway": "elevator",
+    "name": "E7",
+    "railway": "subway_entrance",
+    "ref:PID": "U163S1E7",
+    "source": "cuzk:km;estimation;www.tunelblanka.cz",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 882113355,
+  "lat": 50.0975043,
+  "lon": 14.4045057,
+  "tags": {
+    "alt_name": "Hradčanská, metro A",
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U163S1E6",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 970727232,
+  "lat": 50.0838361,
+  "lon": 14.4344801,
+  "tags": {
+    "level": "-2",
+    "name": "Hlavní nádraží, metro C",
+    "name:de": "Hauptbahnhof, U-Bahn C",
+    "railway": "subway_entrance",
+    "ref:PID": "U142S1E221",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 1119424623,
+  "lat": 50.0682215,
+  "lon": 14.4033025,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U1040S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 1119424644,
+  "lat": 50.0687530,
+  "lon": 14.4033625,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U1040S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 1119524964,
+  "lat": 50.0580512,
+  "lon": 14.3888283,
+  "tags": {
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U957S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 1286786252,
+  "lat": 50.1249632,
+  "lon": 14.4557034,
+  "tags": {
+    "name": "E8",
+    "railway": "subway_entrance",
+    "ref:PID": "U675S1E81",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 1286979637,
+  "lat": 50.1097278,
+  "lon": 14.4404456,
+  "tags": {
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U115S1E4",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 1286979640,
+  "lat": 50.1096545,
+  "lon": 14.4393001,
+  "tags": {
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U115S1E6",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 1399123017,
+  "lat": 50.1060291,
+  "lon": 14.5373752,
+  "tags": {
+    "bench": "yes",
+    "bin": "yes",
+    "blind:description": "Odjezdová tabule je vybavena Tyflosetem, návod na obsluhu https://cs.wikibooks.org/wiki/VPN_vys%C3%ADla%C4%8Dka_pro_nevidom%C3%A9",
+    "bus": "yes",
+    "departures_board": "realtime",
+    "departures_board:speech_output": "yes",
+    "highway": "bus_stop",
+    "lit": "yes",
+    "name": "E4;Hloubětín",
+    "operator": "DPP",
+    "passenger_information_display": "yes",
+    "passenger_information_display:speech_output": "yes",
+    "public_transport": "platform",
+    "railway": "subway_entrance",
+    "ref:PID": "U135S1E4;U135Z4",
+    "shelter": "yes",
+    "tactile_paving": "yes",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 1551149802,
+  "lat": 50.0617486,
+  "lon": 14.4094996,
+  "tags": {
+    "level": "0",
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U458S1E6",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 1552293914,
+  "lat": 50.0275000,
+  "lon": 14.5084592,
+  "tags": {
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U106S1E4",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 1552293925,
+  "lat": 50.0274146,
+  "lon": 14.5074757,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U106S1E3",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 1552293997,
+  "lat": 50.0281012,
+  "lon": 14.5083113,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U106S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 1571203236,
+  "lat": 50.1251654,
+  "lon": 14.5155615,
+  "tags": {
+    "name": "E7",
+    "railway": "subway_entrance",
+    "ref:PID": "U1000S1E7",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 1571203292,
+  "lat": 50.1253055,
+  "lon": 14.5157436,
+  "tags": {
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U1000S1E6",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 1758379229,
+  "lat": 50.0465150,
+  "lon": 14.3075368,
+  "tags": {
+    "railway": "subway_entrance",
+    "ref": "E2",
+    "ref:PID": "U1140S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 1838288289,
+  "lat": 50.0786555,
+  "lon": 14.4299642,
+  "tags": {
+    "name": "E5",
+    "operator": "cz:DPP",
+    "railway": "subway_entrance",
+    "ref:PID": "U400S1E5",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 1912666931,
+  "lat": 50.0465626,
+  "lon": 14.3049998,
+  "tags": {
+    "railway": "subway_entrance",
+    "ref": "E1",
+    "ref:PID": "U1140S1E6",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 1930411661,
+  "lat": 50.0974316,
+  "lon": 14.4043496,
+  "tags": {
+    "highway": "elevator",
+    "name": "Hradčanská, metro A",
+    "railway": "subway_entrance",
+    "source": "cuzk:km;estimation;www.tunelblanka.cz",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 1940523539,
+  "lat": 50.1106370,
+  "lon": 14.5025496,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U474S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 1942701823,
+  "lat": 50.0509909,
+  "lon": 14.4398973,
+  "tags": {
+    "entrance": "main",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U385S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 1942701826,
+  "lat": 50.0513640,
+  "lon": 14.4396136,
+  "tags": {
+    "entrance": "main",
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U385S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 1950675384,
+  "lat": 50.0279978,
+  "lon": 14.5074766,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U106S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 2028727264,
+  "lat": 50.0618117,
+  "lon": 14.4088536,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U458S1E2"
+  }
+},
+{
+  "type": "node",
+  "id": 2089324506,
+  "lat": 50.1103427,
+  "lon": 14.5018276,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U474S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 2151470267,
+  "lat": 50.1246646,
+  "lon": 14.4557851,
+  "tags": {
+    "bicycle": "yes",
+    "name": "E7",
+    "railway": "subway_entrance",
+    "ref:PID": "U675S1E7",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 2205488644,
+  "lat": 50.1068580,
+  "lon": 14.5611521,
+  "tags": {
+    "entrance": "yes",
+    "level": "2",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U818S1E4",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 2293133686,
+  "lat": 50.0845966,
+  "lon": 14.4238587,
+  "tags": {
+    "name": "E107",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E107",
+    "source": "IPR Praha:DMP"
+  }
+},
+{
+  "type": "node",
+  "id": 2293133687,
+  "lat": 50.0844835,
+  "lon": 14.4231187,
+  "tags": {
+    "name": "E1081",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E1081",
+    "source": "IPR Praha:DMP"
+  }
+},
+{
+  "type": "node",
+  "id": 2430587574,
+  "lat": 50.0982020,
+  "lon": 14.3622517,
+  "tags": {
+    "alt_name": "Bořislavka, metro A",
+    "alt_name:de": "Borislaus-Hof, U-Bahn A",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U157S1E4",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 2430587586,
+  "lat": 50.0985507,
+  "lon": 14.3621984,
+  "tags": {
+    "alt_name": "Bořislavka, metro A",
+    "alt_name:de": "Borislaus-Hof, U-Bahn A",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U157S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 2563931263,
+  "lat": 50.0797658,
+  "lon": 14.4314842,
+  "tags": {
+    "name": "E7",
+    "operator": "cz:DPP",
+    "railway": "subway_entrance",
+    "ref:PID": "U400S1E7",
+    "wheelchair": "no",
+    "wikidata": "Q2655155",
+    "wikipedia": "cs:Muzeum (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 2610222553,
+  "lat": 50.0972771,
+  "lon": 14.4645453,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U655S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 2702825829,
+  "lat": 50.1083215,
+  "lon": 14.4406182,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U115S1E2",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 2702825831,
+  "lat": 50.1083754,
+  "lon": 14.4403994,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U115S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 2702825832,
+  "lat": 50.1084091,
+  "lon": 14.4408251,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U115S1E3",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 2704189538,
+  "lat": 50.0465723,
+  "lon": 14.3080304,
+  "tags": {
+    "layer": "1",
+    "railway": "subway_entrance",
+    "ref": "E3",
+    "ref:PID": "U1140S1E3"
+  }
+},
+{
+  "type": "node",
+  "id": 2810880630,
+  "lat": 50.0886590,
+  "lon": 14.4329923,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U480S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 2811433369,
+  "lat": 50.0882245,
+  "lon": 14.4327243,
+  "tags": {
+    "access": "yes",
+    "level": "0",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U480S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 2911014879,
+  "lat": 50.1006421,
+  "lon": 14.3928287,
+  "tags": {
+    "alt_name": "Dejvická, metro A",
+    "alt_name:de": "Dejwitz, U-Bahn A",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U321S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 2911015007,
+  "lat": 50.1008179,
+  "lon": 14.3941801,
+  "tags": {
+    "alt_name": "Dejvická, metro A",
+    "alt_name:de": "Dejwitz, U-Bahn A",
+    "check_date:wheelchair": "2025-11-26",
+    "name": "E7",
+    "railway": "subway_entrance",
+    "ref:PID": "U321S1E7",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 2911296274,
+  "lat": 50.1002512,
+  "lon": 14.3947294,
+  "tags": {
+    "alt_name": "Dejvická, metro A",
+    "alt_name:de": "Dejwitz, U-Bahn A",
+    "check_date:wheelchair": "2025-11-26",
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U321S1E6",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 2911341921,
+  "lat": 50.1003349,
+  "lon": 14.3915420,
+  "tags": {
+    "alt_name": "Dejvická, metro A",
+    "alt_name:de": "Dejwitz, U-Bahn A",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U321S1E4",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 2911341928,
+  "lat": 50.1004218,
+  "lon": 14.3915334,
+  "tags": {
+    "alt_name": "Dejvická, metro A",
+    "alt_name:de": "Dejwitz, U-Bahn A",
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U321S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 2945947964,
+  "lat": 50.0812510,
+  "lon": 14.4197226,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U539S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 2945947969,
+  "lat": 50.0794607,
+  "lon": 14.4201183,
+  "tags": {
+    "bicycle": "yes",
+    "highway": "elevator",
+    "level": "0;-1",
+    "name": "Národní třída, metro B",
+    "name:de": "Nationalallee, U-Bahn B",
+    "railway": "subway_entrance",
+    "source": "survey",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 2959473336,
+  "lat": 50.1232650,
+  "lon": 14.4523225,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U675S1E3"
+  }
+},
+{
+  "type": "node",
+  "id": 2959473337,
+  "lat": 50.1234347,
+  "lon": 14.4528789,
+  "tags": {
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U675S1E4"
+  }
+},
+{
+  "type": "node",
+  "id": 2959473338,
+  "lat": 50.1236791,
+  "lon": 14.4528771,
+  "tags": {
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U675S1E5"
+  }
+},
+{
+  "type": "node",
+  "id": 2959485442,
+  "lat": 50.1241117,
+  "lon": 14.4525632,
+  "tags": {
+    "bicycle": "yes",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U675S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 2959485443,
+  "lat": 50.1241182,
+  "lon": 14.4517689,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U675S1E2",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3061259053,
+  "lat": 50.0908060,
+  "lon": 14.4093956,
+  "tags": {
+    "alt_name": "Malostranská, metro A",
+    "alt_name:de": "Kleinseite, U-Bahn A",
+    "name": "E1",
+    "public_transport": "entrance",
+    "railway": "subway_entrance",
+    "ref:PID": "U360S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3221262176,
+  "lat": 50.0560261,
+  "lon": 14.4341513,
+  "tags": {
+    "check_date:wheelchair": "2025-11-05",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U597S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3243966744,
+  "lat": 50.0305497,
+  "lon": 14.5267110,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U286S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3248878499,
+  "lat": 50.0505729,
+  "lon": 14.4399581,
+  "tags": {
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U385S1E3",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3251685237,
+  "lat": 50.0449226,
+  "lon": 14.4479345,
+  "tags": {
+    "layer": "-2",
+    "level": "-1",
+    "railway": "subway_entrance",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3280182443,
+  "lat": 50.0433710,
+  "lon": 14.4497981,
+  "tags": {
+    "check_date:wheelchair": "2025-05-10",
+    "level": "0",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U50S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3281100922,
+  "lat": 50.0446027,
+  "lon": 14.4490323,
+  "tags": {
+    "highway": "elevator",
+    "level": "-2;0",
+    "name": "E11",
+    "railway": "subway_entrance",
+    "ref:PID": "U50S1E11",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3354701854,
+  "lat": 50.1097897,
+  "lon": 14.4399836,
+  "tags": {
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U115S1E5",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3357272050,
+  "lat": 50.0308156,
+  "lon": 14.4912741,
+  "tags": {
+    "name": "E12",
+    "railway": "subway_entrance",
+    "ref:PID": "U52S1E12",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3393447849,
+  "lat": 50.1266519,
+  "lon": 14.4698994,
+  "tags": {
+    "highway": "elevator",
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U78S1E5",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3426740041,
+  "lat": 50.0885855,
+  "lon": 14.4162698,
+  "tags": {
+    "door": "no",
+    "name": "Staroměstská, metro A",
+    "railway": "subway_entrance",
+    "ref": "E1",
+    "ref:PID": "U703S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3441084193,
+  "lat": 50.0878484,
+  "lon": 14.3444774,
+  "tags": {
+    "alt_name": "Petřiny, metro A",
+    "alt_name:de": "Petrin, U-Bahn A",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U507S1E2",
+    "source": "survey",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3443281331,
+  "lat": 50.0750788,
+  "lon": 14.3408426,
+  "tags": {
+    "alt_name": "Nemocnice Motol, metro A",
+    "alt_name:de": "Krankenhaus Motol, U-Bahn A",
+    "entrance": "yes",
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U306S1E6",
+    "source": "survey",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3446254726,
+  "lat": 50.0788877,
+  "lon": 14.4743156,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U921S1E2"
+  }
+},
+{
+  "type": "node",
+  "id": 3446479597,
+  "lat": 50.0775700,
+  "lon": 14.4611342,
+  "tags": {
+    "access": "no",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U118S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3446479598,
+  "lat": 50.0776921,
+  "lon": 14.4612702,
+  "tags": {
+    "access": "no",
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U118S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3446479600,
+  "lat": 50.0830253,
+  "lon": 14.4214269,
+  "tags": {
+    "name": "E202",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E202",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3446665336,
+  "lat": 50.0838094,
+  "lon": 14.4236657,
+  "tags": {
+    "name": "E104",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E104",
+    "source": "IPR Praha:DMP"
+  }
+},
+{
+  "type": "node",
+  "id": 3446665337,
+  "lat": 50.0838115,
+  "lon": 14.4230274,
+  "tags": {
+    "name": "E103",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E103",
+    "source": "IPR Praha:DMP",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3446665338,
+  "lat": 50.0838918,
+  "lon": 14.4228458,
+  "tags": {
+    "name": "E102",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E102",
+    "source": "IPR Praha:DMP",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3446665339,
+  "lat": 50.0844057,
+  "lon": 14.4240765,
+  "tags": {
+    "name": "E106",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E106",
+    "source": "IPR Praha:DMP"
+  }
+},
+{
+  "type": "node",
+  "id": 3449320344,
+  "lat": 50.0953595,
+  "lon": 14.3468044,
+  "tags": {
+    "alt_name": "Nádraží Veleslavín, metro A",
+    "alt_name:de": "Bahnhof Weleslawin, U-Bahn A",
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U462S1E6",
+    "source": "survey",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3449320362,
+  "lat": 50.0956254,
+  "lon": 14.3476750,
+  "tags": {
+    "alt_name": "Nádraží Veleslavín, metro A",
+    "alt_name:de": "Bahnhof Weleslawin, U-Bahn A",
+    "highway": "elevator",
+    "name": "E7",
+    "railway": "subway_entrance",
+    "ref:PID": "U462S1E1",
+    "source": "survey",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3449320366,
+  "lat": 50.0956781,
+  "lon": 14.3474906,
+  "tags": {
+    "alt_name": "Nádraží Veleslavín, metro A",
+    "alt_name:de": "Bahnhof Weleslawin, U-Bahn A",
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U462S1E7",
+    "source": "survey",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3449320368,
+  "lat": 50.0956319,
+  "lon": 14.3468668,
+  "tags": {
+    "alt_name": "Nádraží Veleslavín, metro A",
+    "alt_name:de": "Bahnhof Weleslawin, U-Bahn A",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U462S1E5",
+    "source": "survey",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3449320376,
+  "lat": 50.0958545,
+  "lon": 14.3467693,
+  "tags": {
+    "alt_name": "Nádraží Veleslavín, metro A",
+    "alt_name:de": "Bahnhof Weleslawin, U-Bahn A",
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U462S1E4",
+    "source": "survey",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3450010364,
+  "lat": 50.0779163,
+  "lon": 14.4614506,
+  "tags": {
+    "access": "no",
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U118S1E5",
+    "source": "cuzk:ruian",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3450010365,
+  "lat": 50.0780115,
+  "lon": 14.4613347,
+  "tags": {
+    "access": "no",
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U118S1E6",
+    "source": "cuzk:ruian",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3455501108,
+  "lat": 50.0749659,
+  "lon": 14.3407502,
+  "tags": {
+    "alt_name": "Nemocnice Motol, metro A",
+    "alt_name:de": "Krankenhaus Motol, U-Bahn A",
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U306S1E5",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3455501109,
+  "lat": 50.0746716,
+  "lon": 14.3400180,
+  "tags": {
+    "alt_name": "Nemocnice Motol, metro A",
+    "alt_name:de": "Krankenhaus Motol, U-Bahn A",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U306S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3455501110,
+  "lat": 50.0748428,
+  "lon": 14.3409275,
+  "tags": {
+    "alt_name": "Nemocnice Motol, metro A",
+    "alt_name:de": "Krankenhaus Motol, U-Bahn A",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U306S1E4",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3455501112,
+  "lat": 50.0744731,
+  "lon": 14.3407953,
+  "tags": {
+    "alt_name": "Nemocnice Motol, metro A",
+    "alt_name:de": "Krankenhaus Motol, U-Bahn A",
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U306S1E3",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3465824969,
+  "lat": 50.0506634,
+  "lon": 14.3510532,
+  "tags": {
+    "name": "E10",
+    "railway": "subway_entrance",
+    "ref:PID": "U602S1E10",
+    "source": "Bing;cuzk:km",
+    "wheelchair": "limited"
+  }
+},
+{
+  "type": "node",
+  "id": 3518075736,
+  "lat": 50.0881366,
+  "lon": 14.4281583,
+  "tags": {
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U480S1E6",
+    "source": "IPR Praha:DMP",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3574886505,
+  "lat": 50.0987326,
+  "lon": 14.3645371,
+  "tags": {
+    "alt_name": "Bořislavka, metro A",
+    "alt_name:de": "Borislaus-Hof, U-Bahn A",
+    "check_date:wheelchair": "2025-11-20",
+    "name": "E8",
+    "railway": "subway_entrance",
+    "ref:PID": "U157S1E8",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3598477693,
+  "lat": 50.0903343,
+  "lon": 14.4373980,
+  "tags": {
+    "elevator": "lift",
+    "name": "E202",
+    "railway": "subway_entrance",
+    "ref:PID": "U689S1E202",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3617135070,
+  "lat": 50.0629899,
+  "lon": 14.4302038,
+  "tags": {
+    "entrance": "main",
+    "name": "Vyšehrad, metro C",
+    "name:de": "Hochburg, U-Bahn C",
+    "railway": "subway_entrance"
+  }
+},
+{
+  "type": "node",
+  "id": 3617135071,
+  "lat": 50.0630020,
+  "lon": 14.4307919,
+  "tags": {
+    "entrance": "exit",
+    "layer": "-1",
+    "name": "Vyšehrad, metro C",
+    "name:de": "Hochburg, U-Bahn C",
+    "railway": "subway_entrance",
+    "source": "survey",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3625646436,
+  "lat": 50.0602592,
+  "lon": 14.4093115,
+  "tags": {
+    "access": "yes",
+    "entrance": "yes",
+    "level": "0",
+    "name": "E9",
+    "railway": "subway_entrance",
+    "ref:PID": "U458S1E9",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3670346066,
+  "lat": 50.1104292,
+  "lon": 14.5151089,
+  "tags": {
+    "entrance": "yes",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U75S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3717101547,
+  "lat": 50.0863878,
+  "lon": 14.3453007,
+  "tags": {
+    "alt_name": "Petřiny, metro A",
+    "alt_name:de": "Petrin, U-Bahn A",
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U507S1E3",
+    "source": "survey"
+  }
+},
+{
+  "type": "node",
+  "id": 3717101548,
+  "lat": 50.0865487,
+  "lon": 14.3452012,
+  "tags": {
+    "alt_name": "Petřiny, metro A",
+    "alt_name:de": "Petrin, U-Bahn A",
+    "capacity": "20",
+    "highway": "elevator",
+    "level": "0;-1",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U507S1E4",
+    "source": "survey",
+    "stroller": "yes",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3724310639,
+  "lat": 50.0741185,
+  "lon": 14.4305015,
+  "tags": {
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U190S1E5",
+    "source": "survey"
+  }
+},
+{
+  "type": "node",
+  "id": 3747796122,
+  "lat": 50.0604065,
+  "lon": 14.4087668,
+  "tags": {
+    "level": "0",
+    "name": "E7",
+    "railway": "subway_entrance",
+    "ref:PID": "U458S1E7"
+  }
+},
+{
+  "type": "node",
+  "id": 3779187897,
+  "lat": 50.0712353,
+  "lon": 14.4039167,
+  "tags": {
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U1040S1E6",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 3945282457,
+  "lat": 50.0308537,
+  "lon": 14.4912293,
+  "tags": {
+    "name": "E11",
+    "railway": "subway_entrance",
+    "ref:PID": "U52S1E11"
+  }
+},
+{
+  "type": "node",
+  "id": 4012504966,
+  "lat": 50.0835915,
+  "lon": 14.4240905,
+  "tags": {
+    "bicycle": "no",
+    "description": "výtahy do přestupní chodby metra Můstek",
+    "highway": "elevator",
+    "level": "-1;0",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E1",
+    "source": "survey",
+    "start_date": "2016-03-01",
+    "stroller": "yes",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4039234121,
+  "lat": 50.0845680,
+  "lon": 14.4232179,
+  "tags": {
+    "name": "E108",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E108",
+    "source": "IPR Praha:DMP"
+  }
+},
+{
+  "type": "node",
+  "id": 4109115118,
+  "lat": 50.0981570,
+  "lon": 14.3647726,
+  "tags": {
+    "alt_name": "Bořislavka, metro A",
+    "alt_name:de": "Borislaus-Hof, U-Bahn A",
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U157S1E6",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4109115120,
+  "lat": 50.0983817,
+  "lon": 14.3645687,
+  "tags": {
+    "alt_name": "Bořislavka, metro A",
+    "alt_name:de": "Borislaus-Hof, U-Bahn A",
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U157S1E5",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4109115126,
+  "lat": 50.0985366,
+  "lon": 14.3644130,
+  "tags": {
+    "alt_name": "Bořislavka, metro A",
+    "alt_name:de": "Borislaus-Hof, U-Bahn A",
+    "check_date:wheelchair": "2024-10-25",
+    "name": "E10",
+    "railway": "subway_entrance",
+    "ref:PID": "U157S1E10",
+    "source": "Bing",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4109115130,
+  "lat": 50.0986319,
+  "lon": 14.3645391,
+  "tags": {
+    "alt_name": "Bořislavka, metro A",
+    "alt_name:de": "Borislaus-Hof, U-Bahn A",
+    "check_date:wheelchair": "2025-11-20",
+    "name": "E9",
+    "railway": "subway_entrance",
+    "ref:PID": "U157S1E9",
+    "source": "Bing",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4172967347,
+  "lat": 50.1006637,
+  "lon": 14.3931187,
+  "tags": {
+    "alt_name": "Dejvická, metro A",
+    "alt_name:de": "Dejwitz, U-Bahn A",
+    "name": "E11",
+    "railway": "subway_entrance",
+    "ref:PID": "U321S1E11",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4217964149,
+  "lat": 50.0726987,
+  "lon": 14.4910641,
+  "tags": {
+    "door": "hinged",
+    "door:wings": "4",
+    "level": "0",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U713S1E1",
+    "wheelchair": "limited"
+  }
+},
+{
+  "type": "node",
+  "id": 4245196345,
+  "lat": 50.0538003,
+  "lon": 14.2906101,
+  "tags": {
+    "door": "swinging",
+    "entrance": "main",
+    "open": "full",
+    "railway": "subway_entrance",
+    "ref": "E1",
+    "ref:PID": "U1141S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4303446946,
+  "lat": 50.0832360,
+  "lon": 14.4337361,
+  "tags": {
+    "level": "-2",
+    "name": "Hlavní nádraží, metro C",
+    "name:de": "Hauptbahnhof, U-Bahn C",
+    "railway": "subway_entrance",
+    "ref:PID": "U142S1E312",
+    "wheelchair": "limited"
+  }
+},
+{
+  "type": "node",
+  "id": 4303446947,
+  "lat": 50.0839118,
+  "lon": 14.4342265,
+  "tags": {
+    "description": "Směr Háje",
+    "level": "-2",
+    "name": "Hlavní nádraží, metro C",
+    "name:de": "Hauptbahnhof, U-Bahn C",
+    "railway": "subway_entrance",
+    "ref:PID": "U142S1E222",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4303448677,
+  "lat": 50.0833311,
+  "lon": 14.4344763,
+  "tags": {
+    "bicycle": "yes",
+    "highway": "elevator",
+    "level": "-3;-2;-1;0",
+    "railway": "subway_entrance",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4303449131,
+  "lat": 50.0834821,
+  "lon": 14.4346050,
+  "tags": {
+    "bicycle": "yes",
+    "highway": "elevator",
+    "level": "-3;-2;-1;0",
+    "railway": "subway_entrance"
+  }
+},
+{
+  "type": "node",
+  "id": 4303449921,
+  "lat": 50.0838118,
+  "lon": 14.4340830,
+  "tags": {
+    "name": "Hlavní nádraží",
+    "railway": "subway_entrance",
+    "ref": "E2",
+    "ref:PID": "U142S1E212",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4664440916,
+  "lat": 50.0565362,
+  "lon": 14.4341708,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U597S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4664440918,
+  "lat": 50.0564306,
+  "lon": 14.4336982,
+  "tags": {
+    "check_date:wheelchair": "2025-11-02",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U597S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4683654115,
+  "lat": 50.0609260,
+  "lon": 14.4093645,
+  "tags": {
+    "level": "0",
+    "name": "E10",
+    "railway": "subway_entrance",
+    "ref:PID": "U458S1E10",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4686502496,
+  "lat": 50.1236052,
+  "lon": 14.4528288,
+  "tags": {
+    "bicycle": "no",
+    "fee": "no",
+    "highway": "elevator",
+    "note": "Výtah vede jen do vestibulu.",
+    "note:en": "The elevator goes to the entrance hall only.",
+    "railway": "subway_entrance",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4688390949,
+  "lat": 50.1187955,
+  "lon": 14.4993575,
+  "tags": {
+    "check_date:wheelchair": "2023-04-07",
+    "highway": "elevator",
+    "name": "E41",
+    "railway": "subway_entrance",
+    "ref:PID": "U603S1E41",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4757540818,
+  "lat": 50.0544408,
+  "lon": 14.3710179,
+  "tags": {
+    "barrier": "gate",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U685S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4757540819,
+  "lat": 50.0546917,
+  "lon": 14.3711388,
+  "tags": {
+    "barrier": "gate",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U685S1E2",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4762030659,
+  "lat": 50.0419206,
+  "lon": 14.4603187,
+  "tags": {
+    "railway": "subway_entrance",
+    "ref:PID": "U228S1E4",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4762030699,
+  "lat": 50.0309961,
+  "lon": 14.4911507,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U52S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4764027005,
+  "lat": 50.0989539,
+  "lon": 14.4383298,
+  "tags": {
+    "bicycle": "yes",
+    "fee": "no",
+    "goods": "no",
+    "highway": "elevator",
+    "indoor": "yes",
+    "lit": "yes",
+    "name": "E41",
+    "railway": "subway_entrance",
+    "ref:PID": "U100S1E41",
+    "stroller": "yes",
+    "surveillance": "indoor",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4764278764,
+  "lat": 50.0538186,
+  "lon": 14.2907554,
+  "tags": {
+    "door": "swinging",
+    "entrance": "yes",
+    "level": "0",
+    "name": "Zličín, metro B",
+    "name:de": "Slitschin, U-Bahn B",
+    "open": "full",
+    "railway": "subway_entrance",
+    "ref": "E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4773026210,
+  "lat": 50.0466476,
+  "lon": 14.3064453,
+  "tags": {
+    "name": "Výtah náměstí Junkových",
+    "name:cs": "Výtah náměstí Junkových",
+    "name:en": "Lift náměstí Junkových",
+    "railway": "subway_entrance",
+    "ref": "E5",
+    "ref:PID": "U1140S1E5",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4774732845,
+  "lat": 50.0449831,
+  "lon": 14.3227827,
+  "tags": {
+    "railway": "subway_entrance",
+    "ref": "E2",
+    "ref:PID": "U1007S1E21",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4774942992,
+  "lat": 50.0445755,
+  "lon": 14.3315990,
+  "tags": {
+    "railway": "subway_entrance",
+    "ref": "E3",
+    "ref:PID": "U258S1E3",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4774943002,
+  "lat": 50.0446740,
+  "lon": 14.3315498,
+  "tags": {
+    "railway": "subway_entrance",
+    "ref": "E2",
+    "ref:PID": "U258S1E2",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4781193618,
+  "lat": 50.0310593,
+  "lon": 14.4918841,
+  "tags": {
+    "name": "E21",
+    "name:de": "Chodau, U-Bahn C",
+    "railway": "subway_entrance",
+    "ref:PID": "U52S1E21",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4781332748,
+  "lat": 50.0499017,
+  "lon": 14.3414893,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U1154S1E2",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4781332749,
+  "lat": 50.0498646,
+  "lon": 14.3419036,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U1154S1E3",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4781377532,
+  "lat": 50.0507870,
+  "lon": 14.3511835,
+  "tags": {
+    "highway": "elevator",
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U602S1E6",
+    "stroller": "yes",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4781377545,
+  "lat": 50.0510096,
+  "lon": 14.3532752,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U602S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4788134735,
+  "lat": 50.0613083,
+  "lon": 14.4085776,
+  "tags": {
+    "level": "0",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U458S1E4",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4788134754,
+  "lat": 50.0614961,
+  "lon": 14.4088503,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U458S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4789030269,
+  "lat": 50.0704939,
+  "lon": 14.4046660,
+  "tags": {
+    "name": "E7",
+    "railway": "subway_entrance",
+    "ref:PID": "U1040S1E7",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4803466717,
+  "lat": 50.0881865,
+  "lon": 14.4323472,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U480S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4813585661,
+  "lat": 50.0935908,
+  "lon": 14.4517721,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U758S1E2",
+    "toilets:wheelchair": "no",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4843697929,
+  "lat": 50.1105460,
+  "lon": 14.5016668,
+  "tags": {
+    "entrance": "yes",
+    "layer": "-1",
+    "level": "-1",
+    "name": "E22",
+    "railway": "subway_entrance",
+    "ref:PID": "U474S1E22",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4878432997,
+  "lat": 50.1064106,
+  "lon": 14.5376739,
+  "tags": {
+    "access": "yes",
+    "accessibility:audible": "yes",
+    "beacon:operator": "VPN",
+    "description": "3 eskalátory, ale také výtah - konečná výtahu za (před nástupištěm - chodba uprostřed průchodu mezi kolejemi, případně při poruše i nákladní výtah proti vstupu do vestibulu",
+    "entrance": "from underpass",
+    "highway": "elevator",
+    "information": "display",
+    "level": "-1;-2",
+    "name": "Hloubětín - stanie metra B",
+    "name:cs": "vestibul jako součást podchodu pod Poděbradskou, na straně do centra",
+    "operator": "DPP",
+    "railway": "subway_entrance",
+    "ref": "Stanice metra B Hloubětín",
+    "ref:PID": "U135S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4878432998,
+  "lat": 50.1064555,
+  "lon": 14.5379388,
+  "tags": {
+    "name": "E11",
+    "railway": "subway_entrance",
+    "ref:PID": "U135S1E11",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 4887704272,
+  "lat": 50.0374362,
+  "lon": 14.4778505,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U601S1E2",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4887982241,
+  "lat": 50.1068397,
+  "lon": 14.5600748,
+  "tags": {
+    "entrance": "yes",
+    "level": "3",
+    "name": "E7",
+    "railway": "subway_entrance",
+    "ref:PID": "U818S1E7"
+  }
+},
+{
+  "type": "node",
+  "id": 4887982243,
+  "lat": 50.1069711,
+  "lon": 14.5608818,
+  "tags": {
+    "entrance": "yes",
+    "level": "3",
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U818S1E6"
+  }
+},
+{
+  "type": "node",
+  "id": 4887982246,
+  "lat": 50.1069838,
+  "lon": 14.5612153,
+  "tags": {
+    "entrance": "yes",
+    "level": "3",
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U818S1E5"
+  }
+},
+{
+  "type": "node",
+  "id": 4887982265,
+  "lat": 50.1066563,
+  "lon": 14.5599216,
+  "tags": {
+    "entrance": "main",
+    "level": "2",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U818S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4887982267,
+  "lat": 50.1066895,
+  "lon": 14.5601321,
+  "tags": {
+    "entrance": "yes",
+    "level": "1",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U818S1E2"
+  }
+},
+{
+  "type": "node",
+  "id": 4888057699,
+  "lat": 50.1090479,
+  "lon": 14.5768577,
+  "tags": {
+    "entrance": "yes",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U897S1E22"
+  }
+},
+{
+  "type": "node",
+  "id": 4899417246,
+  "lat": 50.0935629,
+  "lon": 14.4517873,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U758S1E1",
+    "toilets:wheelchair": "no",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 5006791802,
+  "lat": 50.1266024,
+  "lon": 14.4688457,
+  "tags": {
+    "automatic_door": "motion",
+    "entrance": "yes",
+    "name": "E8",
+    "railway": "subway_entrance",
+    "ref:PID": "U78S1E8",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 5070409779,
+  "lat": 50.0994920,
+  "lon": 14.4384986,
+  "tags": {
+    "name": "E7",
+    "note": "Opraven název podle ref:PID",
+    "railway": "subway_entrance",
+    "ref:PID": "U100S1E7",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 5070409780,
+  "lat": 50.0995207,
+  "lon": 14.4384949,
+  "tags": {
+    "alt_name": "metro Vltaská E6",
+    "name": "Vltavská",
+    "railway": "subway_entrance",
+    "ref": "E6",
+    "ref:PID": "U100S1E6",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 5159316837,
+  "lat": 50.1249601,
+  "lon": 14.5158912,
+  "tags": {
+    "highway": "elevator",
+    "level": "0;-1",
+    "name": "E8",
+    "railway": "subway_entrance",
+    "ref:PID": "U1000S1E8",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 5159805029,
+  "lat": 50.0794580,
+  "lon": 14.4201725,
+  "tags": {
+    "bicycle": "yes",
+    "highway": "elevator",
+    "level": "0;-1",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U539S1E2",
+    "source": "survey",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 5231372592,
+  "lat": 50.1033535,
+  "lon": 14.4731541,
+  "tags": {
+    "name": "E7",
+    "railway": "subway_entrance",
+    "ref:PID": "U529S1E7",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 5257756517,
+  "lat": 50.1090092,
+  "lon": 14.4401336,
+  "tags": {
+    "colour": "red",
+    "name": "Nádraží Holešovice",
+    "name:de": "Bahnhof Holleschowitz",
+    "name:ru": "Надражи Голешовице",
+    "network": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q8043200"
+  }
+},
+{
+  "type": "node",
+  "id": 5257756518,
+  "lat": 50.1001646,
+  "lon": 14.4385486,
+  "tags": {
+    "colour": "red",
+    "name": "Vltavská",
+    "name:ru": "Влтавска",
+    "network": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2614771"
+  }
+},
+{
+  "type": "node",
+  "id": 5257778141,
+  "lat": 50.0456749,
+  "lon": 14.3213783,
+  "tags": {
+    "colour": "yellow",
+    "name": "Luka",
+    "name:cs": "Luka",
+    "name:ru": "Лука",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q1820709"
+  }
+},
+{
+  "type": "node",
+  "id": 5264782261,
+  "lat": 50.0971276,
+  "lon": 14.4041263,
+  "tags": {
+    "alt_name": "Hradčanská, metro A",
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U163S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 5264782262,
+  "lat": 50.0972623,
+  "lon": 14.4040474,
+  "tags": {
+    "alt_name": "Hradčanská, metro A",
+    "check_date:wheelchair": "2025-11-20",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U163S1E4",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 5265676378,
+  "lat": 50.0978400,
+  "lon": 14.4041052,
+  "tags": {
+    "alt_name": "Hradčanská, metro A",
+    "name": "E8",
+    "railway": "subway_entrance",
+    "ref:PID": "U163S1E8",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 5265708622,
+  "lat": 50.0602523,
+  "lon": 14.4089034,
+  "tags": {
+    "level": "0",
+    "name": "E8",
+    "railway": "subway_entrance",
+    "ref:PID": "U458S1E8",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 5316448455,
+  "lat": 50.0959866,
+  "lon": 14.3467359,
+  "tags": {
+    "alt_name": "Nádraží Veleslavín, metro A",
+    "alt_name:de": "Bahnhof Weleslawin, U-Bahn A",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U462S1E3",
+    "source": "survey",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 5316448468,
+  "lat": 50.0961489,
+  "lon": 14.3469387,
+  "tags": {
+    "alt_name": "Nádraží Veleslavín, metro A",
+    "alt_name:de": "Bahnhof Weleslawin, U-Bahn A",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U462S1E2",
+    "source": "survey",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 5400438439,
+  "lat": 50.0985252,
+  "lon": 14.3620009,
+  "tags": {
+    "highway": "elevator",
+    "name": "E11",
+    "railway": "subway_entrance",
+    "ref:PID": "U157S1E11",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 5401417608,
+  "lat": 50.0982109,
+  "lon": 14.3623128,
+  "tags": {
+    "alt_name": "Bořislavka, metro A",
+    "alt_name:de": "Borislaus-Hof, U-Bahn A",
+    "name": "E12",
+    "railway": "subway_entrance",
+    "ref:PID": "U157S1E12",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 5401417609,
+  "lat": 50.0981975,
+  "lon": 14.3620974,
+  "tags": {
+    "alt_name": "Bořislavka, metro A",
+    "alt_name:de": "Borislaus-Hof, U-Bahn A",
+    "highway": "elevator",
+    "level": "0;-1",
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U157S1E3",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 5448178870,
+  "lat": 50.0684631,
+  "lon": 14.5071745,
+  "tags": {
+    "level": "0",
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U953S1E5",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 5451432338,
+  "lat": 50.1266372,
+  "lon": 14.4695788,
+  "tags": {
+    "colour": "red",
+    "name": "Ládví",
+    "name:ru": "Ладви",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "operator:wikipedia": "cs:Dopravní podnik hl. m. Prahy",
+    "public_transport": "station",
+    "railway": "station",
+    "ref:PID": "U78Z101;U78Z102",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q1556730",
+    "wikipedia": "cs:Ládví (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5460545196,
+  "lat": 50.0750440,
+  "lon": 14.5151526,
+  "tags": {
+    "colour": "green",
+    "name": "Depo Hostivař",
+    "name:cs": "Depo Hostivař",
+    "name:en": "Hostivař depot",
+    "name:ru": "Депо Гостиварж",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 5460545197,
+  "lat": 50.0684647,
+  "lon": 14.5079667,
+  "tags": {
+    "colour": "green",
+    "layer": "-1",
+    "name": "Skalka",
+    "name:cs": "Skalka",
+    "name:ru": "Скалка",
+    "network": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2659765",
+    "wikipedia": "cs:Skalka (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5460545198,
+  "lat": 50.0729650,
+  "lon": 14.4907502,
+  "tags": {
+    "colour": "green",
+    "name": "Strašnická",
+    "name:cs": "Strašnická",
+    "name:ru": "Страшницка",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q1867691"
+  }
+},
+{
+  "type": "node",
+  "id": 5460545199,
+  "lat": 50.0781710,
+  "lon": 14.4759414,
+  "tags": {
+    "colour": "green",
+    "layer": "-3",
+    "level": "-3",
+    "name": "Želivského",
+    "name:ru": "Желивскего",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wikidata": "Q2659859",
+    "wikipedia": "cs:Želivského (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5460545201,
+  "lat": 50.0777115,
+  "lon": 14.4507304,
+  "tags": {
+    "addr:housenumber": "131900",
+    "addr:postcode": "12000",
+    "addr:street": "Vinohradská",
+    "colour": "green",
+    "layer": "-2",
+    "name": "Jiřího z Poděbrad",
+    "name:cs": "Jiřího z Poděbrad",
+    "name:ru": "Йиржиго з Подебрад",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "start_date": "1980-12-19",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2163001",
+    "wikipedia": "cs:Jiřího z Poděbrad (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5460545203,
+  "lat": 50.0794841,
+  "lon": 14.4316586,
+  "tags": {
+    "colour": "green",
+    "layer": "-3",
+    "name": "Muzeum",
+    "name:de": "Museum",
+    "name:en": "Museum",
+    "name:ru": "Музеум",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2655155",
+    "wikipedia": "cs:Muzeum (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5460545204,
+  "lat": 50.0836872,
+  "lon": 14.4243604,
+  "tags": {
+    "colour": "green",
+    "name": "Můstek",
+    "name:be": "Мост",
+    "name:de": "Brückel",
+    "name:ru": "Мустек",
+    "network": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2137688",
+    "wikipedia": "cs:Můstek (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5460545205,
+  "lat": 50.0882161,
+  "lon": 14.4176280,
+  "tags": {
+    "check_date": "2025-09-12",
+    "colour": "green",
+    "name": "Staroměstská",
+    "name:de": "Altstadt",
+    "name:ru": "Староместска",
+    "network": "Pražské metro",
+    "network:de": "Prager U-Bahn",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "wheelchair": "no",
+    "wikidata": "Q2639826",
+    "wikipedia": "cs:Staroměstská (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5460545206,
+  "lat": 50.0915233,
+  "lon": 14.4093203,
+  "tags": {
+    "colour": "green",
+    "depth": "32",
+    "name": "Malostranská",
+    "name:de": "Kleinseite",
+    "name:ru": "Малостранска",
+    "name:uk": "Малостранська",
+    "network": "Pražské metro",
+    "network:de": "Prager U-Bahn",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "no",
+    "wikidata": "Q2643308",
+    "wikipedia": "cs:Malostranská (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5460545207,
+  "lat": 50.0974410,
+  "lon": 14.4031773,
+  "tags": {
+    "colour": "green",
+    "layer": "-3",
+    "name": "Hradčanská",
+    "name:cs": "Hradčanská",
+    "name:ru": "Градчанска",
+    "name:uk": "Градчанська",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "no",
+    "wikidata": "Q2992657",
+    "wikipedia": "cs:Hradčanská (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5460545208,
+  "lat": 50.1004626,
+  "lon": 14.3930646,
+  "tags": {
+    "bicycle": "yes",
+    "colour": "green",
+    "name": "Dejvická",
+    "name:de": "Dejwitz",
+    "name:ru": "Дейвицка",
+    "name:uk": "Дейвіцька",
+    "network": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "old_name": "Leninova",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2475128",
+    "wikipedia": "cs:Dejvická (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5460545209,
+  "lat": 50.0983787,
+  "lon": 14.3628828,
+  "tags": {
+    "colour": "green",
+    "layer": "-5",
+    "name": "Bořislavka",
+    "name:de": "Borislaus-Hof",
+    "network": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "source": "stavební plány",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q3494217",
+    "wikipedia": "cs:Bořislavka (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5460545210,
+  "lat": 50.0959181,
+  "lon": 14.3484912,
+  "tags": {
+    "colour": "green",
+    "location": "underground",
+    "name": "Nádraží Veleslavín",
+    "name:de": "Bahnhof Weleslawin",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q11878329",
+    "wikipedia": "cs:Nádraží Veleslavín (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5460545211,
+  "lat": 50.0866350,
+  "lon": 14.3450627,
+  "tags": {
+    "colour": "green",
+    "departures_board": "timetable",
+    "name": "Petřiny",
+    "name:de": "Petrin",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "tactile_paving": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q3390976"
+  }
+},
+{
+  "type": "node",
+  "id": 5460545212,
+  "lat": 50.0753131,
+  "lon": 14.3412984,
+  "tags": {
+    "colour": "green",
+    "name": "Nemocnice Motol",
+    "name:de": "Krankenhaus Motol",
+    "network": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q5063913",
+    "wikipedia": "cs:Nemocnice Motol (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5460580012,
+  "lat": 50.0902191,
+  "lon": 14.4392619,
+  "tags": {
+    "colour": "red",
+    "name": "Florenc",
+    "name:1971-1990": "Sokolovská",
+    "name:cs": "Florenc",
+    "name:de": "Florenz",
+    "name:ja": "フローレンツ",
+    "name:ru": "Флоренц",
+    "network": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "ref:PID": "U689Z121",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "limited"
+  }
+},
+{
+  "type": "node",
+  "id": 5460590598,
+  "lat": 50.0802724,
+  "lon": 14.4311389,
+  "tags": {
+    "colour": "red",
+    "name": "Muzeum",
+    "name:de": "Museum",
+    "name:en": "Museum",
+    "name:ru": "Музеум",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "start_date": "1974",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2655155",
+    "wikipedia": "cs:Muzeum (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5463105928,
+  "lat": 50.0541763,
+  "lon": 14.3697689,
+  "tags": {
+    "alt_name:de": "Ninowitz",
+    "alt_name:ru": "Йинонице",
+    "colour": "yellow",
+    "name": "Jinonice",
+    "name:1985-1990": "Švermova",
+    "name:cs": "Jinonice",
+    "name:de": "Ninowitz",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "start_date": "1988-10-26",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "no",
+    "wikidata": "Q771525",
+    "wikipedia": "cs:Jinonice (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5463105929,
+  "lat": 50.0508464,
+  "lon": 14.3521341,
+  "tags": {
+    "colour": "yellow",
+    "name": "Nové Butovice",
+    "name:cs": "Nové Butovice",
+    "name:ru": "Нове Бутовице",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q938057"
+  }
+},
+{
+  "type": "node",
+  "id": 5463105930,
+  "lat": 50.0500112,
+  "lon": 14.3427888,
+  "tags": {
+    "colour": "yellow",
+    "name": "Hůrka",
+    "name:ru": "Гурка",
+    "network": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "start_date": "1994-11-11",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2063169",
+    "wikipedia": "cs:Hůrka (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5463105931,
+  "lat": 50.0445043,
+  "lon": 14.3304805,
+  "tags": {
+    "colour": "yellow",
+    "name": "Lužiny",
+    "name:cs": "Lužiny",
+    "name:ru": "Лужины",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2892529"
+  }
+},
+{
+  "type": "node",
+  "id": 5463105932,
+  "lat": 50.0466765,
+  "lon": 14.3062169,
+  "tags": {
+    "colour": "yellow",
+    "name": "Stodůlky",
+    "name:cs": "Stodůlky",
+    "name:de": "Stodulek",
+    "name:ru": "Стодулки",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q643234"
+  }
+},
+{
+  "type": "node",
+  "id": 5463105939,
+  "lat": 50.0532419,
+  "lon": 14.2911648,
+  "tags": {
+    "colour": "yellow",
+    "departures_board": "realtime",
+    "departures_board:speech_output": "no",
+    "name": "Zličín",
+    "name:cs": "Zličín",
+    "name:de": "Slitschin",
+    "name:pronunciation": "zlɪtʃiːn",
+    "name:ru": "Зличин",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "short_name": "ZL",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q1962305",
+    "wikipedia": "cs:Zličín (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5463129256,
+  "lat": 50.0702468,
+  "lon": 14.4039192,
+  "tags": {
+    "colour": "yellow",
+    "name": "Anděl",
+    "name:cs": "Anděl",
+    "name:ru": "Андел",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "ref:PID": "U1040Z102",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q1982876",
+    "wikipedia": "cs:Anděl (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5463129257,
+  "lat": 50.0611980,
+  "lon": 14.4090904,
+  "tags": {
+    "colour": "yellow",
+    "name": "Smíchovské nádraží",
+    "name:de": "Bahnhof Smichow",
+    "name:ru": "Смиховске надражи",
+    "network": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2132771"
+  }
+},
+{
+  "type": "node",
+  "id": 5463129258,
+  "lat": 50.0581147,
+  "lon": 14.3877504,
+  "tags": {
+    "colour": "yellow",
+    "name": "Radlická",
+    "name:cs": "Radlická",
+    "name:de": "Radlitzer Straße",
+    "name:ru": "Радлицка",
+    "name:uk": "Радлицька",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:uk": "Празький метрополітен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2314277",
+    "wikipedia": "cs:Radlická (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5471247109,
+  "lat": 50.0969510,
+  "lon": 14.4635262,
+  "tags": {
+    "colour": "yellow",
+    "name": "Invalidovna",
+    "name:cs": "Invalidovna",
+    "name:ru": "Инвалидовна",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "ref:PID": "U655Z102",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "no",
+    "wikidata": "Q2326246"
+  }
+},
+{
+  "type": "node",
+  "id": 5471247110,
+  "lat": 50.0933902,
+  "lon": 14.4517852,
+  "tags": {
+    "colour": "yellow",
+    "name": "Křižíkova",
+    "name:ru": "Кржижикова",
+    "network": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "no",
+    "wikidata": "Q1847711"
+  }
+},
+{
+  "type": "node",
+  "id": 5471247111,
+  "lat": 50.0904744,
+  "lon": 14.4375350,
+  "tags": {
+    "colour": "yellow",
+    "layer": "-5",
+    "name": "Florenc",
+    "name:1985-1990": "Sokolovská",
+    "name:cs": "Florenc",
+    "name:de": "Florenz",
+    "name:ja": "フローレンツ",
+    "name:ru": "Флоренц",
+    "network": "Pražské metro",
+    "network:de": "Prager U-Bahn",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "ref:PID": "U689Z102",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 5471247112,
+  "lat": 50.0887989,
+  "lon": 14.4306385,
+  "tags": {
+    "colour": "yellow",
+    "name": "Náměstí Republiky",
+    "name:cs": "Náměstí Republiky",
+    "name:de": "Platz der Republik",
+    "name:en": "Republic Square",
+    "name:ru": "Намести Републики",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wikidata": "Q2088679"
+  }
+},
+{
+  "type": "node",
+  "id": 5471247113,
+  "lat": 50.0834134,
+  "lon": 14.4233451,
+  "tags": {
+    "colour": "yellow",
+    "name": "Můstek",
+    "name:de": "Brückel",
+    "name:ru": "Мустек",
+    "network": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2137688",
+    "wikipedia": "cs:Můstek (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5471247114,
+  "lat": 50.0799521,
+  "lon": 14.4202946,
+  "tags": {
+    "colour": "yellow",
+    "name": "Národní třída",
+    "name:de": "Nationalallee",
+    "name:ru": "Народни тршида",
+    "network": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2552833"
+  }
+},
+{
+  "type": "node",
+  "id": 5471247115,
+  "lat": 50.0745830,
+  "lon": 14.4169281,
+  "tags": {
+    "colour": "yellow",
+    "name": "Karlovo náměstí",
+    "name:de": "Karlsplatz",
+    "name:en": "Charles Square",
+    "name:ru": "Карлова площадь",
+    "network": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 5473344329,
+  "lat": 50.0308672,
+  "lon": 14.5272352,
+  "tags": {
+    "colour": "red",
+    "name": "Háje",
+    "name:cs": "Háje",
+    "name:de": "Haj",
+    "name:ru": "Гае",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "old_name": "Kosmonautů",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2655164",
+    "wikipedia": "cs:Háje (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5482731178,
+  "lat": 50.1089325,
+  "lon": 14.5767773,
+  "tags": {
+    "colour": "yellow",
+    "name": "Černý Most",
+    "name:cs": "Černý Most",
+    "name:de": "Schwarze Brücke",
+    "name:ru": "Черны мост",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q3491244",
+    "wikipedia": "cs:Černý Most (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5482731179,
+  "lat": 50.1068437,
+  "lon": 14.5604991,
+  "tags": {
+    "colour": "yellow",
+    "name": "Rajská zahrada",
+    "name:cs": "Rajská zahrada",
+    "name:ru": "Райска заграда",
+    "name:uk": "Райська заграда",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "start_date": "8.11.1998",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q1457113",
+    "wikipedia": "cs:Rajská zahrada (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5482731180,
+  "lat": 50.1066501,
+  "lon": 14.5366464,
+  "tags": {
+    "colour": "yellow",
+    "name": "Hloubětín",
+    "name:cs": "Hloubětín",
+    "name:de": "Tiefenbach",
+    "name:ru": "Глоубетин",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "wheelchair": "yes",
+    "wikidata": "Q642695",
+    "wikipedia": "cs:Hloubětín (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 5482731181,
+  "lat": 50.1103835,
+  "lon": 14.5165792,
+  "tags": {
+    "colour": "yellow",
+    "name": "Kolbenova",
+    "name:cs": "Kolbenova",
+    "name:ru": "Колбенова",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 5482731182,
+  "lat": 50.1101153,
+  "lon": 14.5012716,
+  "tags": {
+    "colour": "yellow",
+    "name": "Vysočanská",
+    "name:cs": "Vysočanská",
+    "name:ru": "Височанска",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "operator": "cz:DPP",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2575954"
+  }
+},
+{
+  "type": "node",
+  "id": 5482731184,
+  "lat": 50.1039200,
+  "lon": 14.4743404,
+  "tags": {
+    "colour": "yellow",
+    "name": "Palmovka",
+    "name:de": "Palmhof",
+    "name:ru": "Палмовка",
+    "network": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wheelchair": "yes",
+    "wikidata": "Q2980816"
+  }
+},
+{
+  "type": "node",
+  "id": 5498821243,
+  "lat": 50.1095968,
+  "lon": 14.4395935,
+  "tags": {
+    "name": "Nádraží Holešovice, metro C",
+    "name:de": "Bahnhof Holleschowitz, U-Bahn C",
+    "railway": "subway_entrance",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 6256535951,
+  "lat": 50.0568262,
+  "lon": 14.4333624,
+  "tags": {
+    "amenity": "acoustic_beacon",
+    "colour": "red",
+    "indoor": "yes",
+    "level": "-1",
+    "location": "underground",
+    "name": "Pražského povstání",
+    "name:cs": "Pražského povstání",
+    "name:ru": "Пражскего повстани",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "tactile_paving": "pattern=lines",
+    "transport": "subway",
+    "wikidata": "Q2084685",
+    "wikipedia": "cs:Pražského povstání (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 6680321903,
+  "lat": 50.1089050,
+  "lon": 14.5776177,
+  "tags": {
+    "entrance": "yes",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U897S1E12",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 6680321904,
+  "lat": 50.1089262,
+  "lon": 14.5776230,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U897S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 6710047812,
+  "lat": 50.1089705,
+  "lon": 14.5762585,
+  "tags": {
+    "entrance": "yes",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U897S1E23",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 6715430103,
+  "lat": 50.0314260,
+  "lon": 14.4919665,
+  "tags": {
+    "name": "E31",
+    "railway": "subway_entrance",
+    "ref:PID": "U52S1E31"
+  }
+},
+{
+  "type": "node",
+  "id": 7070517624,
+  "lat": 50.0433984,
+  "lon": 14.4380361,
+  "tags": {
+    "construction": "station",
+    "construction:railway": "station",
+    "name": "Olbrachtova",
+    "public_transport": "station",
+    "railway": "proposed",
+    "station": "subway",
+    "subway": "yes",
+    "wikidata": "Q64846341",
+    "wikipedia": "cs:Olbrachtova (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 7070517626,
+  "lat": 50.0643605,
+  "lon": 14.4408977,
+  "tags": {
+    "name": "Náměstí Bratří Synků",
+    "proposed": "station",
+    "proposed:railway": "station",
+    "public_transport": "station",
+    "railway": "proposed",
+    "station": "subway",
+    "subway": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 7070517627,
+  "lat": 50.0753237,
+  "lon": 14.4406669,
+  "tags": {
+    "name": "Náměstí Míru",
+    "proposed": "station",
+    "proposed:railway": "station",
+    "public_transport": "station",
+    "railway": "proposed",
+    "station": "subway",
+    "subway": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 7070517634,
+  "lat": 50.0283652,
+  "lon": 14.4549072,
+  "tags": {
+    "name": "Nemocnice Krč",
+    "proposed": "station",
+    "proposed:railway": "station",
+    "public_transport": "station",
+    "railway": "proposed",
+    "station": "subway",
+    "subway": "yes",
+    "wikidata": "Q64851177",
+    "wikipedia": "cs:Nemocnice Krč (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 7070517660,
+  "lat": 50.0164539,
+  "lon": 14.4512271,
+  "tags": {
+    "name": "Nové Dvory",
+    "proposed": "station",
+    "proposed:railway": "station",
+    "public_transport": "station",
+    "railway": "proposed",
+    "station": "subway",
+    "subway": "yes",
+    "wikidata": "Q64851191",
+    "wikipedia": "cs:Nové Dvory (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 7070517671,
+  "lat": 50.0342095,
+  "lon": 14.4466781,
+  "tags": {
+    "name": "Nádraží Krč",
+    "proposed": "station",
+    "proposed:railway": "station",
+    "public_transport": "station",
+    "railway": "proposed",
+    "station": "subway",
+    "subway": "yes",
+    "wikidata": "Q64846195",
+    "wikipedia": "cs:Nádraží Krč (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 7425340751,
+  "lat": 50.0752993,
+  "lon": 14.4390755,
+  "tags": {
+    "colour": "green",
+    "name": "Náměstí Míru",
+    "name:cs": "Náměstí Míru",
+    "name:de": "Friedensplatz",
+    "name:ru": "Намести Миру",
+    "network": "Pražské metro",
+    "network:cs": "Pražské metro",
+    "network:en": "Prague Metro",
+    "network:ru": "Пражский метрополитен",
+    "network:wikidata": "Q190271",
+    "operator": "Dopravní podnik hl. m. Prahy",
+    "operator:short": "DPP",
+    "operator:wikidata": "Q381100",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "transport": "subway",
+    "wikidata": "Q1972106",
+    "wikipedia": "cs:Náměstí Míru (stanice metra)"
+  }
+},
+{
+  "type": "node",
+  "id": 7635890682,
+  "lat": 50.0450503,
+  "lon": 14.4477660,
+  "tags": {
+    "level": "0",
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U50S1E5",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 7650252360,
+  "lat": 50.0439653,
+  "lon": 14.4495039,
+  "tags": {
+    "layer": "-2",
+    "level": "-1",
+    "name": "Budějovická, metro C",
+    "name:de": "Budweiser Straße, U-Bahn C",
+    "railway": "subway_entrance",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 8197732054,
+  "lat": 50.0974094,
+  "lon": 14.4039935,
+  "tags": {
+    "alt_name": "Hradčanská, metro A",
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U163S1E5",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 8338388200,
+  "lat": 50.0745637,
+  "lon": 14.4176533,
+  "tags": {
+    "bicycle": "yes",
+    "highway": "elevator",
+    "indoor": "yes",
+    "level": "-2;0",
+    "name": "E10",
+    "railway": "subway_entrance",
+    "ref:PID": "U237S1E10",
+    "stroller": "yes",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 8408599119,
+  "lat": 50.0885234,
+  "lon": 14.4287841,
+  "tags": {
+    "check_date:wheelchair": "2025-10-27",
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U480S1E5",
+    "source": "IPR Praha:DMP",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 8742350181,
+  "lat": 50.1190059,
+  "lon": 14.4987062,
+  "tags": {
+    "highway": "elevator",
+    "name": "E7",
+    "railway": "subway_entrance",
+    "ref:PID": "U603S1E7",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 8987966994,
+  "lat": 50.0744492,
+  "lon": 14.3401646,
+  "tags": {
+    "alt_name": "Nemocnice Motol, metro A",
+    "alt_name:de": "Krankenhaus Motol, U-Bahn A",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U306S1E2",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 9010194040,
+  "lat": 50.0436647,
+  "lon": 14.4508429,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U50S1E3",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 9010194042,
+  "lat": 50.0445160,
+  "lon": 14.4489459,
+  "tags": {
+    "level": "0",
+    "railway": "subway_entrance",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 9010232285,
+  "lat": 50.0510210,
+  "lon": 14.4395415,
+  "tags": {
+    "level": "-1",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U385S1E4",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 9029090274,
+  "lat": 50.1245997,
+  "lon": 14.4560686,
+  "tags": {
+    "bicycle": "yes",
+    "check_date:wheelchair": "2024-07-29",
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U675S1E6",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 9029090275,
+  "lat": 50.1251449,
+  "lon": 14.4562130,
+  "tags": {
+    "name": "E9",
+    "railway": "subway_entrance",
+    "ref:PID": "U675S1E8",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 9034625009,
+  "lat": 50.1262511,
+  "lon": 14.4703009,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U78S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 9034638775,
+  "lat": 50.1260683,
+  "lon": 14.4893627,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U332S1E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 9034638779,
+  "lat": 50.1265199,
+  "lon": 14.4895090,
+  "tags": {
+    "name": "E5",
+    "railway": "subway_entrance",
+    "ref:PID": "U332S1E5",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 9034638783,
+  "lat": 50.1260925,
+  "lon": 14.4900727,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U332S1E3",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 9034724387,
+  "lat": 50.1188600,
+  "lon": 14.4983312,
+  "tags": {
+    "highway": "elevator",
+    "name": "E21",
+    "railway": "subway_entrance",
+    "ref:PID": "U603S1E21",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 9034724389,
+  "lat": 50.1191502,
+  "lon": 14.4989544,
+  "tags": {
+    "highway": "elevator",
+    "name": "E6",
+    "railway": "subway_entrance",
+    "ref:PID": "U603S1E6",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 10271343521,
+  "lat": 50.0774232,
+  "lon": 14.4509962,
+  "tags": {
+    "access": "customers",
+    "bicycle": "yes",
+    "goods": "no",
+    "highway": "elevator",
+    "indoor": "yes",
+    "level": "0;-1",
+    "maxweight": "1.6",
+    "name": "E6",
+    "operator": "DPP",
+    "railway": "subway_entrance",
+    "ref": "1503;1504",
+    "ref:PID": "U209S1E6",
+    "start_date": "2024-07-03",
+    "stroller": "yes",
+    "surveillance": "indoor;outdoor",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 10616703187,
+  "lat": 50.0431705,
+  "lon": 14.4501311,
+  "tags": {
+    "level": "0",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U50S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 10753473226,
+  "lat": 50.0884260,
+  "lon": 14.4289332,
+  "tags": {
+    "layer": "-1",
+    "level": "-1",
+    "name": "E51",
+    "note": "OC Palladium underground entrance",
+    "railway": "subway_entrance",
+    "ref:PID": "U480S1E51",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 10753473233,
+  "lat": 50.1087488,
+  "lon": 14.5775630,
+  "tags": {
+    "entrance": "exit",
+    "name": "E16",
+    "railway": "subway_entrance",
+    "ref:PID": "U897S1E16",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 10753473235,
+  "lat": 50.1087633,
+  "lon": 14.5765210,
+  "tags": {
+    "entrance": "exit",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U897S1E14",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 10758508976,
+  "lat": 50.1088683,
+  "lon": 14.5773336,
+  "tags": {
+    "entrance": "exit",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U897S1E13",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 10758540171,
+  "lat": 50.0884254,
+  "lon": 14.4286519,
+  "tags": {
+    "layer": "-1",
+    "level": "-1",
+    "name": "E52",
+    "note": "OC Palladium underground entrance",
+    "railway": "subway_entrance",
+    "ref:PID": "U480S1E52",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 10758540177,
+  "lat": 50.0310456,
+  "lon": 14.5283164,
+  "tags": {
+    "level": "1",
+    "name": "E11",
+    "name:de": "Haj, U-Bahn C",
+    "railway": "subway_entrance",
+    "ref:PID": "U286S1E11",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 11001762595,
+  "lat": 50.0451705,
+  "lon": 14.3226839,
+  "tags": {
+    "level": "0",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U1007S1E2"
+  }
+},
+{
+  "type": "node",
+  "id": 11001762596,
+  "lat": 50.0453846,
+  "lon": 14.3223913,
+  "tags": {
+    "layer": "1",
+    "level": "1",
+    "name": "E4",
+    "railway": "subway_entrance",
+    "ref:PID": "U1007S1E4",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 11022682926,
+  "lat": 50.0444801,
+  "lon": 14.4480549,
+  "tags": {
+    "name": "E7",
+    "railway": "subway_entrance",
+    "ref:PID": "U50S1E7",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 11022682927,
+  "lat": 50.1185877,
+  "lon": 14.4995972,
+  "tags": {
+    "highway": "elevator",
+    "name": "E31",
+    "railway": "subway_entrance",
+    "ref:PID": "U603S1E31",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 11153400043,
+  "lat": 50.0277477,
+  "lon": 14.5079480,
+  "tags": {
+    "name": "Opatov, metro C",
+    "name:de": "Opatow, U-Bahn C",
+    "railway": "subway_entrance",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 11824531245,
+  "lat": 50.0839371,
+  "lon": 14.4343012,
+  "tags": {
+    "name": "Hlavní nádraží",
+    "railway": "subway_entrance",
+    "ref": "E1",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 12155169336,
+  "lat": 50.1091584,
+  "lon": 14.5775501,
+  "tags": {
+    "entrance": "yes",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U897S1E21",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 12198891157,
+  "lat": 50.0821001,
+  "lon": 14.4264670,
+  "tags": {
+    "access": "no",
+    "name": "E113",
+    "railway": "subway_entrance",
+    "ref:PID": "U1072S1E113",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 12478227239,
+  "lat": 50.0511773,
+  "lon": 14.4401493,
+  "tags": {
+    "entrance": "main",
+    "name": "E3",
+    "railway": "subway_entrance",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 12478227240,
+  "lat": 50.0511319,
+  "lon": 14.4400314,
+  "tags": {
+    "entrance": "main",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 12650144222,
+  "lat": 50.0418015,
+  "lon": 14.4605296,
+  "tags": {
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U228S1E1",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 13185941083,
+  "lat": 50.0431822,
+  "lon": 14.4501464,
+  "tags": {
+    "level": "0",
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U50S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 13477664997,
+  "lat": 50.0752795,
+  "lon": 14.4187835,
+  "tags": {
+    "level": "0",
+    "name": "E1",
+    "railway": "subway_entrance",
+    "ref:PID": "U237S1E1",
+    "source": "IPR Praha:DMP",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 13477719702,
+  "lat": 50.0754666,
+  "lon": 14.4192126,
+  "tags": {
+    "name": "E2",
+    "railway": "subway_entrance",
+    "ref:PID": "U237S1E2",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 13479604897,
+  "lat": 50.0760393,
+  "lon": 14.4195440,
+  "tags": {
+    "name": "E3",
+    "railway": "subway_entrance",
+    "ref:PID": "U237S1E3",
+    "source": "IPR Praha:DMP",
+    "wheelchair": "no"
+  }
+}
+
+  ]
+}

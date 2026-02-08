@@ -18,7 +18,7 @@ def _data_dir() -> Path:
 
 def load_prague_layers(data_dir: Path | None = None) -> PragueLayers:
     """
-    Load the 3 reproducible Prague layers committed under `data/prague/`.
+    Load the reproducible Prague layers committed under `data/prague/`.
 
     We keep loaders pure and deterministic so they're easy to swap later.
     """
@@ -27,8 +27,18 @@ def load_prague_layers(data_dir: Path | None = None) -> PragueLayers:
     flood_q100 = load_flood_q100(base / "prague_q100_flood.geojson")
     beer_pois = load_beer_pois_overpass(base / "prague_beer_pois_overpass.json")
     metro_ways = load_metro_ways_overpass(base / "prague_metro_ways_overpass.json")
+    metro_stations = load_metro_stations_overpass(base / "prague_metro_stations_overpass.json")
+    tram_ways = load_tram_ways_overpass(base / "prague_tram_ways_overpass.json")
+    tram_stops = load_tram_stops_overpass(base / "prague_tram_stops_overpass.json")
 
-    return PragueLayers(flood_q100=flood_q100, metro_ways=metro_ways, beer_pois=beer_pois)
+    return PragueLayers(
+        flood_q100=flood_q100,
+        metro_ways=metro_ways,
+        metro_stations=metro_stations,
+        tram_ways=tram_ways,
+        tram_stops=tram_stops,
+        beer_pois=beer_pois,
+    )
 
 
 def load_flood_q100(path: Path) -> list[PolygonFeature]:
@@ -119,6 +129,53 @@ def load_beer_pois_overpass(path: Path) -> list[PointFeature]:
     return out
 
 
+def load_metro_stations_overpass(path: Path) -> list[PointFeature]:
+    """
+    Input: Overpass JSON with `out center;` so:
+    - nodes have `lat`/`lon`
+    - ways/relations may have `center: {lat, lon}`
+    """
+    data = json.loads(path.read_text(encoding="utf-8"))
+    elements = data.get("elements") or []
+
+    out: list[PointFeature] = []
+    for el in elements:
+        etype = el.get("type")
+        eid = el.get("id")
+        tags = el.get("tags") or {}
+
+        lon = el.get("lon")
+        lat = el.get("lat")
+        if lon is None or lat is None:
+            center = el.get("center") or {}
+            lon = center.get("lon")
+            lat = center.get("lat")
+
+        if lon is None or lat is None:
+            continue
+
+        props: dict[str, Any] = {
+            "osm_type": etype,
+            "osm_id": eid,
+            "layer_kind": "metro_station",
+            **tags,
+        }
+        name = tags.get("name")
+        if name:
+            props["label"] = name
+
+        out.append(
+            PointFeature(
+                id=f"{etype}/{eid}",
+                lon=float(lon),
+                lat=float(lat),
+                props=props,
+            )
+        )
+
+    return out
+
+
 def load_metro_ways_overpass(path: Path) -> list[LineFeature]:
     """
     Input: Overpass JSON with `out geom;` for ways, providing `geometry: [{lat,lon}, ...]`.
@@ -150,6 +207,89 @@ def load_metro_ways_overpass(path: Path) -> list[LineFeature]:
             **(el.get("tags") or {}),
         }
         out.append(LineFeature(id=f"way/{eid}", coords=coords, props=props))
+
+    return out
+
+
+def load_tram_ways_overpass(path: Path) -> list[LineFeature]:
+    """
+    Input: Overpass JSON with `out geom;` for ways, providing `geometry: [{lat,lon}, ...]`.
+    """
+    data = json.loads(path.read_text(encoding="utf-8"))
+    elements = data.get("elements") or []
+
+    out: list[LineFeature] = []
+    for el in elements:
+        if el.get("type") != "way":
+            continue
+
+        eid = el.get("id")
+        geom = el.get("geometry") or []
+        coords: list[tuple[float, float]] = []
+        for p in geom:
+            lat = p.get("lat")
+            lon = p.get("lon")
+            if lat is None or lon is None:
+                continue
+            coords.append((float(lon), float(lat)))
+
+        if len(coords) < 2:
+            continue
+
+        props = {
+            "osm_type": "way",
+            "osm_id": eid,
+            "layer_kind": "tram_way",
+            **(el.get("tags") or {}),
+        }
+        out.append(LineFeature(id=f"way/{eid}", coords=coords, props=props))
+
+    return out
+
+
+def load_tram_stops_overpass(path: Path) -> list[PointFeature]:
+    """
+    Input: Overpass JSON with `out center;` so:
+    - nodes have `lat`/`lon`
+    - ways/relations may have `center: {lat, lon}`
+    """
+    data = json.loads(path.read_text(encoding="utf-8"))
+    elements = data.get("elements") or []
+
+    out: list[PointFeature] = []
+    for el in elements:
+        etype = el.get("type")
+        eid = el.get("id")
+        tags = el.get("tags") or {}
+
+        lon = el.get("lon")
+        lat = el.get("lat")
+        if lon is None or lat is None:
+            center = el.get("center") or {}
+            lon = center.get("lon")
+            lat = center.get("lat")
+
+        if lon is None or lat is None:
+            continue
+
+        props: dict[str, Any] = {
+            "osm_type": etype,
+            "osm_id": eid,
+            "layer_kind": "tram_stop",
+            **tags,
+        }
+        name = tags.get("name")
+        if name:
+            props["label"] = name
+
+        out.append(
+            PointFeature(
+                id=f"{etype}/{eid}",
+                lon=float(lon),
+                lat=float(lat),
+                props=props,
+            )
+        )
 
     return out
 

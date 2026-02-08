@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from fastapi.testclient import TestClient
 
 from main import app
@@ -66,7 +68,18 @@ def test_plot_endpoint_preserves_highlight_when_provided():
     assert "stats" in meta
 
 
-def test_plot_endpoint_supports_duckdb_engine():
+def test_plot_endpoint_supports_duckdb_engine(tmp_path, monkeypatch):
+    # Use a per-test DuckDB file to avoid lock conflicts with any running local backend.
+    db_path = tmp_path / "plot_endpoint.duckdb"
+    monkeypatch.setenv("PANGE_DUCKDB_PATH", str(db_path))
+
+    # Clear caches so the app picks up the new path in this process.
+    import main
+    from engine import duckdb as duckdb_mod
+
+    main._engine.cache_clear()
+    duckdb_mod._duckdb_base.cache_clear()
+
     client = TestClient(app)
     resp = client.post(
         "/plot",

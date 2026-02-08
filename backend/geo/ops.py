@@ -38,9 +38,27 @@ class GeoIndex:
     metro_geoms_4326: list[LineString]
     metro_features: list[LineFeature]
 
+    metro_station_tree_4326: STRtree
+    metro_station_geoms_4326: list[Point]
+    metro_station_features: list[PointFeature]
+
+    tram_tree_4326: STRtree
+    tram_geoms_4326: list[LineString]
+    tram_features: list[LineFeature]
+
+    tram_stop_tree_4326: STRtree
+    tram_stop_geoms_4326: list[Point]
+    tram_stop_features: list[PointFeature]
+
     beer_tree_4326: STRtree
     beer_geoms_4326: list[Point]
     beer_features: list[PointFeature]
+
+    # Projected point indexes (EPSG:32633) for nearest-neighbor distance in meters.
+    metro_station_tree_32633: STRtree
+    metro_station_points_32633: list[Point]
+    tram_stop_tree_32633: STRtree
+    tram_stop_points_32633: list[Point]
 
     # Caches keyed by a rounded bbox
     _slice_cache: dict[tuple[float, float, float, float], PragueLayers] = field(
@@ -55,7 +73,7 @@ class GeoIndex:
 
     def slice_layers(self, aoi: BBox, *, decimals: int = 4) -> PragueLayers:
         """
-        Slice all three layers to AOI using STRtrees (fast bbox selection).
+        Slice layers to AOI using STRtrees (fast bbox selection).
 
         This is intentionally approximate: bbox selection is a good first cut and keeps the
         map payload small. We can add stricter predicates later if needed.
@@ -69,11 +87,17 @@ class GeoIndex:
 
         flood_idx = _to_int_list(self.flood_tree_4326.query(bbox))
         metro_idx = _to_int_list(self.metro_tree_4326.query(bbox))
+        metro_station_idx = _to_int_list(self.metro_station_tree_4326.query(bbox))
+        tram_idx = _to_int_list(self.tram_tree_4326.query(bbox))
+        tram_stop_idx = _to_int_list(self.tram_stop_tree_4326.query(bbox))
         beer_idx = _to_int_list(self.beer_tree_4326.query(bbox))
 
         sliced = PragueLayers(
             flood_q100=[self.flood_features[i] for i in flood_idx],
             metro_ways=[self.metro_features[i] for i in metro_idx],
+            metro_stations=[self.metro_station_features[i] for i in metro_station_idx],
+            tram_ways=[self.tram_features[i] for i in tram_idx],
+            tram_stops=[self.tram_stop_features[i] for i in tram_stop_idx],
             beer_pois=[self.beer_features[i] for i in beer_idx],
         )
 
@@ -95,6 +119,9 @@ class GeoIndex:
 
         flood_by_id: dict[str, PolygonFeature] = {}
         metro_by_id: dict[str, LineFeature] = {}
+        metro_station_by_id: dict[str, PointFeature] = {}
+        tram_by_id: dict[str, LineFeature] = {}
+        tram_stop_by_id: dict[str, PointFeature] = {}
         beer_by_id: dict[str, PointFeature] = {}
 
         for z, x, y in tiles:
@@ -106,11 +133,17 @@ class GeoIndex:
 
                 flood_idx = _to_int_list(self.flood_tree_4326.query(bbox))
                 metro_idx = _to_int_list(self.metro_tree_4326.query(bbox))
+                metro_station_idx = _to_int_list(self.metro_station_tree_4326.query(bbox))
+                tram_idx = _to_int_list(self.tram_tree_4326.query(bbox))
+                tram_stop_idx = _to_int_list(self.tram_stop_tree_4326.query(bbox))
                 beer_idx = _to_int_list(self.beer_tree_4326.query(bbox))
 
                 cached = PragueLayers(
                     flood_q100=[self.flood_features[i] for i in flood_idx],
                     metro_ways=[self.metro_features[i] for i in metro_idx],
+                    metro_stations=[self.metro_station_features[i] for i in metro_station_idx],
+                    tram_ways=[self.tram_features[i] for i in tram_idx],
+                    tram_stops=[self.tram_stop_features[i] for i in tram_stop_idx],
                     beer_pois=[self.beer_features[i] for i in beer_idx],
                 )
                 _bounded_cache_put(self._tile_slice_cache, key, cached, max_items=256)
@@ -119,15 +152,31 @@ class GeoIndex:
                 flood_by_id.setdefault(f.id, f)
             for f in cached.metro_ways:
                 metro_by_id.setdefault(f.id, f)
+            for f in cached.metro_stations:
+                metro_station_by_id.setdefault(f.id, f)
+            for f in cached.tram_ways:
+                tram_by_id.setdefault(f.id, f)
+            for f in cached.tram_stops:
+                tram_stop_by_id.setdefault(f.id, f)
             for f in cached.beer_pois:
                 beer_by_id.setdefault(f.id, f)
 
         # Deterministic ordering.
         flood = [flood_by_id[k] for k in sorted(flood_by_id.keys())]
         metro = [metro_by_id[k] for k in sorted(metro_by_id.keys())]
+        metro_stations = [metro_station_by_id[k] for k in sorted(metro_station_by_id.keys())]
+        tram = [tram_by_id[k] for k in sorted(tram_by_id.keys())]
+        tram_stops = [tram_stop_by_id[k] for k in sorted(tram_stop_by_id.keys())]
         beer = [beer_by_id[k] for k in sorted(beer_by_id.keys())]
 
-        return PragueLayers(flood_q100=flood, metro_ways=metro, beer_pois=beer)
+        return PragueLayers(
+            flood_q100=flood,
+            metro_ways=metro,
+            metro_stations=metro_stations,
+            tram_ways=tram,
+            tram_stops=tram_stops,
+            beer_pois=beer,
+        )
 
     def flood_union_for_aoi(self, aoi: BBox, *, decimals: int = 4) -> Polygon | MultiPolygon:
         """
@@ -171,7 +220,22 @@ def build_geo_index(
     )
     metro_union_32633 = _build_metro_union_32633(layers.metro_ways)
 
+    metro_station_points_4326, metro_station_features = _build_point_geoms_and_features_4326(
+        layers.metro_stations
+    )
+    tram_lines_4326, tram_features = _build_metro_geoms_and_features_4326(layers.tram_ways)
+    tram_stop_points_4326, tram_stop_features = _build_point_geoms_and_features_4326(
+        layers.tram_stops
+    )
+
     beer_points_4326 = [Point(p.lon, p.lat) for p in layers.beer_pois]
+
+    metro_station_points_32633, metro_station_tree_32633 = _build_projected_point_tree_32633(
+        metro_station_features
+    )
+    tram_stop_points_32633, tram_stop_tree_32633 = _build_projected_point_tree_32633(
+        tram_stop_features
+    )
 
     return GeoIndex(
         flood_union_4326=flood_union,
@@ -182,9 +246,22 @@ def build_geo_index(
         metro_tree_4326=STRtree(metro_lines_4326),
         metro_geoms_4326=metro_lines_4326,
         metro_features=metro_features,
+        metro_station_tree_4326=STRtree(metro_station_points_4326),
+        metro_station_geoms_4326=metro_station_points_4326,
+        metro_station_features=metro_station_features,
+        tram_tree_4326=STRtree(tram_lines_4326),
+        tram_geoms_4326=tram_lines_4326,
+        tram_features=tram_features,
+        tram_stop_tree_4326=STRtree(tram_stop_points_4326),
+        tram_stop_geoms_4326=tram_stop_points_4326,
+        tram_stop_features=tram_stop_features,
         beer_tree_4326=STRtree(beer_points_4326),
         beer_geoms_4326=beer_points_4326,
         beer_features=list(layers.beer_pois),
+        metro_station_tree_32633=metro_station_tree_32633,
+        metro_station_points_32633=metro_station_points_32633,
+        tram_stop_tree_32633=tram_stop_tree_32633,
+        tram_stop_points_32633=tram_stop_points_32633,
     )
 
 
@@ -207,6 +284,30 @@ def distance_to_metro_m(
     t = transformer_4326_to_32633()
     x, y = t.transform(point.lon, point.lat)
     return float(metro_union_32633.distance(Point(x, y)))
+
+
+def distance_to_nearest_station_m(
+    point: PointFeature,
+    *,
+    station_tree_32633: STRtree,
+    station_points_32633: list[Point],
+) -> float:
+    """
+    Distance in meters from a point to the nearest station/stop point.
+
+    This is used for "near metro": near a metro station/entrance, not the track geometry.
+    """
+    if not station_points_32633:
+        return float("inf")
+    t = transformer_4326_to_32633()
+    x, y = t.transform(point.lon, point.lat)
+    idx = station_tree_32633.nearest(Point(float(x), float(y)))
+    try:
+        i = int(idx)
+    except Exception:
+        # Extremely defensive: if shapely returns a geometry instead of index.
+        i = station_points_32633.index(idx)  # type: ignore[arg-type]
+    return float(station_points_32633[i].distance(Point(float(x), float(y))))
 
 
 def _build_flood_geoms_and_features_4326(
@@ -262,6 +363,38 @@ def _build_metro_geoms_and_features_4326(
         except Exception:
             continue
     return shapely_lines, out_features
+
+
+def _build_point_geoms_and_features_4326(
+    points: Iterable[PointFeature],
+) -> tuple[list[Point], list[PointFeature]]:
+    shapely_points: list[Point] = []
+    out_features: list[PointFeature] = []
+    for f in points:
+        try:
+            p = Point(float(f.lon), float(f.lat))
+            if p.is_empty:
+                continue
+            shapely_points.append(p)
+            out_features.append(f)
+        except Exception:
+            continue
+    return shapely_points, out_features
+
+
+def _build_projected_point_tree_32633(
+    points: Iterable[PointFeature],
+) -> tuple[list[Point], STRtree]:
+    t = transformer_4326_to_32633()
+    out: list[Point] = []
+    for p in points:
+        try:
+            x, y = t.transform(float(p.lon), float(p.lat))
+            out.append(Point(float(x), float(y)))
+        except Exception:
+            continue
+    # STRtree requires a sequence; empty is fine.
+    return out, STRtree(out)
 
 
 def _build_metro_union_32633(lines: Iterable[LineFeature]) -> LineString | MultiLineString:

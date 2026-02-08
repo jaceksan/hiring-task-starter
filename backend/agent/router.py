@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 
 from geo.aoi import BBox
-from geo.ops import GeoIndex, distance_to_metro_m, is_point_flooded, transformer_4326_to_32633
+from geo.ops import GeoIndex, distance_to_nearest_station_m, is_point_flooded, transformer_4326_to_32633
 from layers.types import PointFeature, PragueLayers
 from plotly.build_plot import Highlight
 
@@ -30,7 +30,8 @@ def route_prompt(prompt: str, layers: PragueLayers, index: GeoIndex, aoi: BBox) 
     if not p or any(k in p for k in ["show layers", "reset", "start over", "help"]):
         return AgentResponse(
             message=(
-                "Loaded three layers for Prague: Q100 flood extent (polygons), metro tracks (lines), "
+                "Loaded Prague layers: Q100 flood extent (polygons), metro tracks (lines), "
+                "metro stations/entrances (points), tram tracks (lines), tram stops (points), "
                 "and beer POIs (points). Ask things like 'how many pubs are flooded?' or "
                 "'recommend 5 safe pubs near metro'."
             )
@@ -44,17 +45,17 @@ def route_prompt(prompt: str, layers: PragueLayers, index: GeoIndex, aoi: BBox) 
 
     if ("dry" in p or "safe" in p) and "metro" in p:
         top_n = _extract_number(p, default=20, clamp=(1, 200))
-        ranked = _rank_dry_by_metro(
+        ranked = _rank_dry_by_metro_station(
             layers.beer_pois,
             flood_union_4326=flood_union,
-            metro_union_32633=index.metro_union_32633,
+            index=index,
             top_n=top_n,
         )
         ids = {pt.id for pt, _ in ranked}
         return AgentResponse(
             message=(
-                f"Here are {len(ranked)} dry beer places closest to the metro (distance computed in meters "
-                "using a Prague-friendly projection)."
+                f"Here are {len(ranked)} dry beer places closest to the nearest metro station "
+                "(distance computed in meters using a Prague-friendly projection)."
             ),
             highlight=Highlight(point_ids=ids, title=f"Top {len(ranked)} dry + near metro"),
             focus_map=True,
@@ -67,11 +68,12 @@ def route_prompt(prompt: str, layers: PragueLayers, index: GeoIndex, aoi: BBox) 
         ranked = _recommend_safe_pubs(
             layers.beer_pois,
             flood_union_4326=flood_union,
-            metro_union_32633=index.metro_union_32633,
+            index=index,
             top_n=n,
-            # Treat \"near metro\" as \"within radius\" (not \"exactly on the line\").
-            # This makes recommendations feel more reasonable and less biased towards distance=0.
-            near_m=300.0,
+            # Interpret "near metro" as near a station/entrance within a radius.
+            metro_near_m=300.0,
+            tram_near_m=350.0,
+            tram_penalty=1.5,
             prefer_center=prefer_center,
         )
         ids = {pt.id for pt, _ in ranked}
@@ -102,15 +104,25 @@ def _split_flooded(
     return flooded, dry
 
 
-def _rank_dry_by_metro(
+def _rank_dry_by_metro_station(
     points: list[PointFeature],
     *,
     flood_union_4326,
-    metro_union_32633,
+    index: GeoIndex,
     top_n: int,
 ) -> list[tuple[PointFeature, float]]:
     _, dry = _split_flooded(points, flood_union_4326)
-    scored = [(pt, distance_to_metro_m(pt, metro_union_32633)) for pt in dry]
+    scored = [
+        (
+            pt,
+            distance_to_nearest_station_m(
+                pt,
+                station_tree_32633=index.metro_station_tree_32633,
+                station_points_32633=index.metro_station_points_32633,
+            ),
+        )
+        for pt in dry
+    ]
     scored.sort(key=lambda x: x[1])
     return scored[:top_n]
 
@@ -119,9 +131,11 @@ def _recommend_safe_pubs(
     points: list[PointFeature],
     *,
     flood_union_4326,
-    metro_union_32633,
+    index: GeoIndex,
     top_n: int,
-    near_m: float,
+    metro_near_m: float,
+    tram_near_m: float,
+    tram_penalty: float,
     prefer_center: dict[str, float],
 ) -> list[tuple[PointFeature, float]]:
     """
@@ -133,18 +147,67 @@ def _recommend_safe_pubs(
     """
     _, dry = _split_flooded(points, flood_union_4326)
 
-    scored = [(pt, distance_to_metro_m(pt, metro_union_32633)) for pt in dry]
-    near = [(pt, d) for pt, d in scored if d <= near_m]
+    metro_scored = [
+        (
+            pt,
+            distance_to_nearest_station_m(
+                pt,
+                station_tree_32633=index.metro_station_tree_32633,
+                station_points_32633=index.metro_station_points_32633,
+            ),
+        )
+        for pt in dry
+    ]
+    near_metro = [(pt, d) for pt, d in metro_scored if d <= metro_near_m]
 
-    # If there aren't enough within the band, fall back to closest-to-metro ranking.
-    if len(near) < top_n:
-        scored.sort(key=lambda x: x[1])
-        return scored[:top_n]
-
-    # Otherwise, pick local pubs within the band.
     cx, cy = _project_4326_to_32633(prefer_center["lon"], prefer_center["lat"])
-    near.sort(key=lambda x: (_dist_to_center_m(x[0], cx, cy), x[0].id))
-    return near[:top_n]
+
+    def local_key(pt: PointFeature) -> tuple[float, str]:
+        return (_dist_to_center_m(pt, cx, cy), pt.id)
+
+    # Prefer metro: pick local pubs within the station-radius band.
+    near_metro.sort(key=lambda x: (local_key(x[0]), x[1]))
+    selected: list[tuple[PointFeature, float]] = near_metro[:top_n]
+    if len(selected) >= top_n:
+        return selected
+
+    # Fill remainder from tram stops (fallback) if present.
+    selected_ids = {pt.id for pt, _ in selected}
+    if index.tram_stop_points_32633:
+        tram_scored: list[tuple[PointFeature, float]] = []
+        for pt in dry:
+            if pt.id in selected_ids:
+                continue
+            d_tram = distance_to_nearest_station_m(
+                pt,
+                station_tree_32633=index.tram_stop_tree_32633,
+                station_points_32633=index.tram_stop_points_32633,
+            )
+            if d_tram <= tram_near_m:
+                tram_scored.append((pt, float(d_tram)))
+
+        tram_scored.sort(
+            key=lambda x: (float(x[1]) * float(tram_penalty), local_key(x[0]), x[0].id)
+        )
+        for pt, d in tram_scored:
+            if len(selected) >= top_n:
+                break
+            selected.append((pt, d))
+            selected_ids.add(pt.id)
+
+        if len(selected) >= top_n:
+            return selected
+
+    # If still short, fall back to closest-to-metro-station ranking.
+    metro_scored.sort(key=lambda x: (x[1], x[0].id))
+    for pt, d in metro_scored:
+        if pt.id in selected_ids:
+            continue
+        selected.append((pt, d))
+        if len(selected) >= top_n:
+            break
+
+    return selected[:top_n]
 
 
 def _project_4326_to_32633(lon: float, lat: float) -> tuple[float, float]:

@@ -25,6 +25,21 @@ curl -L --fail -sS 'https://overpass-api.de/api/interpreter' \
   --data-urlencode "data=[out:json][timeout:180];(way[\"railway\"=\"subway\"](${BBOX}););out geom;" \
   -o "${OUT_DIR}/prague_metro_ways_overpass.json"
 
+echo "Fetching metro stations/entrances from Overpass..."
+curl -L --fail -sS 'https://overpass-api.de/api/interpreter' \
+  --data-urlencode "data=[out:json][timeout:180];(nwr[\"railway\"=\"station\"][\"station\"=\"subway\"](${BBOX});nwr[\"public_transport\"=\"station\"][\"subway\"=\"yes\"](${BBOX});node[\"railway\"=\"subway_entrance\"](${BBOX}););out center;" \
+  -o "${OUT_DIR}/prague_metro_stations_overpass.json"
+
+echo "Fetching tram ways from Overpass..."
+curl -L --fail -sS 'https://overpass-api.de/api/interpreter' \
+  --data-urlencode "data=[out:json][timeout:180];(way[\"railway\"=\"tram\"](${BBOX}););out geom;" \
+  -o "${OUT_DIR}/prague_tram_ways_overpass.json"
+
+echo "Fetching tram stops/platforms from Overpass..."
+curl -L --fail -sS 'https://overpass-api.de/api/interpreter' \
+  --data-urlencode "data=[out:json][timeout:180];(node[\"railway\"=\"tram_stop\"](${BBOX});nwr[\"public_transport\"=\"platform\"][\"tram\"=\"yes\"](${BBOX});nwr[\"railway\"=\"platform\"][\"tram\"=\"yes\"](${BBOX}););out center;" \
+  -o "${OUT_DIR}/prague_tram_stops_overpass.json"
+
 echo
 echo "Done. Files in ${OUT_DIR}:"
 ls -lh "${OUT_DIR}"

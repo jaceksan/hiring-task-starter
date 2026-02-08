@@ -15,3 +15,8 @@ def test_build_prague_plot_shape():
     assert "mapbox" in plot["layout"]
     assert any(trace.get("type") == "scattermapbox" for trace in plot["data"])
 
+    names = {t.get("name") for t in plot["data"]}
+    assert "Metro stations/entrances" in names
+    assert "Tram tracks (OSM tram ways)" in names
+    assert "Tram stops/platforms" in names
+

@@ -2,7 +2,7 @@
   "version": 0.6,
   "generator": "Overpass API 0.7.62.10 2d4cfc48",
   "osm3s": {
-    "timestamp_osm_base": "2026-02-03T08:42:30Z",
+    "timestamp_osm_base": "2026-02-08T16:46:16Z",
     "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
   },
   "elements": [
@@ -5340,6 +5340,15 @@
 },
 {
   "type": "node",
+  "id": 4563076623,
+  "lat": 50.0836959,
+  "lon": 14.2572397,
+  "tags": {
+    "amenity": "pub"
+  }
+},
+{
+  "type": "node",
   "id": 4563076715,
   "lat": 50.0837217,
   "lon": 14.2569514,
@@ -5766,6 +5775,7 @@
     "email": "obchod@pivni-rozmanitost.cz",
     "mobile": "+420 608 601 601",
     "name": "Pivní rozmanitost",
+    "opening_hours": "Mo-Th 15:00-22:00; Fr 14:00-23:00; Sa 15:00-23:00",
     "shop": "alcohol",
     "website": "http://pivni-rozmanitost.cz",
     "wheelchair": "limited"
@@ -6880,7 +6890,9 @@
   "lon": 14.3441001,
   "tags": {
     "amenity": "pub",
-    "name": "Hospůdka"
+    "indoor_seating": "yes",
+    "name": "Hospůdka u Pařezu",
+    "outdoor_seating": "yes"
   }
 },
 {

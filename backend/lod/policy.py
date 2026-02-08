@@ -20,6 +20,10 @@ class ClusterMarker:
 @dataclass(frozen=True)
 class LodBudgets:
     max_points_rendered: int = 2_500
+    # Auxiliary point layers (metro stations / tram stops) are generally smaller than beer POIs,
+    # but can still grow if we expand AOI. Keep an explicit cap so payload doesn't explode.
+    max_station_points_rendered: int = 1_500
+    max_tram_stop_points_rendered: int = 3_000
     max_line_vertices: int = 40_000
     max_poly_vertices: int = 80_000
 
@@ -42,7 +46,25 @@ def apply_lod(
     zoom = float(view_zoom)
 
     flood = _simplify_polygons_until_budget(layers.flood_q100, zoom, max_vertices=b.max_poly_vertices)
-    metro = _simplify_lines_until_budget(layers.metro_ways, zoom, max_vertices=b.max_line_vertices)
+
+    # Lines: allocate a shared vertex budget between metro and tram so both remain visible.
+    metro_raw = _count_line_vertices(layers.metro_ways)
+    tram_raw = _count_line_vertices(layers.tram_ways)
+    total_raw = metro_raw + tram_raw
+    if total_raw <= 0:
+        metro_budget = int(b.max_line_vertices * 0.5)
+    else:
+        metro_budget = int(b.max_line_vertices * (metro_raw / total_raw))
+    # Ensure both layers get a minimum budget when present, but never break tiny test budgets.
+    min_budget = min(5_000, int(b.max_line_vertices * 0.2))
+    if layers.metro_ways and metro_budget < min_budget:
+        metro_budget = min_budget
+    if layers.tram_ways and (b.max_line_vertices - metro_budget) < min_budget:
+        metro_budget = max(min_budget, b.max_line_vertices - min_budget)
+    tram_budget = max(0, int(b.max_line_vertices - metro_budget))
+
+    metro = _simplify_lines_until_budget(layers.metro_ways, zoom, max_vertices=metro_budget)
+    tram = _simplify_lines_until_budget(layers.tram_ways, zoom, max_vertices=tram_budget)
 
     # Points: either keep raw points (capped) or return clusters (preferred at low zoom).
     beer_clusters: list[ClusterMarker] | None = None
@@ -53,10 +75,22 @@ def apply_lod(
     elif len(beer_pois) > b.max_points_rendered:
         beer_pois = _cap_points(beer_pois, b.max_points_rendered, keep_ids=highlight_point_ids)
 
+    # Station/stop point layers: do not cluster (UX wants actual points), but cap deterministically.
+    metro_stations = layers.metro_stations
+    if len(metro_stations) > b.max_station_points_rendered:
+        metro_stations = _cap_points(metro_stations, b.max_station_points_rendered, keep_ids=None)
+
+    tram_stops = layers.tram_stops
+    if len(tram_stops) > b.max_tram_stop_points_rendered:
+        tram_stops = _cap_points(tram_stops, b.max_tram_stop_points_rendered, keep_ids=None)
+
     lod_layers = PragueLayers(
         flood_q100=flood,
         metro_ways=metro,
+        tram_ways=tram,
         beer_pois=beer_pois,
+        metro_stations=metro_stations,
+        tram_stops=tram_stops,
     )
     return lod_layers, beer_clusters
 

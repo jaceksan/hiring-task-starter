@@ -15,7 +15,30 @@ This folder contains **small, reproducible public datasets** to develop and test
    - Source: OpenStreetMap via Overpass API  
    - Query: `way["railway"="subway"](49.94,14.22,50.18,14.70); out geom;`
 
-3. **Beer layer (pubs + biergartens + breweries) – points**  
+3. **Metro stations + entrances – points**  
+   - File: `prague_metro_stations_overpass.json`  
+   - Source: OpenStreetMap via Overpass API  
+   - Query (union):  
+     - `nwr["railway"="station"]["station"="subway"](49.94,14.22,50.18,14.70);`  
+     - `nwr["public_transport"="station"]["subway"="yes"](49.94,14.22,50.18,14.70);`  
+     - `node["railway"="subway_entrance"](49.94,14.22,50.18,14.70);`  
+     - `out center;`
+
+4. **Tram track geometry – lines (optional)**  
+   - File: `prague_tram_ways_overpass.json`  
+   - Source: OpenStreetMap via Overpass API  
+   - Query: `way["railway"="tram"](49.94,14.22,50.18,14.70); out geom;`
+
+5. **Tram stops + platforms – points (optional)**  
+   - File: `prague_tram_stops_overpass.json`  
+   - Source: OpenStreetMap via Overpass API  
+   - Query (union):  
+     - `node["railway"="tram_stop"](49.94,14.22,50.18,14.70);`  
+     - `nwr["public_transport"="platform"]["tram"="yes"](49.94,14.22,50.18,14.70);`  
+     - `nwr["railway"="platform"]["tram"="yes"](49.94,14.22,50.18,14.70);`  
+     - `out center;`
+
+6. **Beer layer (pubs + biergartens + breweries) – points**  
    - File: `prague_beer_pois_overpass.json`  
    - Source: OpenStreetMap via Overpass API  
    - Query: `nwr["amenity"="biergarten"](49.94,14.22,50.18,14.70); nwr["amenity"="pub"](...); nwr["craft"="brewery"](...); out center;`
