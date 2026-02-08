@@ -1,10 +1,19 @@
+from __future__ import annotations
+
+import json
+from asyncio import sleep
+from enum import Enum
+from functools import lru_cache
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-import json
 from pydantic import BaseModel
-from enum import Enum
-from asyncio import sleep
+
+from agent.router import route_prompt
+from geo.ops import build_geo_index
+from layers.load_prague import load_prague_layers
+from plotly.build_plot import build_prague_plot
 
 app = FastAPI()
 
@@ -51,53 +60,34 @@ def format_event(type: EventType, data: str):
     return f"event: {type.value}\ndata: {data}\n\n"
 
 
+@lru_cache(maxsize=1)
+def _layers_and_index():
+    layers = load_prague_layers()
+    index = build_geo_index(layers.flood_q100, layers.metro_ways)
+    return layers, index
+
+
 async def handle_incoming_message(thread: ApiThread):
-    last_message = thread.messages[-1]
+    prompt = thread.messages[-1].text if thread.messages else ""
 
-    example_messages_1 = [
-        "Hello, this is an example message, just to showcase the events",
-        f'You said: "{last_message.text}" and I think it\'s beautiful',
-    ]
+    try:
+        layers, index = _layers_and_index()
+        response = route_prompt(prompt, layers=layers, index=index)
 
-    for message in example_messages_1:
-        await sleep(1)
-        for word in message.split(" "):
+        # Stream a short explanation.
+        for word in response.message.replace("\n", " \n ").split():
             yield format_event(EventType.append, word)
-            await sleep(0.1)
+            await sleep(0.02)
+
+        # Send the map payload before commit so frontend attaches it to the message.
+        plot = build_prague_plot(layers, highlight=response.highlight)
+        yield format_event(EventType.plot_data, json.dumps(plot))
+
+        # Commit the message (punctuation ends the buffer on frontend).
         yield format_event(EventType.commit, ".")
-
-    await sleep(1)
-    yield format_event(EventType.plot_data, json.dumps(get_example_plot_data()))
-
-    example_messages_2 = ["Go checkout the backend/main.py file and add your own logic"]
-
-    for message in example_messages_2:
-        await sleep(1)
-        for word in message.split(" "):
+    except Exception as e:
+        # Fail safe: return an error message but keep streaming protocol valid.
+        msg = f"Backend error: {type(e).__name__}: {e}"
+        for word in msg.split():
             yield format_event(EventType.append, word)
-            await sleep(0.1)
         yield format_event(EventType.commit, ".")
-
-
-def get_example_plot_data():
-    # Plotly structure
-    return {
-        "data": [
-            {
-                "type": "scattermapbox",
-                "mode": "text+markers",
-                "lat": [37.77, -23.55, 48.85, 35.68],
-                "lon": [-122.42, -46.63, 2.35, 139.69],
-                "text": ["San Francisco", "São Paulo", "Paris", "Tokyo"],
-                "textposition": "top right",
-                "marker": {"size": 12, "color": "red"},
-            },
-        ],
-        "layout": {
-            "mapbox": {
-                "center": {"lat": 48.85, "lon": 2.35},
-                "zoom": 4,
-                "style": "carto-positron",
-            },
-        },
-    }
