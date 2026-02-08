@@ -3,6 +3,7 @@
 	types-all types-backend types-frontend \
 	test-all test-backend test-frontend \
 	test-integration-all test-integration-backend test-integration-frontend \
+	test-e2e-frontend \
 	fix-backend fix-frontend fix-all
 
 help:
@@ -19,7 +20,8 @@ help:
 		"  test-frontend            Run frontend tests (currently no-op)" \
 		"  test-integration-all     Run integration tests (where available)" \
 		"  test-integration-backend Run backend integration tests" \
-		"  test-integration-frontend Run frontend integration tests (currently no-op)" \
+		"  test-integration-frontend Run frontend integration tests (Playwright e2e)" \
+		"  test-e2e-frontend        Run frontend Playwright e2e" \
 		"  fix-backend      Auto-fix backend (ruff format)" \
 		"  fix-frontend     Auto-fix frontend (biome --write)" \
 		"  fix-all          Auto-fix backend + frontend" \
@@ -55,7 +57,10 @@ test-integration-backend:
 	@cd backend && uv run pytest -q -m integration
 
 test-integration-frontend:
-	@:
+	@$(MAKE) test-e2e-frontend
+
+test-e2e-frontend:
+	@cd frontend && E2E_FAST=1 npm run -s e2e
 
 fix-backend:
 	@cd backend && uv run ruff format .

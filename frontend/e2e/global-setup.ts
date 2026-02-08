@@ -26,10 +26,15 @@ async function waitForHttp(url: string, timeoutMs: number) {
   }
 }
 
-function startServer(command: string, args: string[], cwd: string): ChildProcess {
+function startServer(
+  command: string,
+  args: string[],
+  cwd: string,
+  stdio: "inherit" | "ignore" | "pipe" = "inherit"
+): ChildProcess {
   const cp = spawn(command, args, {
     cwd,
-    stdio: "inherit",
+    stdio,
     env: { ...process.env },
   });
   if (!cp.pid) throw new Error(`Failed to start: ${command} ${args.join(" ")}`);
@@ -59,8 +64,20 @@ export default async function globalSetup() {
     }
     startedFrontend = startServer(
       "npm",
-      ["run", "dev", "--", "--host", "127.0.0.1", "--port", "3000"],
-      process.cwd()
+      [
+        "run",
+        "dev",
+        "--",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "3000",
+        "--logLevel",
+        "silent",
+      ],
+      process.cwd(),
+      // Suppress dev-server URL logs to avoid IDE auto-opening a browser tab/window.
+      "ignore"
     );
   }
 

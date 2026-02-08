@@ -1,5 +1,23 @@
 import { expect, test } from "@playwright/test";
 
+async function expectPlotlyTraceName(page: any, pattern: RegExp) {
+  await expect
+    .poll(
+      async () => {
+        return await page.evaluate(() => {
+          const el = document.querySelector(".js-plotly-plot") as any;
+          const data = el?.data;
+          const names = Array.isArray(data)
+            ? data.map((t: any) => String(t?.name ?? "")).filter(Boolean)
+            : [];
+          return names;
+        });
+      },
+      { timeout: 15_000 }
+    )
+    .toEqual(expect.arrayContaining([expect.stringMatching(pattern)]));
+}
+
 async function disableAutoMinimizeChat(page: any) {
   const toggle = page.getByLabel(/auto-minimize chat/i);
   if ((await toggle.count()) > 0) {
@@ -104,7 +122,8 @@ test("zoomed out view uses clusters (LOD)", async ({ page }) => {
 
   await openChatDrawer(page);
   await page.getByRole("button", { name: "show layers" }).click();
-  await expect(page.getByText("Beer POIs (pub/biergarten/brewery) (clusters)")).toBeVisible();
+  // Assert on the actual Plotly trace names (legend may not be visible in the DOM).
+  await expectPlotlyTraceName(page, /\(clusters\)$/);
 });
 
 test("highlighted response can render clusters at low zoom", async ({ page }) => {
@@ -138,6 +157,6 @@ test("highlighted response can render clusters at low zoom", async ({ page }) =>
   await input.press("Enter");
 
   await expect(page.getByText(/My 20 recommendations:/i)).toBeVisible();
-  await expect(page.getByText("Beer POIs (pub/biergarten/brewery) (clusters)")).toBeVisible();
+  await expectPlotlyTraceName(page, /\(clusters\)$/);
 });
 

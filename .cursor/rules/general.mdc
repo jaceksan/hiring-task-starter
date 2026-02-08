@@ -28,7 +28,7 @@ alwaysApply: true
   - types: `make types-all` (or `make types-frontend`)
   - tests: `make test-all` (or `make test-backend`)
 - Run E2E only when UI/API/map behavior changes:
-  - `cd frontend && E2E_FAST=1 E2E_REUSE_ONLY=1 npm run -s e2e`
+  - `make test-e2e-frontend` (or `cd frontend && E2E_FAST=1 E2E_REUSE_ONLY=1 npm run -s e2e`)
 - Only run `cd frontend && npm run -s build` when bundling-related (Vite config/deps/import paths) or build-only failures appear.
 
 - Extra (when needed):

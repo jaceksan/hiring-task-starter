@@ -99,9 +99,11 @@ The core “PangeAI-ish” value demonstrated:
 - [x] Keep backend tests fast:
   - ensure slow/heavy tests are under `-m integration`
   - verified: backend unit tests are ~5s (`pytest` reported 4.82s; wall clock ~5.60s)
-- [ ] Frontend test strategy:
-  - keep Playwright e2e stable + minimal
-  - decide if any unit tests are worth it (likely optional for demo)
+- [x] Frontend test strategy:
+  - done: Playwright e2e is the only frontend test suite; keep it stable + minimal
+  - done: E2E assertions avoid brittle DOM legend checks; assert on Plotly trace names when needed
+  - done: can run via `make test-e2e-frontend` (alias: `make test-integration-frontend`)
+  - unit tests: optional for demo (not added)
 
 ## B) Performance (large GeoParquet scenario still has slow paths)
 - [ ] Investigate why GeoParquet mode can still take ~7s at high zoom:
