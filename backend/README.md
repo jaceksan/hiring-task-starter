@@ -11,7 +11,7 @@ Note: this MVP expects map context to be sent by the frontend in the request bod
 - `map.bbox` (`minLon`, `minLat`, `maxLon`, `maxLat`) for AOI slicing
 - `map.view` (`center`, `zoom`) for view preservation / zoom-to-results
 
-Engine selection (future DuckDB option): set `PANGE_ENGINE=in_memory|duckdb` (DuckDB not implemented yet).
+Engine selection: set `PANGE_ENGINE=in_memory|duckdb`.
 
 ## How to run
 

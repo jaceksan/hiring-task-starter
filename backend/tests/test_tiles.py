@@ -65,7 +65,9 @@ def test_slice_layers_tiled_dedupes_cross_tile_features():
     layers = LayerBundle(
         layers=[
             Layer(id="lines", kind="lines", title="Lines", features=[line], style={}),
-            Layer(id="polys", kind="polygons", title="Polys", features=[poly], style={}),
+            Layer(
+                id="polys", kind="polygons", title="Polys", features=[poly], style={}
+            ),
         ]
     )
     index = build_geo_index(layers)
@@ -82,6 +84,9 @@ def test_slice_layers_tiled_dedupes_cross_tile_features():
     sliced = index.slice_layers_tiled(aoi, tile_zoom=z)
     out_lines = sliced.get("lines")
     out_polys = sliced.get("polys")
-    assert out_lines is not None and [f.id for f in out_lines.features] == ["line-cross"]
-    assert out_polys is not None and [f.id for f in out_polys.features] == ["poly-cross"]
-
+    assert out_lines is not None and [f.id for f in out_lines.features] == [
+        "line-cross"
+    ]
+    assert out_polys is not None and [f.id for f in out_polys.features] == [
+        "poly-cross"
+    ]

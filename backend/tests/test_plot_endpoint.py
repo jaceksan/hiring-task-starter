@@ -13,7 +13,12 @@ def test_plot_endpoint_returns_plot_payload():
         "/plot",
         json={
             "map": {
-                "bbox": {"minLon": 14.22, "minLat": 49.94, "maxLon": 14.70, "maxLat": 50.18},
+                "bbox": {
+                    "minLon": 14.22,
+                    "minLat": 49.94,
+                    "maxLon": 14.70,
+                    "maxLat": 50.18,
+                },
                 "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
             },
             "engine": "in_memory",
@@ -53,10 +58,19 @@ def test_plot_endpoint_preserves_highlight_when_provided():
         "/plot",
         json={
             "map": {
-                "bbox": {"minLon": 14.22, "minLat": 49.94, "maxLon": 14.70, "maxLat": 50.18},
+                "bbox": {
+                    "minLon": 14.22,
+                    "minLat": 49.94,
+                    "maxLon": 14.70,
+                    "maxLat": 50.18,
+                },
                 "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
             },
-            "highlight": {"layerId": "beer_pois", "featureIds": ["node/123", "node/456"], "title": "MyHighlight"},
+            "highlight": {
+                "layerId": "beer_pois",
+                "featureIds": ["node/123", "node/456"],
+                "title": "MyHighlight",
+            },
             "engine": "in_memory",
         },
     )
@@ -88,7 +102,12 @@ def test_plot_endpoint_supports_duckdb_engine(tmp_path, monkeypatch):
         "/plot",
         json={
             "map": {
-                "bbox": {"minLon": 14.22, "minLat": 49.94, "maxLon": 14.70, "maxLat": 50.18},
+                "bbox": {
+                    "minLon": 14.22,
+                    "minLat": 49.94,
+                    "maxLon": 14.70,
+                    "maxLat": 50.18,
+                },
                 # Keep this test fast by staying below minZoomForGeometry for lines/polygons.
                 # That still exercises the DuckDB+GeoParquet code path for points + bbox filtering.
                 "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 11.0},
@@ -101,5 +120,7 @@ def test_plot_endpoint_supports_duckdb_engine(tmp_path, monkeypatch):
     payload = resp.json()
     meta = payload.get("layout", {}).get("meta", {})
     assert meta.get("stats", {}).get("engine") == "duckdb"
-    assert meta.get("stats", {}).get("scenarioId") == "prague_population_infrastructure_small"
-
+    assert (
+        meta.get("stats", {}).get("scenarioId")
+        == "prague_population_infrastructure_small"
+    )

@@ -77,11 +77,24 @@ def build_map_plot(
     pts = sum(len(l.features) for l in layers.of_kind("points"))
     lines = sum(len(l.features) for l in layers.of_kind("lines"))
     polys = sum(len(l.features) for l in layers.of_kind("polygons"))
-    line_vertices = sum(len(f.coords) for l in layers.of_kind("lines") for f in l.features if isinstance(f, LineFeature))
-    poly_vertices = sum(len(r) for l in layers.of_kind("polygons") for f in l.features if isinstance(f, PolygonFeature) for r in f.rings)
+    line_vertices = sum(
+        len(f.coords)
+        for l in layers.of_kind("lines")
+        for f in l.features
+        if isinstance(f, LineFeature)
+    )
+    poly_vertices = sum(
+        len(r)
+        for l in layers.of_kind("polygons")
+        for f in l.features
+        if isinstance(f, PolygonFeature)
+        for r in f.rings
+    )
     highlight_count = 0
     if highlight and highlight.feature_ids:
-        highlight_count = len(_selected_points(layers, highlight.layer_id, highlight.feature_ids))
+        highlight_count = len(
+            _selected_points(layers, highlight.layer_id, highlight.feature_ids)
+        )
 
     meta["stats"] = {
         "clusterMode": clusters is not None,
@@ -163,7 +176,8 @@ def _trace_polygons(layer: Layer) -> dict[str, Any]:
         "fill": "toself",
         "fillcolor": style.get("fillcolor") or "rgba(30, 136, 229, 0.20)",
         "line": {
-            "color": (line.get("color") if isinstance(line, dict) else None) or "rgba(30, 136, 229, 0.65)",
+            "color": (line.get("color") if isinstance(line, dict) else None)
+            or "rgba(30, 136, 229, 0.65)",
             "width": int((line.get("width") if isinstance(line, dict) else 1) or 1),
         },
         "hoverinfo": "skip",
@@ -192,7 +206,8 @@ def _trace_lines(layer: Layer) -> dict[str, Any]:
         "lat": lats,
         "mode": "lines",
         "line": {
-            "color": (line.get("color") if isinstance(line, dict) else None) or "rgba(67, 160, 71, 0.9)",
+            "color": (line.get("color") if isinstance(line, dict) else None)
+            or "rgba(67, 160, 71, 0.9)",
             "width": int((line.get("width") if isinstance(line, dict) else 2) or 2),
         },
         "hoverinfo": "skip",
@@ -209,20 +224,28 @@ def _trace_points(layer: Layer) -> dict[str, Any]:
         "lon": [p.lon for p in feats],
         "lat": [p.lat for p in feats],
         "mode": "markers",
-        "text": [str((p.props or {}).get("label") or (p.props or {}).get("name") or "") for p in feats],
+        "text": [
+            str((p.props or {}).get("label") or (p.props or {}).get("name") or "")
+            for p in feats
+        ],
         "marker": {
             "size": int((marker.get("size") if isinstance(marker, dict) else 6) or 6),
-            "color": (marker.get("color") if isinstance(marker, dict) else None) or "rgba(255, 193, 7, 0.75)",
+            "color": (marker.get("color") if isinstance(marker, dict) else None)
+            or "rgba(255, 193, 7, 0.75)",
         },
         "hovertemplate": "%{text}<extra></extra>",
     }
 
 
-def _trace_point_clusters(layer: Layer, clusters: list[ClusterMarker]) -> dict[str, Any]:
+def _trace_point_clusters(
+    layer: Layer, clusters: list[ClusterMarker]
+) -> dict[str, Any]:
     # Style inherits from the point layer, but with cluster-specific defaults.
     style = layer.style or {}
     marker = style.get("marker") or {}
-    color = (marker.get("color") if isinstance(marker, dict) else None) or "rgba(255, 193, 7, 0.55)"
+    color = (
+        marker.get("color") if isinstance(marker, dict) else None
+    ) or "rgba(255, 193, 7, 0.55)"
     return {
         "type": "scattermapbox",
         "name": f"{layer.title} (clusters)",
@@ -243,7 +266,12 @@ def _trace_point_clusters(layer: Layer, clusters: list[ClusterMarker]) -> dict[s
 def _trace_highlight_layer(layers: LayerBundle, highlight: Highlight) -> dict[str, Any]:
     layer = layers.get(highlight.layer_id)
     if layer is None:
-        return {"type": "scattermapbox", "name": highlight.title or "Highlighted", "lon": [], "lat": []}
+        return {
+            "type": "scattermapbox",
+            "name": highlight.title or "Highlighted",
+            "lon": [],
+            "lat": [],
+        }
 
     if layer.kind == "points":
         selected = _selected_points(layers, highlight.layer_id, highlight.feature_ids)
@@ -253,14 +281,21 @@ def _trace_highlight_layer(layers: LayerBundle, highlight: Highlight) -> dict[st
             "lon": [p.lon for p in selected],
             "lat": [p.lat for p in selected],
             "mode": "markers+text",
-            "text": [str((p.props or {}).get("label") or (p.props or {}).get("name") or "") for p in selected],
+            "text": [
+                str((p.props or {}).get("label") or (p.props or {}).get("name") or "")
+                for p in selected
+            ],
             "textposition": "top center",
             "marker": {"size": 11, "color": "rgba(229, 57, 53, 0.95)"},
             "hovertemplate": "%{text}<extra></extra>",
         }
 
     if layer.kind == "lines":
-        feats = [f for f in layer.features if isinstance(f, LineFeature) and f.id in highlight.feature_ids]
+        feats = [
+            f
+            for f in layer.features
+            if isinstance(f, LineFeature) and f.id in highlight.feature_ids
+        ]
         lons: list[float | None] = []
         lats: list[float | None] = []
         for f in feats:
@@ -282,7 +317,11 @@ def _trace_highlight_layer(layers: LayerBundle, highlight: Highlight) -> dict[st
         }
 
     if layer.kind == "polygons":
-        feats = [f for f in layer.features if isinstance(f, PolygonFeature) and f.id in highlight.feature_ids]
+        feats = [
+            f
+            for f in layer.features
+            if isinstance(f, PolygonFeature) and f.id in highlight.feature_ids
+        ]
         lons: list[float | None] = []
         lats: list[float | None] = []
         for f in feats:
@@ -310,10 +349,17 @@ def _trace_highlight_layer(layers: LayerBundle, highlight: Highlight) -> dict[st
             "hoverinfo": "skip",
         }
 
-    return {"type": "scattermapbox", "name": highlight.title or "Highlighted", "lon": [], "lat": []}
+    return {
+        "type": "scattermapbox",
+        "name": highlight.title or "Highlighted",
+        "lon": [],
+        "lat": [],
+    }
 
 
-def _selected_points(layers: LayerBundle, layer_id: str, ids: set[str]) -> list[PointFeature]:
+def _selected_points(
+    layers: LayerBundle, layer_id: str, ids: set[str]
+) -> list[PointFeature]:
     layer = layers.get(layer_id)
     if layer is None or layer.kind != "points":
         return []
@@ -376,4 +422,3 @@ def _bbox_to_zoom(
     zoom_x = math.log2((width * 360.0) / (256.0 * lon_delta))
     zoom_y = math.log2((height * 170.0) / (256.0 * lat_delta))
     return float(min(zoom_x, zoom_y))
-

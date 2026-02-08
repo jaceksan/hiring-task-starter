@@ -31,4 +31,3 @@ def test_focus_map_does_not_zoom_out_aggressively():
 
     # We clamp zoom-out to avoid huge jumps; allow up to ~2 zoom levels out from current.
     assert float(plot["layout"]["mapbox"]["zoom"]) >= 13.0
-

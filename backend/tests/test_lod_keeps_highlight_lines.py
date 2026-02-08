@@ -18,8 +18,16 @@ def test_lod_keeps_highlighted_lines_when_over_budget():
     )
     bundle = LayerBundle(
         layers=[
-            Layer(id="roads", kind="lines", title="Roads", features=[keep, huge], style={}),
-            Layer(id="places", kind="points", title="Places", features=[PointFeature(id="p", lon=14.0, lat=50.0, props={})], style={}),
+            Layer(
+                id="roads", kind="lines", title="Roads", features=[keep, huge], style={}
+            ),
+            Layer(
+                id="places",
+                kind="points",
+                title="Places",
+                features=[PointFeature(id="p", lon=14.0, lat=50.0, props={})],
+                style={},
+            ),
         ]
     )
 
@@ -29,11 +37,12 @@ def test_lod_keeps_highlighted_lines_when_over_budget():
         highlight_layer_id="roads",
         highlight_feature_ids={"keep"},
         cluster_points_layer_id="places",
-        budgets=LodBudgets(max_points_rendered=10_000, max_line_vertices=40, max_poly_vertices=10_000),
+        budgets=LodBudgets(
+            max_points_rendered=10_000, max_line_vertices=40, max_poly_vertices=10_000
+        ),
     )
 
     roads = lod.get("roads")
     assert roads is not None
     ids = {f.id for f in roads.features}
     assert "keep" in ids
-

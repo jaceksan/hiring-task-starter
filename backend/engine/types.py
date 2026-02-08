@@ -41,4 +41,3 @@ class LayerEngine(Protocol):
     """
 
     def get(self, ctx: MapContext) -> EngineResult: ...
-

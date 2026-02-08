@@ -20,7 +20,9 @@ class ScenarioDefaultView(BaseModel):
     zoom: float = Field(ge=0.0, le=24.0)
 
 
-LayerSourceType = Literal["geojson_polygons", "overpass_points", "overpass_lines", "geoparquet"]
+LayerSourceType = Literal[
+    "geojson_polygons", "overpass_points", "overpass_lines", "geoparquet"
+]
 GeometryKind = Literal["points", "lines", "polygons"]
 
 
@@ -88,9 +90,13 @@ class ScenarioRouting(BaseModel):
     maskLabel: str = "masked area"
 
     # Keyword hints (kept simple on purpose).
-    showLayersKeywords: list[str] = Field(default_factory=lambda: ["show layers", "help", "reset", "start over"])
+    showLayersKeywords: list[str] = Field(
+        default_factory=lambda: ["show layers", "help", "reset", "start over"]
+    )
     countKeywords: list[str] = Field(default_factory=lambda: ["how many"])
-    maskKeywords: list[str] = Field(default_factory=lambda: ["flood", "flooded", "water"])
+    maskKeywords: list[str] = Field(
+        default_factory=lambda: ["flood", "flooded", "water"]
+    )
     recommendKeywords: list[str] = Field(default_factory=lambda: ["recommend"])
 
     # Optional: proximity-based ranking using one or more point layers.
@@ -121,4 +127,3 @@ class ScenarioConfig(BaseModel):
     layers: list[ScenarioLayer]
     routing: ScenarioRouting
     plot: ScenarioPlot
-

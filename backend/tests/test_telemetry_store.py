@@ -53,4 +53,3 @@ def test_telemetry_reset_deletes_db(tmp_path, monkeypatch):
 
     reset_store()
     assert not db_path.exists()
-

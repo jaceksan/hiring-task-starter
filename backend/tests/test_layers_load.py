@@ -16,4 +16,3 @@ def test_load_prague_transport_non_empty():
     assert len(bundle.get("tram_ways").features) > 0
     assert len(bundle.get("tram_stops").features) > 0
     assert len(bundle.get("flood_q100").features) > 0
-

@@ -35,7 +35,8 @@ def lonlat_to_tile(zoom: int, lon: float, lat: float) -> tuple[int, int]:
     x = int(math.floor((lon + 180.0) / 360.0 * n))
     y = int(
         math.floor(
-            (1.0 - math.log(math.tan(lat_rad) + (1.0 / math.cos(lat_rad))) / math.pi) / 2.0
+            (1.0 - math.log(math.tan(lat_rad) + (1.0 / math.cos(lat_rad))) / math.pi)
+            / 2.0
             * n
         )
     )
@@ -65,7 +66,9 @@ def tile_bbox_4326(zoom: int, x: int, y: int) -> BBox:
     lat_top = lat_from_tile_y(y)
     lat_bottom = lat_from_tile_y(y + 1)
 
-    return BBox(min_lon=lon_left, min_lat=lat_bottom, max_lon=lon_right, max_lat=lat_top).normalized()
+    return BBox(
+        min_lon=lon_left, min_lat=lat_bottom, max_lon=lon_right, max_lat=lat_top
+    ).normalized()
 
 
 def tiles_for_bbox(zoom: int, aoi: BBox) -> list[tuple[int, int, int]]:
@@ -88,4 +91,3 @@ def tiles_for_bbox(zoom: int, aoi: BBox) -> list[tuple[int, int, int]]:
         for y in range(min_y, max_y + 1):
             out.append((z, x, y))
     return out
-

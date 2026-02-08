@@ -12,7 +12,14 @@ from shapely.strtree import STRtree
 
 from geo.aoi import BBox
 from geo.tiles import tiles_for_bbox
-from layers.types import GeometryKind, Layer, LayerBundle, LineFeature, PointFeature, PolygonFeature
+from layers.types import (
+    GeometryKind,
+    Layer,
+    LayerBundle,
+    LineFeature,
+    PointFeature,
+    PolygonFeature,
+)
 
 
 @dataclass
@@ -38,18 +45,29 @@ class GeoIndex:
     _point_geoms_3857: dict[str, list[Point]] = field(default_factory=dict, repr=False)
 
     # Caches
-    _slice_cache: dict[tuple[str, tuple[float, float, float, float]], LayerBundle] = field(
+    _slice_cache: dict[tuple[str, tuple[float, float, float, float]], LayerBundle] = (
+        field(default_factory=dict, repr=False)
+    )
+    _poly_union_cache: dict[
+        tuple[str, tuple[float, float, float, float]], Polygon | MultiPolygon
+    ] = field(default_factory=dict, repr=False)
+    _tile_slice_cache: dict[tuple[int, int, int], LayerBundle] = field(
         default_factory=dict, repr=False
     )
-    _poly_union_cache: dict[tuple[str, tuple[float, float, float, float]], Polygon | MultiPolygon] = field(
-        default_factory=dict, repr=False
-    )
-    _tile_slice_cache: dict[tuple[int, int, int], LayerBundle] = field(default_factory=dict, repr=False)
 
-    def slice_layers_tiled(self, aoi: BBox, *, tile_zoom: int, decimals: int = 4) -> LayerBundle:
+    def slice_layers_tiled(
+        self, aoi: BBox, *, tile_zoom: int, decimals: int = 4
+    ) -> LayerBundle:
         tiles = tiles_for_bbox(tile_zoom, aoi)
         if not tiles:
-            return LayerBundle(layers=[Layer(id=l.id, kind=l.kind, title=l.title, features=[], style=l.style) for l in self.layers.layers])
+            return LayerBundle(
+                layers=[
+                    Layer(
+                        id=l.id, kind=l.kind, title=l.title, features=[], style=l.style
+                    )
+                    for l in self.layers.layers
+                ]
+            )
 
         tiles = sorted(tiles, key=lambda t: (t[1], t[2]))
 
@@ -80,7 +98,13 @@ class GeoIndex:
             feats = by_layer.get(base.id, {})
             ordered = [feats[k] for k in sorted(feats.keys())]
             out_layers.append(
-                Layer(id=base.id, kind=base.kind, title=base.title, features=ordered, style=base.style)
+                Layer(
+                    id=base.id,
+                    kind=base.kind,
+                    title=base.title,
+                    features=ordered,
+                    style=base.style,
+                )
             )
         return LayerBundle(layers=out_layers)
 
@@ -100,17 +124,27 @@ class GeoIndex:
             geoms = self._layer_geoms.get(l.id) or []
             feats = self._layer_feats.get(l.id) or []
             if tree is None:
-                out_layers.append(Layer(id=l.id, kind=l.kind, title=l.title, features=[], style=l.style))
+                out_layers.append(
+                    Layer(
+                        id=l.id, kind=l.kind, title=l.title, features=[], style=l.style
+                    )
+                )
                 continue
             idxs = _to_int_list(tree.query(bbox))
             sliced = [feats[i] for i in idxs] if idxs else []
-            out_layers.append(Layer(id=l.id, kind=l.kind, title=l.title, features=sliced, style=l.style))
+            out_layers.append(
+                Layer(
+                    id=l.id, kind=l.kind, title=l.title, features=sliced, style=l.style
+                )
+            )
 
         out = LayerBundle(layers=out_layers)
         _bounded_cache_put(self._slice_cache, ck, out, max_items=64)
         return out
 
-    def polygon_union_for_aoi(self, layer_id: str, aoi: BBox, *, decimals: int = 4) -> Polygon | MultiPolygon:
+    def polygon_union_for_aoi(
+        self, layer_id: str, aoi: BBox, *, decimals: int = 4
+    ) -> Polygon | MultiPolygon:
         key = aoi.rounded_key(decimals)
         ck = (layer_id, key)
         cached = self._poly_union_cache.get(ck)
@@ -142,7 +176,9 @@ class GeoIndex:
         _bounded_cache_put(self._poly_union_cache, ck, u, max_items=64)
         return u
 
-    def distance_to_nearest_point_m(self, point: PointFeature, *, point_layer_id: str) -> float:
+    def distance_to_nearest_point_m(
+        self, point: PointFeature, *, point_layer_id: str
+    ) -> float:
         """
         Distance from `point` to nearest point in `point_layer_id` (meters, approx).
         """
@@ -177,7 +213,9 @@ def build_geo_index(bundle: LayerBundle) -> GeoIndex:
         idx._layer_feats[layer.id] = feats
 
         if kind == "points":
-            geoms = [Point(float(getattr(f, "lon")), float(getattr(f, "lat"))) for f in feats]  # type: ignore[arg-type]
+            geoms = [
+                Point(float(getattr(f, "lon")), float(getattr(f, "lat"))) for f in feats
+            ]  # type: ignore[arg-type]
             idx._layer_geoms[layer.id] = geoms
             idx._layer_tree[layer.id] = STRtree(geoms) if geoms else STRtree([])
 
@@ -189,7 +227,9 @@ def build_geo_index(bundle: LayerBundle) -> GeoIndex:
                 x, y = transformer_4326_to_3857().transform(f.lon, f.lat)
                 pts_3857.append(Point(float(x), float(y)))
             idx._point_geoms_3857[layer.id] = pts_3857
-            idx._point_tree_3857[layer.id] = STRtree(pts_3857) if pts_3857 else STRtree([])
+            idx._point_tree_3857[layer.id] = (
+                STRtree(pts_3857) if pts_3857 else STRtree([])
+            )
 
         elif kind == "lines":
             geoms = []
@@ -198,7 +238,9 @@ def build_geo_index(bundle: LayerBundle) -> GeoIndex:
                     continue
                 if len(f.coords) < 2:
                     continue
-                geoms.append(LineString([(float(lon), float(lat)) for lon, lat in f.coords]))
+                geoms.append(
+                    LineString([(float(lon), float(lat)) for lon, lat in f.coords])
+                )
             idx._layer_geoms[layer.id] = geoms
             idx._layer_tree[layer.id] = STRtree(geoms) if geoms else STRtree([])
 
@@ -258,4 +300,3 @@ def tile_bbox_as_tuple(z: int, x: int, y: int) -> tuple[float, float, float, flo
 
     tb = tile_bbox_4326(z, x, y)
     return (tb.min_lon, tb.min_lat, tb.max_lon, tb.max_lat)
-

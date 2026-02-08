@@ -27,7 +27,10 @@ def _repo_root() -> Path:
 
 def telemetry_path() -> Path:
     # Store under repo so it’s easy to share/query (and stays local).
-    return Path(os.getenv("PANGE_TELEMETRY_PATH") or (_repo_root() / "data" / "telemetry" / "telemetry.duckdb"))
+    return Path(
+        os.getenv("PANGE_TELEMETRY_PATH")
+        or (_repo_root() / "data" / "telemetry" / "telemetry.duckdb")
+    )
 
 
 def telemetry_enabled() -> bool:
@@ -67,7 +70,9 @@ class TelemetryStore:
         if self._worker is not None:
             return
         self._stop.clear()
-        self._worker = threading.Thread(target=self._run, name="telemetry-writer", daemon=True)
+        self._worker = threading.Thread(
+            target=self._run, name="telemetry-writer", daemon=True
+        )
         self._worker.start()
 
     def stop(self, *, timeout_s: float = 2.0) -> None:
@@ -196,7 +201,9 @@ class TelemetryStore:
                     "p50TotalMs": _safe_float(p50),
                     "p95TotalMs": _safe_float(p95),
                     "p99TotalMs": _safe_float(p99),
-                    "avgPayloadKB": _safe_float(avg_bytes) / 1024.0 if avg_bytes is not None else None,
+                    "avgPayloadKB": _safe_float(avg_bytes) / 1024.0
+                    if avg_bytes is not None
+                    else None,
                     "cacheHitRate": _safe_float(hit_rate),
                 }
             )
@@ -230,21 +237,31 @@ class TelemetryStore:
               try_cast(json_extract(stats_json, '$.cache.cacheHit') AS BOOLEAN) AS cache_hit,
               view_zoom
             FROM events
-            WHERE {' AND '.join(where)}
+            WHERE {" AND ".join(where)}
             ORDER BY total_ms DESC
             LIMIT ?
             """,
             params,
         )
         out: list[dict[str, Any]] = []
-        for ts_ms, engine_v, endpoint_v, total_ms, payload_bytes, cache_hit, view_zoom in rows:
+        for (
+            ts_ms,
+            engine_v,
+            endpoint_v,
+            total_ms,
+            payload_bytes,
+            cache_hit,
+            view_zoom,
+        ) in rows:
             out.append(
                 {
                     "tsMs": int(ts_ms),
                     "engine": engine_v,
                     "endpoint": endpoint_v,
                     "totalMs": _safe_float(total_ms),
-                    "payloadKB": (int(payload_bytes) / 1024.0) if payload_bytes is not None else None,
+                    "payloadKB": (int(payload_bytes) / 1024.0)
+                    if payload_bytes is not None
+                    else None,
                     "cacheHit": bool(cache_hit) if cache_hit is not None else None,
                     "viewZoom": _safe_float(view_zoom),
                 }
@@ -375,4 +392,3 @@ def reset_store() -> None:
                 p.unlink(missing_ok=True)
             except Exception:
                 pass
-

@@ -111,7 +111,7 @@ def plot(body: ApiPlotRequest):
         max_lat=bbox.maxLat,
     ).normalized()
 
-    scenario_id = (body.scenarioId or default_scenario_id())
+    scenario_id = body.scenarioId or default_scenario_id()
     scenario = get_scenario(scenario_id).config
     ctx = MapContext(
         scenario_id=scenario.id,
@@ -119,13 +119,20 @@ def plot(body: ApiPlotRequest):
         view_center={"lat": body.map.view.center.lat, "lon": body.map.view.center.lon},
         view_zoom=body.map.view.zoom,
         viewport=(
-            {"width": int(body.map.viewport.width), "height": int(body.map.viewport.height)}
+            {
+                "width": int(body.map.viewport.width),
+                "height": int(body.map.viewport.height),
+            }
             if body.map.viewport is not None
             else None
         ),
     )
 
-    engine_name = _default_engine_name() if body.engine is None else _normalize_engine(body.engine)
+    engine_name = (
+        _default_engine_name()
+        if body.engine is None
+        else _normalize_engine(body.engine)
+    )
     if (scenario.dataSize or "small").lower() == "large":
         engine_name = "duckdb"
     t0 = time.perf_counter()
@@ -141,11 +148,15 @@ def plot(body: ApiPlotRequest):
         view_zoom=ctx.view_zoom,
         scenario_id=ctx.scenario_id,
         cluster_points_layer_id=scenario.plot.highlightLayerId,
-        highlight_layer_id=str(body.highlight.get("layerId") or scenario.plot.highlightLayerId)
+        highlight_layer_id=str(
+            body.highlight.get("layerId") or scenario.plot.highlightLayerId
+        )
         if body.highlight
         else None,
         highlight_feature_ids=(
-            set(body.highlight.get("featureIds") or body.highlight.get("pointIds") or [])
+            set(
+                body.highlight.get("featureIds") or body.highlight.get("pointIds") or []
+            )
             if body.highlight
             else None
         ),
@@ -153,11 +164,17 @@ def plot(body: ApiPlotRequest):
     t_lod_ms = (time.perf_counter() - t1) * 1000.0
 
     highlight = None
-    if body.highlight and (body.highlight.get("featureIds") or body.highlight.get("pointIds")):
+    if body.highlight and (
+        body.highlight.get("featureIds") or body.highlight.get("pointIds")
+    ):
         from plotly.build_map import Highlight as PlotHighlight
 
-        hl_layer_id = str(body.highlight.get("layerId") or scenario.plot.highlightLayerId)
-        hl_ids = set(body.highlight.get("featureIds") or body.highlight.get("pointIds") or [])
+        hl_layer_id = str(
+            body.highlight.get("layerId") or scenario.plot.highlightLayerId
+        )
+        hl_ids = set(
+            body.highlight.get("featureIds") or body.highlight.get("pointIds") or []
+        )
         highlight = PlotHighlight(
             layer_id=hl_layer_id,
             feature_ids=hl_ids,
@@ -209,7 +226,9 @@ def plot(body: ApiPlotRequest):
                     "maxLon": aoi.max_lon,
                     "maxLat": aoi.max_lat,
                 },
-                stats=(payload.get("layout", {}).get("meta", {}) or {}).get("stats", {}),
+                stats=(payload.get("layout", {}).get("meta", {}) or {}).get(
+                    "stats", {}
+                ),
             )
     except Exception:
         pass
@@ -245,7 +264,9 @@ def scenarios():
 
 
 @app.get("/telemetry/summary")
-def telemetry_summary(engine: str | None = None, endpoint: str | None = None, since_ms: int | None = None):
+def telemetry_summary(
+    engine: str | None = None, endpoint: str | None = None, since_ms: int | None = None
+):
     store = get_store()
     if store is None:
         return {"enabled": False, "rows": []}
@@ -254,11 +275,16 @@ def telemetry_summary(engine: str | None = None, endpoint: str | None = None, si
         store.flush(timeout_s=0.5)
     except Exception:
         pass
-    return {"enabled": True, "rows": store.summary(engine=engine, endpoint=endpoint, since_ms=since_ms)}
+    return {
+        "enabled": True,
+        "rows": store.summary(engine=engine, endpoint=endpoint, since_ms=since_ms),
+    }
 
 
 @app.get("/telemetry/slowest")
-def telemetry_slowest(engine: str | None = None, endpoint: str | None = None, limit: int = 25):
+def telemetry_slowest(
+    engine: str | None = None, endpoint: str | None = None, limit: int = 25
+):
     store = get_store()
     if store is None:
         return {"enabled": False, "rows": []}
@@ -266,7 +292,10 @@ def telemetry_slowest(engine: str | None = None, endpoint: str | None = None, li
         store.flush(timeout_s=0.5)
     except Exception:
         pass
-    return {"enabled": True, "rows": store.slowest(engine=engine, endpoint=endpoint, limit=limit)}
+    return {
+        "enabled": True,
+        "rows": store.slowest(engine=engine, endpoint=endpoint, limit=limit),
+    }
 
 
 class EventType(str, Enum):
@@ -331,8 +360,19 @@ def _apply_lod_cached(
     tile_zoom = tile_zoom_for_view_zoom(view_zoom)
     tiles = tuple(sorted(tiles_for_bbox(tile_zoom, aoi), key=lambda t: (t[1], t[2])))
     zoom_bucket = int(round(float(view_zoom) * 2.0))  # 0.5 zoom buckets
-    highlight_key = (highlight_layer_id or "", tuple(sorted(highlight_feature_ids or ())))
-    key = (scenario_id, engine_name, cluster_points_layer_id, tile_zoom, zoom_bucket, tiles, highlight_key)
+    highlight_key = (
+        highlight_layer_id or "",
+        tuple(sorted(highlight_feature_ids or ())),
+    )
+    key = (
+        scenario_id,
+        engine_name,
+        cluster_points_layer_id,
+        tile_zoom,
+        zoom_bucket,
+        tiles,
+        highlight_key,
+    )
 
     cached = _lod_cache.get(key)
     if cached is not None:
@@ -372,21 +412,31 @@ async def handle_incoming_message(thread: ApiThread):
             max_lat=bbox.maxLat,
         ).normalized()
 
-        scenario_id = (thread.scenarioId or default_scenario_id())
+        scenario_id = thread.scenarioId or default_scenario_id()
         scenario = get_scenario(scenario_id).config
         ctx = MapContext(
             scenario_id=scenario.id,
             aoi=aoi,
-            view_center={"lat": thread.map.view.center.lat, "lon": thread.map.view.center.lon},
+            view_center={
+                "lat": thread.map.view.center.lat,
+                "lon": thread.map.view.center.lon,
+            },
             view_zoom=thread.map.view.zoom,
             viewport=(
-                {"width": int(thread.map.viewport.width), "height": int(thread.map.viewport.height)}
+                {
+                    "width": int(thread.map.viewport.width),
+                    "height": int(thread.map.viewport.height),
+                }
                 if thread.map.viewport is not None
                 else None
             ),
         )
 
-        engine_name = _default_engine_name() if thread.engine is None else _normalize_engine(thread.engine)
+        engine_name = (
+            _default_engine_name()
+            if thread.engine is None
+            else _normalize_engine(thread.engine)
+        )
         if (scenario.dataSize or "small").lower() == "large":
             engine_name = "duckdb"
         t0 = time.perf_counter()
@@ -419,8 +469,12 @@ async def handle_incoming_message(thread: ApiThread):
             view_zoom=thread.map.view.zoom,
             scenario_id=ctx.scenario_id,
             cluster_points_layer_id=scenario.plot.highlightLayerId,
-            highlight_layer_id=response.highlight.layer_id if response.highlight is not None else None,
-            highlight_feature_ids=response.highlight.feature_ids if response.highlight is not None else None,
+            highlight_layer_id=response.highlight.layer_id
+            if response.highlight is not None
+            else None,
+            highlight_feature_ids=response.highlight.feature_ids
+            if response.highlight is not None
+            else None,
         )
         t_lod_ms = (time.perf_counter() - t2) * 1000.0
 
@@ -470,7 +524,9 @@ async def handle_incoming_message(thread: ApiThread):
                         "maxLon": aoi.max_lon,
                         "maxLat": aoi.max_lat,
                     },
-                    stats=(plot.get("layout", {}).get("meta", {}) or {}).get("stats", {}),
+                    stats=(plot.get("layout", {}).get("meta", {}) or {}).get(
+                        "stats", {}
+                    ),
                 )
         except Exception:
             pass

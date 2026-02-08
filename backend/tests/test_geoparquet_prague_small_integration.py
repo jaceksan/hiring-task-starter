@@ -26,4 +26,3 @@ def test_duckdb_geoparquet_prague_small_decodes_some_geometries():
     # At zoom 12.0 we are above minZoomForGeometry → expect at least some decoded geometry.
     assert len(roads.features) > 0
     assert len(water.features) > 0
-

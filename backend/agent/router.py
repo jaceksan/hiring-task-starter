@@ -41,7 +41,9 @@ def route_prompt(
 
     for rule in routing.highlightRules:
         if rule.keywords and any(k.lower() in p for k in rule.keywords):
-            return _apply_highlight_rule(layers, index=index, aoi=aoi, routing=routing, rule=rule)
+            return _apply_highlight_rule(
+                layers, index=index, aoi=aoi, routing=routing, rule=rule
+            )
 
     point_kw = {routing.pointLabelSingular.lower(), routing.pointLabelPlural.lower()}
     mentions_points = any(k and k in p for k in point_kw)
@@ -56,7 +58,10 @@ def route_prompt(
     if any(k in p for k in routing.recommendKeywords) and mentions_points:
         n = _extract_number(p, default=5, clamp=(1, 50))
         b = aoi.normalized()
-        prefer_center = view_center or {"lat": (b.min_lat + b.max_lat) / 2.0, "lon": (b.min_lon + b.max_lon) / 2.0}
+        prefer_center = view_center or {
+            "lat": (b.min_lat + b.max_lat) / 2.0,
+            "lon": (b.min_lon + b.max_lon) / 2.0,
+        }
         ranked = _recommend_points(
             layers,
             index=index,
@@ -93,7 +98,9 @@ def _count_points_in_mask(
 ) -> AgentResponse:
     pts_layer = layers.get(routing.primaryPointsLayerId)
     if pts_layer is None or pts_layer.kind != "points":
-        return AgentResponse(message="This scenario has no configured primary point layer.")
+        return AgentResponse(
+            message="This scenario has no configured primary point layer."
+        )
     pts = [f for f in pts_layer.features if isinstance(f, PointFeature)]
 
     if not routing.maskPolygonsLayerId:
@@ -199,7 +206,9 @@ def _recommend_points(
     if not candidates:
         return []
 
-    cx, cy = transformer_4326_to_3857().transform(prefer_center["lon"], prefer_center["lat"])
+    cx, cy = transformer_4326_to_3857().transform(
+        prefer_center["lon"], prefer_center["lat"]
+    )
 
     def local_key(pt: PointFeature) -> tuple[float, str]:
         x, y = transformer_4326_to_3857().transform(pt.lon, pt.lat)
@@ -232,7 +241,7 @@ def _recommend_points(
 
 def _label(pt: PointFeature) -> str | None:
     props = pt.props or {}
-    return (props.get("label") or props.get("name") or None)
+    return props.get("label") or props.get("name") or None
 
 
 def _extract_number(prompt: str, *, default: int, clamp: tuple[int, int]) -> int:
@@ -245,4 +254,3 @@ def _extract_number(prompt: str, *, default: int, clamp: tuple[int, int]) -> int
         return default
     lo, hi = clamp
     return max(lo, min(hi, n))
-

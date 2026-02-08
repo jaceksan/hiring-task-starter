@@ -20,4 +20,3 @@ def test_build_map_plot_shape():
     cfg = get_scenario("prague_transport").config
     for l in cfg.layers:
         assert l.title in names
-

@@ -1,6 +1,15 @@
 import asyncio
 
-from main import ApiBbox, ApiCenter, ApiMapContext, ApiMapView, ApiMessage, ApiMessageSenderEnum, ApiThread, handle_incoming_message
+from main import (
+    ApiBbox,
+    ApiCenter,
+    ApiMapContext,
+    ApiMapView,
+    ApiMessage,
+    ApiMessageSenderEnum,
+    ApiThread,
+    handle_incoming_message,
+)
 
 
 def test_invoke_stream_emits_required_event_types():
@@ -92,4 +101,3 @@ def test_invoke_stream_dry_near_metro_does_not_error():
 
     text = asyncio.run(collect_text())
     assert "Backend error" not in text
-

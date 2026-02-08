@@ -37,4 +37,3 @@ class BBox:
             round(b.max_lon, decimals),
             round(b.max_lat, decimals),
         )
-

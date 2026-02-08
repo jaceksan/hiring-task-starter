@@ -30,7 +30,9 @@ def load_geojson_polygons(path: Path) -> list[PolygonFeature]:
             for j, poly in enumerate(coords):
                 rings = [_to_ring(r) for r in poly]
                 if rings:
-                    out.append(PolygonFeature(id=f"{fid}-{j}", rings=rings, props=props))
+                    out.append(
+                        PolygonFeature(id=f"{fid}-{j}", rings=rings, props=props)
+                    )
 
     return out
 
@@ -45,7 +47,9 @@ def _to_ring(ring: Any) -> list[tuple[float, float]]:
     return out
 
 
-def load_overpass_points(path: Path, *, extra_props: dict[str, Any] | None = None) -> list[PointFeature]:
+def load_overpass_points(
+    path: Path, *, extra_props: dict[str, Any] | None = None
+) -> list[PointFeature]:
     """
     Input: Overpass JSON with `out center;` so:
     - nodes have `lat`/`lon`
@@ -80,12 +84,18 @@ def load_overpass_points(path: Path, *, extra_props: dict[str, Any] | None = Non
         if name and "label" not in props:
             props["label"] = name
 
-        out.append(PointFeature(id=f"{etype}/{eid}", lon=float(lon), lat=float(lat), props=props))
+        out.append(
+            PointFeature(
+                id=f"{etype}/{eid}", lon=float(lon), lat=float(lat), props=props
+            )
+        )
 
     return out
 
 
-def load_overpass_lines(path: Path, *, extra_props: dict[str, Any] | None = None) -> list[LineFeature]:
+def load_overpass_lines(
+    path: Path, *, extra_props: dict[str, Any] | None = None
+) -> list[LineFeature]:
     """
     Input: Overpass JSON with `out geom;` for ways, providing `geometry: [{lat,lon}, ...]`.
     """
@@ -119,4 +129,3 @@ def load_overpass_lines(path: Path, *, extra_props: dict[str, Any] | None = None
         out.append(LineFeature(id=f"way/{eid}", coords=coords, props=props))
 
     return out
-

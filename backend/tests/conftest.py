@@ -6,4 +6,3 @@ from pathlib import Path
 # like `layers.*`, `geo.*`, and `main`.
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
-

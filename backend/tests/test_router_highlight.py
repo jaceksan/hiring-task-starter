@@ -61,4 +61,3 @@ def test_highlight_rule_selects_points_in_mask():
     assert resp.highlight is not None
     assert resp.highlight.layer_id == "points"
     assert resp.highlight.feature_ids == {"in1", "in2"}
-

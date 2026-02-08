@@ -23,7 +23,12 @@ def test_plot_endpoint_duckdb_geoparquet_prague_small_returns_layers():
         "/plot",
         json={
             "map": {
-                "bbox": {"minLon": 14.22, "minLat": 49.94, "maxLon": 14.70, "maxLat": 50.18},
+                "bbox": {
+                    "minLon": 14.22,
+                    "minLat": 49.94,
+                    "maxLon": 14.70,
+                    "maxLat": 50.18,
+                },
                 # Keep this test fast (avoid decoding large line/polygon geometries).
                 # The scenario uses `minZoomForGeometry` for roads/water; below that threshold
                 # those layers should be present but empty.
@@ -37,11 +42,13 @@ def test_plot_endpoint_duckdb_geoparquet_prague_small_returns_layers():
     payload = resp.json()
     meta = payload.get("layout", {}).get("meta", {})
     assert meta.get("stats", {}).get("engine") == "duckdb"
-    assert meta.get("stats", {}).get("scenarioId") == "prague_population_infrastructure_small"
+    assert (
+        meta.get("stats", {}).get("scenarioId")
+        == "prague_population_infrastructure_small"
+    )
 
     names = {t.get("name") for t in payload.get("data", [])}
     # Scenario titles should appear as trace names.
     assert "Places (points)" in names
     assert "Roads (lines)" in names
     assert "Water areas (polygons)" in names
-

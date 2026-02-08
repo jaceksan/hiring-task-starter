@@ -26,4 +26,3 @@ class InMemoryEngine(LayerEngine):
         tile_zoom = tile_zoom_for_view_zoom(ctx.view_zoom)
         aoi_layers = index.slice_layers_tiled(ctx.aoi, tile_zoom=tile_zoom)
         return EngineResult(layers=aoi_layers, index=index)
-

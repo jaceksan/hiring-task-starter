@@ -6,6 +6,8 @@ This is a repo with React frontend and Python backend to get you started on your
 
 This repo now contains an MVP that fulfills the core requirements from `requirements.pdf`:
 
+- For the **current** “what we built + what’s left” snapshot (including scenario packs, DuckDB/GeoParquet engine, LOD/budgets, telemetry), see `PROJECT_CONTEXT.md`.
+
 - **Region**: Prague
 - **3 datasets, different geometries**:
   - Flood extent Q100 (**polygons**) from IPR Praha (stored under `data/prague/`)
@@ -41,9 +43,9 @@ On top of AOI slicing, the backend applies **zoom-aware level-of-detail (LOD)** 
 - **Lines + polygons**: simplified as zoom decreases to reduce vertex counts
 - **Payload budgets**: hard caps ensure we don't ship huge Plotly traces
 
-### Future option: DuckDB engine (not implemented yet)
+### Optional: DuckDB engine (GeoParquet)
 
-The backend now has an engine abstraction to allow a future **DuckDB/GeoParquet** engine. Today it uses the in-memory engine by default.
+The backend supports an optional **DuckDB/GeoParquet** engine. Select via `PANGE_ENGINE=in_memory|duckdb` (some scenarios may require DuckDB).
 
 ### Data sources
 

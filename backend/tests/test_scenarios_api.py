@@ -17,4 +17,3 @@ def test_get_scenarios_lists_prague_transport():
     assert "prague_population_infrastructure_small" in ids
     # We also expose a large GeoParquet scenario.
     assert "czech_population_infrastructure_large" in ids
-

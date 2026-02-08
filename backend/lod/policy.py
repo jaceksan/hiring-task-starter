@@ -55,7 +55,9 @@ def apply_lod(
     poly_out: dict[str, list[PolygonFeature]] = {}
     for l in poly_layers:
         feats = [f for f in l.features if isinstance(f, PolygonFeature)]
-        poly_out[l.id] = _simplify_polygons_until_budget(feats, zoom, max_vertices=poly_budget_each)
+        poly_out[l.id] = _simplify_polygons_until_budget(
+            feats, zoom, max_vertices=poly_budget_each
+        )
 
     # Lines: split budget evenly between line layers.
     line_budget_each = max(0, int(b.max_line_vertices // max(1, len(line_layers))))
@@ -67,7 +69,9 @@ def apply_lod(
             if highlight_layer_id is not None and l.id == highlight_layer_id
             else None
         )
-        line_out[l.id] = _simplify_lines_until_budget(feats, zoom, max_vertices=line_budget_each, keep_ids=keep_ids)
+        line_out[l.id] = _simplify_lines_until_budget(
+            feats, zoom, max_vertices=line_budget_each, keep_ids=keep_ids
+        )
 
     # Points: cluster/cap only the configured primary layer; cap others deterministically.
     beer_clusters: list[ClusterMarker] | None = None
@@ -76,15 +80,21 @@ def apply_lod(
         feats = [f for f in l.features if isinstance(f, PointFeature)]
         if l.id == cluster_points_layer_id:
             if _should_cluster_points(zoom, len(feats), b.max_points_rendered):
-                beer_clusters = _cluster_points(feats, zoom=zoom)[: b.max_points_rendered]
-                point_out[l.id] = feats  # keep raw for highlight lookup; plot chooses clusters
+                beer_clusters = _cluster_points(feats, zoom=zoom)[
+                    : b.max_points_rendered
+                ]
+                point_out[l.id] = (
+                    feats  # keep raw for highlight lookup; plot chooses clusters
+                )
             elif len(feats) > b.max_points_rendered:
                 keep_ids = (
                     set(highlight_feature_ids or set())
                     if highlight_layer_id is not None and l.id == highlight_layer_id
                     else None
                 )
-                point_out[l.id] = _cap_points(feats, b.max_points_rendered, keep_ids=keep_ids)
+                point_out[l.id] = _cap_points(
+                    feats, b.max_points_rendered, keep_ids=keep_ids
+                )
             else:
                 point_out[l.id] = feats
         else:
@@ -98,13 +108,25 @@ def apply_lod(
     for l in layers.layers:
         if l.kind == "polygons":
             feats = poly_out.get(l.id, [])
-            out_layers.append(Layer(id=l.id, kind=l.kind, title=l.title, features=feats, style=l.style))
+            out_layers.append(
+                Layer(
+                    id=l.id, kind=l.kind, title=l.title, features=feats, style=l.style
+                )
+            )
         elif l.kind == "lines":
             feats = line_out.get(l.id, [])
-            out_layers.append(Layer(id=l.id, kind=l.kind, title=l.title, features=feats, style=l.style))
+            out_layers.append(
+                Layer(
+                    id=l.id, kind=l.kind, title=l.title, features=feats, style=l.style
+                )
+            )
         elif l.kind == "points":
             feats = point_out.get(l.id, [])
-            out_layers.append(Layer(id=l.id, kind=l.kind, title=l.title, features=feats, style=l.style))
+            out_layers.append(
+                Layer(
+                    id=l.id, kind=l.kind, title=l.title, features=feats, style=l.style
+                )
+            )
         else:
             out_layers.append(l)
 
@@ -165,7 +187,9 @@ def _cluster_points(points: list[PointFeature], *, zoom: float) -> list[ClusterM
     return out
 
 
-def _cap_points(points: list[PointFeature], max_points: int, keep_ids: set[str] | None) -> list[PointFeature]:
+def _cap_points(
+    points: list[PointFeature], max_points: int, keep_ids: set[str] | None
+) -> list[PointFeature]:
     if len(points) <= max_points:
         return points
     keep_ids = keep_ids or set()
@@ -254,7 +278,9 @@ def _cap_lines_to_vertex_budget(
     return out
 
 
-def _cap_polys_to_vertex_budget(polys: list[PolygonFeature], max_vertices: int) -> list[PolygonFeature]:
+def _cap_polys_to_vertex_budget(
+    polys: list[PolygonFeature], max_vertices: int
+) -> list[PolygonFeature]:
     """
     Hard fallback: drop the heaviest features until under budget.
     Deterministic: sort by vertex count desc, then id.
@@ -297,7 +323,9 @@ def _poly_tol_m(zoom: float) -> float:
     return 15.0
 
 
-def _simplify_lines(lines: list[LineFeature], *, tolerance_m: float) -> list[LineFeature]:
+def _simplify_lines(
+    lines: list[LineFeature], *, tolerance_m: float
+) -> list[LineFeature]:
     t_fwd = transformer_4326_to_3857()
     t_inv = _transformer_32633_to_4326()
 
@@ -329,7 +357,9 @@ def _simplify_lines(lines: list[LineFeature], *, tolerance_m: float) -> list[Lin
     return out
 
 
-def _simplify_polygons(polys: list[PolygonFeature], *, tolerance_m: float) -> list[PolygonFeature]:
+def _simplify_polygons(
+    polys: list[PolygonFeature], *, tolerance_m: float
+) -> list[PolygonFeature]:
     t_fwd = transformer_4326_to_3857()
     t_inv = _transformer_32633_to_4326()
 
@@ -377,4 +407,3 @@ def _simplify_polygons(polys: list[PolygonFeature], *, tolerance_m: float) -> li
             )
 
     return out
-

@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from layers.loaders import load_geojson_polygons, load_overpass_lines, load_overpass_points
+from layers.loaders import (
+    load_geojson_polygons,
+    load_overpass_lines,
+    load_overpass_points,
+)
 from layers.types import Layer, LayerBundle
 from scenarios.registry import get_scenario, resolve_repo_path
 
@@ -38,7 +42,10 @@ def load_scenario_layers(scenario_id: str | None) -> LayerBundle:
         else:
             raise ValueError(f"Unknown layer source type: {src.type}")
 
-        out.append(Layer(id=l.id, kind=l.kind, title=l.title, features=feats, style=l.style or {}))
+        out.append(
+            Layer(
+                id=l.id, kind=l.kind, title=l.title, features=feats, style=l.style or {}
+            )
+        )
 
     return LayerBundle(layers=out)
-

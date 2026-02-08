@@ -25,7 +25,9 @@ class LineFeature:
 @dataclass(frozen=True)
 class PolygonFeature:
     id: str
-    rings: list[list[tuple[float, float]]]  # [outer_ring, ...]; each ring is [(lon, lat), ...]
+    rings: list[
+        list[tuple[float, float]]
+    ]  # [outer_ring, ...]; each ring is [(lon, lat), ...]
     props: dict[str, Any]
 
 
@@ -62,4 +64,3 @@ class LayerBundle:
 
     def of_kind(self, kind: GeometryKind) -> list[Layer]:
         return [l for l in self.layers if l.kind == kind]
-
