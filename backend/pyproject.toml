@@ -53,3 +53,8 @@ dependencies = [
 dev = [
     "pytest>=9.0.2",
 ]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: tests that depend on larger local fixtures or slow geometry decoding",
+]

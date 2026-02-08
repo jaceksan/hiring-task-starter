@@ -1,0 +1,98 @@
+id: czech_population_infrastructure_large
+title: "Czech Republic: Population & Infrastructure (Large)"
+
+# GeoParquet-backed large scenario (query-on-read via DuckDB `read_parquet()`).
+enabled: true
+dataSize: large
+
+defaultView:
+  center:
+    lat: 49.8175
+    lon: 15.4730
+  zoom: 6.6
+
+examplePrompts:
+  - "show layers"
+  - "how many places are flooded?"
+  - "show flooded places"
+  - "highlight motorways"
+
+layers:
+  - id: roads
+    title: "Roads (lines)"
+    kind: lines
+    source:
+      type: geoparquet
+      path: data/derived/czech_population_infrastructure_large/cz_bbox/roads.parquet
+      geoparquet:
+        idColumn: osm_id
+        nameColumn: name
+        classColumn: fclass
+        geometryColumn: geometry
+        minZoomForGeometry: 11.5
+    style:
+      line:
+        color: "rgba(55, 71, 79, 0.55)"
+        width: 1
+
+  - id: water_areas
+    title: "Water areas (polygons)"
+    kind: polygons
+    source:
+      type: geoparquet
+      path: data/derived/czech_population_infrastructure_large/cz_bbox/water_areas.parquet
+      geoparquet:
+        idColumn: osm_id
+        nameColumn: name
+        classColumn: fclass
+        geometryColumn: geometry
+        minZoomForGeometry: 11.5
+    style:
+      fillcolor: "rgba(30, 136, 229, 0.15)"
+      line:
+        color: "rgba(30, 136, 229, 0.45)"
+        width: 1
+
+  - id: places
+    title: "Places (points)"
+    kind: points
+    source:
+      type: geoparquet
+      path: data/derived/czech_population_infrastructure_large/cz_bbox/places.parquet
+      geoparquet:
+        idColumn: osm_id
+        nameColumn: name
+        classColumn: fclass
+        geometryColumn: geometry
+    style:
+      marker:
+        size: 6
+        color: "rgba(255, 193, 7, 0.60)"
+
+routing:
+  primaryPointsLayerId: places
+  maskPolygonsLayerId: water_areas
+  pointLabelSingular: place
+  pointLabelPlural: places
+  maskLabel: water areas
+  showLayersKeywords: ["show layers", "help", "reset", "start over"]
+  countKeywords: ["how many"]
+  maskKeywords: ["flood", "flooded", "water"]
+  recommendKeywords: ["recommend", "find"]
+  highlightRules:
+    - keywords: ["show flooded places", "highlight flooded places"]
+      layerId: places
+      title: "Flooded places"
+      maxFeatures: 500
+      maskLayerId: water_areas
+      maskMode: IN_MASK
+    - keywords: ["highlight motorways", "highlight motorway", "highlight highways"]
+      layerId: roads
+      title: "Motorways"
+      maxFeatures: 800
+      props:
+        fclass: ["motorway", "trunk"]
+
+plot:
+  highlightLayerId: places
+

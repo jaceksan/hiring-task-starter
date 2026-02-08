@@ -8,3 +8,5 @@
 /data/duckdb/
 /backend/data/duckdb/
 
+# Local derived datasets (generated locally; can be very large)
+/data/derived/czech_population_infrastructure_large/cz_bbox/**/*

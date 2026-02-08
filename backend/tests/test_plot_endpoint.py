@@ -26,6 +26,7 @@ def test_plot_endpoint_returns_plot_payload():
     meta = data["layout"].get("meta") or {}
     assert "stats" in meta
     assert meta["stats"].get("engine") == "in_memory"
+    assert meta["stats"].get("scenarioId") == "prague_transport"
 
 
 def test_plot_endpoint_can_return_clusters_at_low_zoom():
@@ -43,7 +44,7 @@ def test_plot_endpoint_can_return_clusters_at_low_zoom():
     assert resp.status_code == 200
     payload = resp.json()
     names = {t.get("name") for t in payload.get("data", [])}
-    assert "Beer POIs (clusters)" in names
+    assert any(isinstance(n, str) and n.endswith("(clusters)") for n in names)
 
 
 def test_plot_endpoint_preserves_highlight_when_provided():
@@ -55,7 +56,7 @@ def test_plot_endpoint_preserves_highlight_when_provided():
                 "bbox": {"minLon": 14.22, "minLat": 49.94, "maxLon": 14.70, "maxLat": 50.18},
                 "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
             },
-            "highlight": {"pointIds": ["node/123", "node/456"], "title": "MyHighlight"},
+            "highlight": {"layerId": "beer_pois", "featureIds": ["node/123", "node/456"], "title": "MyHighlight"},
             "engine": "in_memory",
         },
     )
@@ -65,6 +66,7 @@ def test_plot_endpoint_preserves_highlight_when_provided():
     # More importantly: meta should carry highlight info for frontend to round-trip.
     meta = payload.get("layout", {}).get("meta", {})
     assert meta.get("highlight", {}).get("title") == "MyHighlight"
+    assert meta.get("highlight", {}).get("layerId") == "beer_pois"
     assert "stats" in meta
 
 
@@ -78,7 +80,8 @@ def test_plot_endpoint_supports_duckdb_engine(tmp_path, monkeypatch):
     from engine import duckdb as duckdb_mod
 
     main._engine.cache_clear()
-    duckdb_mod._duckdb_base.cache_clear()
+    duckdb_mod._seeded_base.cache_clear()
+    duckdb_mod._geoparquet_bundle_cached.cache_clear()
 
     client = TestClient(app)
     resp = client.post(
@@ -86,13 +89,17 @@ def test_plot_endpoint_supports_duckdb_engine(tmp_path, monkeypatch):
         json={
             "map": {
                 "bbox": {"minLon": 14.22, "minLat": 49.94, "maxLon": 14.70, "maxLat": 50.18},
-                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
+                # Keep this test fast by staying below minZoomForGeometry for lines/polygons.
+                # That still exercises the DuckDB+GeoParquet code path for points + bbox filtering.
+                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 11.0},
             },
             "engine": "duckdb",
+            "scenarioId": "prague_population_infrastructure_small",
         },
     )
     assert resp.status_code == 200
     payload = resp.json()
     meta = payload.get("layout", {}).get("meta", {})
     assert meta.get("stats", {}).get("engine") == "duckdb"
+    assert meta.get("stats", {}).get("scenarioId") == "prague_population_infrastructure_small"
 
