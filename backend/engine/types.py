@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from geo.aoi import BBox
-from geo.ops import GeoIndex
-from layers.types import PragueLayers
+from geo.index import GeoIndex
+from layers.types import LayerBundle
 
 
 @dataclass(frozen=True)
@@ -14,6 +14,7 @@ class MapContext:
     Request-scoped map context coming from the frontend.
     """
 
+    scenario_id: str
     aoi: BBox
     view_center: dict[str, float]  # {"lat": ..., "lon": ...}
     view_zoom: float
@@ -27,7 +28,7 @@ class EngineResult:
     What an engine returns for a given request.
     """
 
-    layers: PragueLayers
+    layers: LayerBundle
     index: GeoIndex
 
 

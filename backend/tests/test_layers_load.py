@@ -1,12 +1,19 @@
-from layers.load_prague import load_prague_layers
+from layers.load_scenario import load_scenario_layers
 
 
-def test_load_prague_layers_non_empty():
-    layers = load_prague_layers()
-    assert len(layers.beer_pois) > 0
-    assert len(layers.metro_ways) > 0
-    assert len(layers.metro_stations) > 0
-    assert len(layers.tram_ways) > 0
-    assert len(layers.tram_stops) > 0
-    assert len(layers.flood_q100) > 0
+def test_load_prague_transport_non_empty():
+    bundle = load_scenario_layers("prague_transport")
+    assert bundle.get("beer_pois") is not None
+    assert bundle.get("metro_ways") is not None
+    assert bundle.get("metro_stations") is not None
+    assert bundle.get("tram_ways") is not None
+    assert bundle.get("tram_stops") is not None
+    assert bundle.get("flood_q100") is not None
+
+    assert len(bundle.get("beer_pois").features) > 0
+    assert len(bundle.get("metro_ways").features) > 0
+    assert len(bundle.get("metro_stations").features) > 0
+    assert len(bundle.get("tram_ways").features) > 0
+    assert len(bundle.get("tram_stops").features) > 0
+    assert len(bundle.get("flood_q100").features) > 0
 

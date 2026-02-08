@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias, Union
 
 
 GeometryKind = Literal["points", "lines", "polygons"]
@@ -29,14 +29,37 @@ class PolygonFeature:
     props: dict[str, Any]
 
 
+LayerFeature: TypeAlias = Union[PointFeature, LineFeature, PolygonFeature]
+
+
 @dataclass(frozen=True)
-class PragueLayers:
-    flood_q100: list[PolygonFeature]
-    metro_ways: list[LineFeature]
-    beer_pois: list[PointFeature]
-    # Realistically, "near metro" means near a station/entrance, not the track geometry.
-    metro_stations: list[PointFeature] = field(default_factory=list)
-    # Optional tram layers to keep the demo small but more realistic.
-    tram_ways: list[LineFeature] = field(default_factory=list)
-    tram_stops: list[PointFeature] = field(default_factory=list)
+class Layer:
+    """
+    A scenario-defined layer (points/lines/polygons) with a stable id.
+
+    All scenario-specific semantics (titles, styling, routing roles) should live in YAML;
+    this type intentionally stays generic.
+    """
+
+    id: str
+    kind: GeometryKind
+    title: str
+    features: list[LayerFeature]
+    # Free-form style hints (e.g. colors/widths) consumed by the Plotly builder.
+    style: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class LayerBundle:
+    layers: list[Layer]
+
+    def get(self, layer_id: str) -> Layer | None:
+        lid = (layer_id or "").strip()
+        for l in self.layers:
+            if l.id == lid:
+                return l
+        return None
+
+    def of_kind(self, kind: GeometryKind) -> list[Layer]:
+        return [l for l in self.layers if l.kind == kind]
 

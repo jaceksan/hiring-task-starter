@@ -1,0 +1,115 @@
+id: prague_transport
+title: Prague Flood & Transport
+
+dataSize: small
+enabled: true
+
+defaultView:
+  center:
+    lat: 50.0755
+    lon: 14.4378
+  zoom: 10.5
+
+examplePrompts:
+  - "show layers"
+  - "how many pubs are flooded?"
+  - "show flooded pubs"
+  - "find 20 dry pubs near metro"
+  - "recommend 5 safe pubs"
+
+layers:
+  - id: flood_q100
+    title: "Flood extent (Q100)"
+    kind: polygons
+    source:
+      type: geojson_polygons
+      path: data/prague/prague_q100_flood.geojson
+    style:
+      fillcolor: "rgba(30, 136, 229, 0.20)"
+      line:
+        color: "rgba(30, 136, 229, 0.65)"
+        width: 1
+
+  - id: metro_ways
+    title: "Metro (OSM subway ways)"
+    kind: lines
+    source:
+      type: overpass_lines
+      path: data/prague/prague_metro_ways_overpass.json
+    style:
+      line:
+        color: "rgba(67, 160, 71, 0.9)"
+        width: 2
+
+  - id: metro_stations
+    title: "Metro stations/entrances"
+    kind: points
+    source:
+      type: overpass_points
+      path: data/prague/prague_metro_stations_overpass.json
+    style:
+      marker:
+        size: 8
+        color: "rgba(27, 94, 32, 0.85)"
+
+  - id: tram_ways
+    title: "Tram tracks (OSM tram ways)"
+    kind: lines
+    source:
+      type: overpass_lines
+      path: data/prague/prague_tram_ways_overpass.json
+    style:
+      line:
+        color: "rgba(156, 39, 176, 0.75)"
+        width: 1
+
+  - id: tram_stops
+    title: "Tram stops/platforms"
+    kind: points
+    source:
+      type: overpass_points
+      path: data/prague/prague_tram_stops_overpass.json
+    style:
+      marker:
+        size: 6
+        color: "rgba(106, 27, 154, 0.80)"
+
+  - id: beer_pois
+    title: "Beer POIs (pub/biergarten/brewery)"
+    kind: points
+    source:
+      type: overpass_points
+      path: data/prague/prague_beer_pois_overpass.json
+    style:
+      marker:
+        size: 6
+        color: "rgba(255, 193, 7, 0.75)"
+
+routing:
+  primaryPointsLayerId: beer_pois
+  maskPolygonsLayerId: flood_q100
+  pointLabelSingular: pub
+  pointLabelPlural: pubs
+  maskLabel: flood extent
+  showLayersKeywords: ["show layers", "help", "reset", "start over"]
+  countKeywords: ["how many"]
+  maskKeywords: ["flood", "flooded"]
+  recommendKeywords: ["recommend", "find"]
+  highlightRules:
+    - keywords: ["show flooded pubs", "highlight flooded pubs"]
+      layerId: beer_pois
+      title: "Flooded pubs"
+      maxFeatures: 500
+      maskLayerId: flood_q100
+      maskMode: IN_MASK
+  proximity:
+    - layerId: metro_stations
+      maxMeters: 300
+      penalty: 1.0
+    - layerId: tram_stops
+      maxMeters: 350
+      penalty: 1.5
+
+plot:
+  highlightLayerId: beer_pois
+

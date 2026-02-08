@@ -1,10 +1,11 @@
-from plotly.build_plot import build_prague_plot
-from layers.load_prague import load_prague_layers
+from layers.load_scenario import load_scenario_layers
+from plotly.build_map import build_map_plot
+from scenarios.registry import get_scenario
 
 
-def test_build_prague_plot_shape():
-    layers = load_prague_layers()
-    plot = build_prague_plot(layers)
+def test_build_map_plot_shape():
+    bundle = load_scenario_layers("prague_transport")
+    plot = build_map_plot(bundle)
 
     assert set(plot.keys()) == {"data", "layout"}
     assert isinstance(plot["data"], list)
@@ -16,7 +17,7 @@ def test_build_prague_plot_shape():
     assert any(trace.get("type") == "scattermapbox" for trace in plot["data"])
 
     names = {t.get("name") for t in plot["data"]}
-    assert "Metro stations/entrances" in names
-    assert "Tram tracks (OSM tram ways)" in names
-    assert "Tram stops/platforms" in names
+    cfg = get_scenario("prague_transport").config
+    for l in cfg.layers:
+        assert l.title in names
 

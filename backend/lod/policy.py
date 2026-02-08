@@ -6,8 +6,8 @@ from typing import Iterable
 from pyproj import Transformer
 from shapely.geometry import LineString, Point, Polygon
 
-from geo.ops import transformer_4326_to_32633
-from layers.types import LineFeature, PointFeature, PolygonFeature, PragueLayers
+from geo.index import transformer_4326_to_3857
+from layers.types import Layer, LayerBundle, LineFeature, PointFeature, PolygonFeature
 
 
 @dataclass(frozen=True)
@@ -19,22 +19,23 @@ class ClusterMarker:
 
 @dataclass(frozen=True)
 class LodBudgets:
+    # Primary point layer (typically the one the agent highlights).
     max_points_rendered: int = 2_500
-    # Auxiliary point layers (metro stations / tram stops) are generally smaller than beer POIs,
-    # but can still grow if we expand AOI. Keep an explicit cap so payload doesn't explode.
-    max_station_points_rendered: int = 1_500
-    max_tram_stop_points_rendered: int = 3_000
+    # Other point layers (kept as actual points; no clustering).
+    max_aux_points_rendered: int = 3_000
     max_line_vertices: int = 40_000
     max_poly_vertices: int = 80_000
 
 
 def apply_lod(
-    layers: PragueLayers,
+    layers: LayerBundle,
     *,
     view_zoom: float,
-    highlight_point_ids: set[str] | None,
+    highlight_layer_id: str | None,
+    highlight_feature_ids: set[str] | None,
+    cluster_points_layer_id: str,
     budgets: LodBudgets | None = None,
-) -> tuple[PragueLayers, list[ClusterMarker] | None]:
+) -> tuple[LayerBundle, list[ClusterMarker] | None]:
     """
     Apply zoom-aware level-of-detail policies.
 
@@ -45,54 +46,69 @@ def apply_lod(
     b = budgets or LodBudgets()
     zoom = float(view_zoom)
 
-    flood = _simplify_polygons_until_budget(layers.flood_q100, zoom, max_vertices=b.max_poly_vertices)
+    poly_layers = [l for l in layers.layers if l.kind == "polygons"]
+    line_layers = [l for l in layers.layers if l.kind == "lines"]
+    point_layers = [l for l in layers.layers if l.kind == "points"]
 
-    # Lines: allocate a shared vertex budget between metro and tram so both remain visible.
-    metro_raw = _count_line_vertices(layers.metro_ways)
-    tram_raw = _count_line_vertices(layers.tram_ways)
-    total_raw = metro_raw + tram_raw
-    if total_raw <= 0:
-        metro_budget = int(b.max_line_vertices * 0.5)
-    else:
-        metro_budget = int(b.max_line_vertices * (metro_raw / total_raw))
-    # Ensure both layers get a minimum budget when present, but never break tiny test budgets.
-    min_budget = min(5_000, int(b.max_line_vertices * 0.2))
-    if layers.metro_ways and metro_budget < min_budget:
-        metro_budget = min_budget
-    if layers.tram_ways and (b.max_line_vertices - metro_budget) < min_budget:
-        metro_budget = max(min_budget, b.max_line_vertices - min_budget)
-    tram_budget = max(0, int(b.max_line_vertices - metro_budget))
+    # Polygons: split budget evenly between polygon layers (simple, deterministic).
+    poly_budget_each = max(0, int(b.max_poly_vertices // max(1, len(poly_layers))))
+    poly_out: dict[str, list[PolygonFeature]] = {}
+    for l in poly_layers:
+        feats = [f for f in l.features if isinstance(f, PolygonFeature)]
+        poly_out[l.id] = _simplify_polygons_until_budget(feats, zoom, max_vertices=poly_budget_each)
 
-    metro = _simplify_lines_until_budget(layers.metro_ways, zoom, max_vertices=metro_budget)
-    tram = _simplify_lines_until_budget(layers.tram_ways, zoom, max_vertices=tram_budget)
+    # Lines: split budget evenly between line layers.
+    line_budget_each = max(0, int(b.max_line_vertices // max(1, len(line_layers))))
+    line_out: dict[str, list[LineFeature]] = {}
+    for l in line_layers:
+        feats = [f for f in l.features if isinstance(f, LineFeature)]
+        keep_ids = (
+            set(highlight_feature_ids or set())
+            if highlight_layer_id is not None and l.id == highlight_layer_id
+            else None
+        )
+        line_out[l.id] = _simplify_lines_until_budget(feats, zoom, max_vertices=line_budget_each, keep_ids=keep_ids)
 
-    # Points: either keep raw points (capped) or return clusters (preferred at low zoom).
+    # Points: cluster/cap only the configured primary layer; cap others deterministically.
     beer_clusters: list[ClusterMarker] | None = None
-    beer_pois = layers.beer_pois
+    point_out: dict[str, list[PointFeature]] = {}
+    for l in point_layers:
+        feats = [f for f in l.features if isinstance(f, PointFeature)]
+        if l.id == cluster_points_layer_id:
+            if _should_cluster_points(zoom, len(feats), b.max_points_rendered):
+                beer_clusters = _cluster_points(feats, zoom=zoom)[: b.max_points_rendered]
+                point_out[l.id] = feats  # keep raw for highlight lookup; plot chooses clusters
+            elif len(feats) > b.max_points_rendered:
+                keep_ids = (
+                    set(highlight_feature_ids or set())
+                    if highlight_layer_id is not None and l.id == highlight_layer_id
+                    else None
+                )
+                point_out[l.id] = _cap_points(feats, b.max_points_rendered, keep_ids=keep_ids)
+            else:
+                point_out[l.id] = feats
+        else:
+            point_out[l.id] = (
+                _cap_points(feats, b.max_aux_points_rendered, keep_ids=None)
+                if len(feats) > b.max_aux_points_rendered
+                else feats
+            )
 
-    if _should_cluster_points(zoom, len(beer_pois), b.max_points_rendered):
-        beer_clusters = _cluster_points(beer_pois, zoom=zoom)[: b.max_points_rendered]
-    elif len(beer_pois) > b.max_points_rendered:
-        beer_pois = _cap_points(beer_pois, b.max_points_rendered, keep_ids=highlight_point_ids)
+    out_layers: list[Layer] = []
+    for l in layers.layers:
+        if l.kind == "polygons":
+            feats = poly_out.get(l.id, [])
+            out_layers.append(Layer(id=l.id, kind=l.kind, title=l.title, features=feats, style=l.style))
+        elif l.kind == "lines":
+            feats = line_out.get(l.id, [])
+            out_layers.append(Layer(id=l.id, kind=l.kind, title=l.title, features=feats, style=l.style))
+        elif l.kind == "points":
+            feats = point_out.get(l.id, [])
+            out_layers.append(Layer(id=l.id, kind=l.kind, title=l.title, features=feats, style=l.style))
+        else:
+            out_layers.append(l)
 
-    # Station/stop point layers: do not cluster (UX wants actual points), but cap deterministically.
-    metro_stations = layers.metro_stations
-    if len(metro_stations) > b.max_station_points_rendered:
-        metro_stations = _cap_points(metro_stations, b.max_station_points_rendered, keep_ids=None)
-
-    tram_stops = layers.tram_stops
-    if len(tram_stops) > b.max_tram_stop_points_rendered:
-        tram_stops = _cap_points(tram_stops, b.max_tram_stop_points_rendered, keep_ids=None)
-
-    lod_layers = PragueLayers(
-        flood_q100=flood,
-        metro_ways=metro,
-        tram_ways=tram,
-        beer_pois=beer_pois,
-        metro_stations=metro_stations,
-        tram_stops=tram_stops,
-    )
-    return lod_layers, beer_clusters
+    return LayerBundle(layers=out_layers), beer_clusters
 
 
 def _should_cluster_points(zoom: float, n_points: int, max_points: int) -> bool:
@@ -116,14 +132,15 @@ def _grid_size_m(zoom: float) -> float:
 
 
 def _transformer_32633_to_4326() -> Transformer:
-    return Transformer.from_crs("EPSG:32633", "EPSG:4326", always_xy=True)
+    # We cluster in EPSG:3857, so invert that back to 4326.
+    return Transformer.from_crs("EPSG:3857", "EPSG:4326", always_xy=True)
 
 
 def _cluster_points(points: list[PointFeature], *, zoom: float) -> list[ClusterMarker]:
     """
-    Cluster points using a simple meter-based grid in UTM (EPSG:32633).
+    Cluster points using a simple meter-based grid in Web Mercator (EPSG:3857).
     """
-    t_fwd = transformer_4326_to_32633()
+    t_fwd = transformer_4326_to_3857()
     t_inv = _transformer_32633_to_4326()
     grid = _grid_size_m(zoom)
 
@@ -174,6 +191,7 @@ def _simplify_lines_until_budget(
     zoom: float,
     *,
     max_vertices: int,
+    keep_ids: set[str] | None,
 ) -> list[LineFeature]:
     # Start with a zoom-derived tolerance, then increase until we're under budget.
     base_tol = _line_tol_m(zoom)
@@ -185,7 +203,7 @@ def _simplify_lines_until_budget(
             break
         out = _simplify_lines(lines, tolerance_m=tol)
     if _count_line_vertices(out) > max_vertices:
-        out = _cap_lines_to_vertex_budget(out, max_vertices)
+        out = _cap_lines_to_vertex_budget(out, max_vertices, keep_ids=keep_ids)
     return out
 
 
@@ -208,16 +226,28 @@ def _simplify_polygons_until_budget(
     return out
 
 
-def _cap_lines_to_vertex_budget(lines: list[LineFeature], max_vertices: int) -> list[LineFeature]:
+def _cap_lines_to_vertex_budget(
+    lines: list[LineFeature], max_vertices: int, *, keep_ids: set[str] | None
+) -> list[LineFeature]:
     """
     Hard fallback: drop the heaviest features until under budget.
     Deterministic: sort by vertex count desc, then id.
     """
+    keep = set(keep_ids or set())
     out = list(lines)
     out.sort(key=lambda l: (-len(l.coords), l.id))
     total = _count_line_vertices(out)
     while out and total > max_vertices:
-        removed = out.pop(0)
+        # Prefer removing non-kept, heaviest first.
+        remove_idx = None
+        for i, cand in enumerate(out):
+            if cand.id not in keep:
+                remove_idx = i
+                break
+        if remove_idx is None:
+            # All remaining are kept; last resort: drop heaviest kept as well.
+            remove_idx = 0
+        removed = out.pop(remove_idx)
         total -= len(removed.coords)
     # Restore deterministic order for downstream rendering/tests.
     out.sort(key=lambda l: l.id)
@@ -268,7 +298,7 @@ def _poly_tol_m(zoom: float) -> float:
 
 
 def _simplify_lines(lines: list[LineFeature], *, tolerance_m: float) -> list[LineFeature]:
-    t_fwd = transformer_4326_to_32633()
+    t_fwd = transformer_4326_to_3857()
     t_inv = _transformer_32633_to_4326()
 
     out: list[LineFeature] = []
@@ -300,7 +330,7 @@ def _simplify_lines(lines: list[LineFeature], *, tolerance_m: float) -> list[Lin
 
 
 def _simplify_polygons(polys: list[PolygonFeature], *, tolerance_m: float) -> list[PolygonFeature]:
-    t_fwd = transformer_4326_to_32633()
+    t_fwd = transformer_4326_to_3857()
     t_inv = _transformer_32633_to_4326()
 
     out: list[PolygonFeature] = []

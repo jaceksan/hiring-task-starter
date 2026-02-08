@@ -19,7 +19,8 @@ from engine.types import LayerEngine, MapContext
 from geo.aoi import BBox
 from geo.tiles import tile_zoom_for_view_zoom, tiles_for_bbox
 from lod.policy import apply_lod
-from plotly.build_plot import build_prague_plot
+from plotly.build_map import build_map_plot
+from scenarios.registry import default_scenario_id, get_scenario, list_scenarios
 from telemetry.store import get_store, reset_store
 
 app = FastAPI()
@@ -78,12 +79,14 @@ class ApiThread(BaseModel):
     messages: list[ApiMessage]
     map: ApiMapContext
     engine: str | None = None
+    scenarioId: str | None = None
 
 
 class ApiPlotRequest(BaseModel):
     map: ApiMapContext
     highlight: dict | None = None
     engine: str | None = None
+    scenarioId: str | None = None
 
 
 @app.post("/invoke")
@@ -108,7 +111,10 @@ def plot(body: ApiPlotRequest):
         max_lat=bbox.maxLat,
     ).normalized()
 
+    scenario_id = (body.scenarioId or default_scenario_id())
+    scenario = get_scenario(scenario_id).config
     ctx = MapContext(
+        scenario_id=scenario.id,
         aoi=aoi,
         view_center={"lat": body.map.view.center.lat, "lon": body.map.view.center.lon},
         view_zoom=body.map.view.zoom,
@@ -120,6 +126,8 @@ def plot(body: ApiPlotRequest):
     )
 
     engine_name = _default_engine_name() if body.engine is None else _normalize_engine(body.engine)
+    if (scenario.dataSize or "small").lower() == "large":
+        engine_name = "duckdb"
     t0 = time.perf_counter()
     result = _engine(engine_name).get(ctx)
     t_engine_get_ms = (time.perf_counter() - t0) * 1000.0
@@ -131,21 +139,33 @@ def plot(body: ApiPlotRequest):
         layers=aoi_layers,
         aoi=aoi,
         view_zoom=ctx.view_zoom,
-        highlight_point_ids=set(body.highlight.get("pointIds") or []) if body.highlight else None,
+        scenario_id=ctx.scenario_id,
+        cluster_points_layer_id=scenario.plot.highlightLayerId,
+        highlight_layer_id=str(body.highlight.get("layerId") or scenario.plot.highlightLayerId)
+        if body.highlight
+        else None,
+        highlight_feature_ids=(
+            set(body.highlight.get("featureIds") or body.highlight.get("pointIds") or [])
+            if body.highlight
+            else None
+        ),
     )
     t_lod_ms = (time.perf_counter() - t1) * 1000.0
 
     highlight = None
-    if body.highlight and body.highlight.get("pointIds"):
-        from plotly.build_plot import Highlight as PlotHighlight
+    if body.highlight and (body.highlight.get("featureIds") or body.highlight.get("pointIds")):
+        from plotly.build_map import Highlight as PlotHighlight
 
+        hl_layer_id = str(body.highlight.get("layerId") or scenario.plot.highlightLayerId)
+        hl_ids = set(body.highlight.get("featureIds") or body.highlight.get("pointIds") or [])
         highlight = PlotHighlight(
-            point_ids=set(body.highlight.get("pointIds") or []),
+            layer_id=hl_layer_id,
+            feature_ids=hl_ids,
             title=body.highlight.get("title") or "Highlighted",
         )
 
     t2 = time.perf_counter()
-    payload = build_prague_plot(
+    payload = build_map_plot(
         lod_layers,
         highlight=highlight,
         aoi=aoi,
@@ -153,7 +173,8 @@ def plot(body: ApiPlotRequest):
         view_zoom=ctx.view_zoom,
         viewport=ctx.viewport,
         focus_map=False,
-        beer_clusters=beer_clusters,
+        clusters=beer_clusters,
+        cluster_layer_id=scenario.plot.highlightLayerId,
     )
     t_plot_ms = (time.perf_counter() - t2) * 1000.0
 
@@ -161,6 +182,8 @@ def plot(body: ApiPlotRequest):
     try:
         payload["layout"]["meta"]["stats"]["cache"] = cache_stats
         payload["layout"]["meta"]["stats"]["engine"] = engine_name
+        payload["layout"]["meta"]["stats"]["scenarioId"] = ctx.scenario_id
+        payload["layout"]["meta"]["stats"]["scenarioDataSize"] = scenario.dataSize
         payload["layout"]["meta"]["stats"]["payloadBytes"] = payload_bytes
         payload["layout"]["meta"]["stats"]["timingsMs"] = {
             "engineGet": round(t_engine_get_ms, 2),
@@ -197,6 +220,28 @@ def plot(body: ApiPlotRequest):
 def telemetry_reset():
     reset_store()
     return {"ok": True}
+
+
+@app.get("/scenarios")
+def scenarios():
+    """
+    List available scenario packs discovered under `scenarios/*/scenario.yaml`.
+    """
+    out = []
+    for s in list_scenarios():
+        has_geoparquet = any((l.source.type == "geoparquet") for l in (s.layers or []))
+        out.append(
+            {
+                "id": s.id,
+                "title": s.title,
+                "defaultView": s.defaultView.model_dump(),
+                "dataSize": s.dataSize,
+                "hasGeoParquet": bool(has_geoparquet),
+                "enabled": bool(s.enabled),
+                "examplePrompts": list(s.examplePrompts or []),
+            }
+        )
+    return out
 
 
 @app.get("/telemetry/summary")
@@ -273,7 +318,10 @@ def _apply_lod_cached(
     layers,
     aoi: BBox,
     view_zoom: float,
-    highlight_point_ids: set[str] | None,
+    scenario_id: str,
+    cluster_points_layer_id: str,
+    highlight_layer_id: str | None,
+    highlight_feature_ids: set[str] | None,
 ):
     """
     Cache LOD output by tile coverage and zoom bucket.
@@ -283,8 +331,8 @@ def _apply_lod_cached(
     tile_zoom = tile_zoom_for_view_zoom(view_zoom)
     tiles = tuple(sorted(tiles_for_bbox(tile_zoom, aoi), key=lambda t: (t[1], t[2])))
     zoom_bucket = int(round(float(view_zoom) * 2.0))  # 0.5 zoom buckets
-    highlight_key = tuple(sorted(highlight_point_ids or ()))
-    key = (engine_name, tile_zoom, zoom_bucket, tiles, highlight_key)
+    highlight_key = (highlight_layer_id or "", tuple(sorted(highlight_feature_ids or ())))
+    key = (scenario_id, engine_name, cluster_points_layer_id, tile_zoom, zoom_bucket, tiles, highlight_key)
 
     cached = _lod_cache.get(key)
     if cached is not None:
@@ -298,7 +346,9 @@ def _apply_lod_cached(
     lod_layers, beer_clusters = apply_lod(
         layers,
         view_zoom=view_zoom,
-        highlight_point_ids=highlight_point_ids,
+        highlight_layer_id=highlight_layer_id,
+        highlight_feature_ids=highlight_feature_ids,
+        cluster_points_layer_id=cluster_points_layer_id,
     )
     value = (lod_layers, beer_clusters)
     _bounded_cache_put(_lod_cache, key, value, max_items=64)
@@ -322,7 +372,10 @@ async def handle_incoming_message(thread: ApiThread):
             max_lat=bbox.maxLat,
         ).normalized()
 
+        scenario_id = (thread.scenarioId or default_scenario_id())
+        scenario = get_scenario(scenario_id).config
         ctx = MapContext(
+            scenario_id=scenario.id,
             aoi=aoi,
             view_center={"lat": thread.map.view.center.lat, "lon": thread.map.view.center.lon},
             view_zoom=thread.map.view.zoom,
@@ -334,6 +387,8 @@ async def handle_incoming_message(thread: ApiThread):
         )
 
         engine_name = _default_engine_name() if thread.engine is None else _normalize_engine(thread.engine)
+        if (scenario.dataSize or "small").lower() == "large":
+            engine_name = "duckdb"
         t0 = time.perf_counter()
         result = _engine(engine_name).get(ctx)
         t_engine_get_ms = (time.perf_counter() - t0) * 1000.0
@@ -347,6 +402,7 @@ async def handle_incoming_message(thread: ApiThread):
             index=index,
             aoi=aoi,
             view_center=ctx.view_center,
+            routing=scenario.routing,
         )
         t_route_ms = (time.perf_counter() - t1) * 1000.0
 
@@ -361,13 +417,16 @@ async def handle_incoming_message(thread: ApiThread):
             layers=aoi_layers,
             aoi=aoi,
             view_zoom=thread.map.view.zoom,
-            highlight_point_ids=response.highlight.point_ids if response.highlight is not None else None,
+            scenario_id=ctx.scenario_id,
+            cluster_points_layer_id=scenario.plot.highlightLayerId,
+            highlight_layer_id=response.highlight.layer_id if response.highlight is not None else None,
+            highlight_feature_ids=response.highlight.feature_ids if response.highlight is not None else None,
         )
         t_lod_ms = (time.perf_counter() - t2) * 1000.0
 
         # Send the map payload before commit so frontend attaches it to the message.
         t3 = time.perf_counter()
-        plot = build_prague_plot(
+        plot = build_map_plot(
             lod_layers,
             highlight=response.highlight,
             aoi=aoi,
@@ -375,12 +434,15 @@ async def handle_incoming_message(thread: ApiThread):
             view_zoom=ctx.view_zoom,
             viewport=ctx.viewport,
             focus_map=response.focus_map,
-            beer_clusters=beer_clusters,
+            clusters=beer_clusters,
+            cluster_layer_id=scenario.plot.highlightLayerId,
         )
         t_plot_ms = (time.perf_counter() - t3) * 1000.0
         try:
             plot["layout"]["meta"]["stats"]["cache"] = cache_stats
             plot["layout"]["meta"]["stats"]["engine"] = engine_name
+            plot["layout"]["meta"]["stats"]["scenarioId"] = ctx.scenario_id
+            plot["layout"]["meta"]["stats"]["scenarioDataSize"] = scenario.dataSize
             plot_json = json.dumps(plot, ensure_ascii=False)
             plot["layout"]["meta"]["stats"]["payloadBytes"] = len(plot_json)
             plot["layout"]["meta"]["stats"]["timingsMs"] = {

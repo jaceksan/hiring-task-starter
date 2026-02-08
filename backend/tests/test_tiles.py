@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from geo.aoi import BBox
-from geo.ops import build_geo_index
+from geo.index import build_geo_index
 from geo.tiles import lonlat_to_tile, tile_bbox_4326, tiles_for_bbox
-from layers.types import LineFeature, PolygonFeature, PragueLayers
+from layers.types import Layer, LayerBundle, LineFeature, PolygonFeature
 
 
 def test_tiles_for_bbox_is_stable_within_same_tile():
@@ -62,7 +62,12 @@ def test_slice_layers_tiled_dedupes_cross_tile_features():
     ]
     poly = PolygonFeature(id="poly-cross", rings=[ring], props={})
 
-    layers = PragueLayers(flood_q100=[poly], metro_ways=[line], beer_pois=[])
+    layers = LayerBundle(
+        layers=[
+            Layer(id="lines", kind="lines", title="Lines", features=[line], style={}),
+            Layer(id="polys", kind="polygons", title="Polys", features=[poly], style={}),
+        ]
+    )
     index = build_geo_index(layers)
 
     # AOI covering both tiles horizontally.
@@ -75,6 +80,8 @@ def test_slice_layers_tiled_dedupes_cross_tile_features():
     ).normalized()
 
     sliced = index.slice_layers_tiled(aoi, tile_zoom=z)
-    assert [f.id for f in sliced.metro_ways] == ["line-cross"]
-    assert [f.id for f in sliced.flood_q100] == ["poly-cross"]
+    out_lines = sliced.get("lines")
+    out_polys = sliced.get("polys")
+    assert out_lines is not None and [f.id for f in out_lines.features] == ["line-cross"]
+    assert out_polys is not None and [f.id for f in out_polys.features] == ["poly-cross"]
 

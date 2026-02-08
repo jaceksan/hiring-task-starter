@@ -42,3 +42,11 @@ Ask the developer to restart **backend** when:
 - deps changed (`backend/requirements.txt`, `backend/pyproject.toml`, `backend/uv.lock`)
 - startup/import-time env or import order changed
 - reloader is stuck (import errors, changes not taking effect)
+
+## Frontend rules
+
+Use the latest version of Shadcn to install new components, like this command to add a button component:
+
+```bash
+pnpx shadcn@latest add button
+```

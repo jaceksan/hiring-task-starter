@@ -4,9 +4,10 @@ import re
 from dataclasses import dataclass
 
 from geo.aoi import BBox
-from geo.ops import GeoIndex, distance_to_nearest_station_m, is_point_flooded, transformer_4326_to_32633
-from layers.types import PointFeature, PragueLayers
-from plotly.build_plot import Highlight
+from geo.index import GeoIndex, is_point_in_union, transformer_4326_to_3857
+from layers.types import LayerBundle, PointFeature
+from plotly.build_map import Highlight
+from scenarios.types import ScenarioHighlightRule, ScenarioRouting
 
 
 @dataclass(frozen=True)
@@ -26,273 +27,222 @@ class AgentResponse:
 def route_prompt(
     prompt: str,
     *,
-    layers: PragueLayers,
+    layers: LayerBundle,
     index: GeoIndex,
     aoi: BBox,
+    routing: ScenarioRouting,
     view_center: dict[str, float] | None = None,
 ) -> AgentResponse:
     p = (prompt or "").strip().lower()
-    flood_union = index.flood_union_for_aoi(aoi)
 
-    if not p or any(k in p for k in ["show layers", "reset", "start over", "help"]):
-        return AgentResponse(
-            message=(
-                "Loaded Prague layers: Q100 flood extent (polygons), metro tracks (lines), "
-                "metro stations/entrances (points), tram tracks (lines), tram stops (points), "
-                "and beer POIs (points). Ask things like 'how many pubs are flooded?' or "
-                "'recommend 5 safe pubs near metro'."
-            )
-        )
+    if not p or any(k in p for k in routing.showLayersKeywords):
+        titles = [f"- {l.title} ({l.kind})" for l in layers.layers]
+        return AgentResponse(message="Loaded layers:\n" + "\n".join(titles))
 
-    if "how many" in p and ("flood" in p or "flooded" in p) and ("pub" in p or "beer" in p):
-        flooded, dry = _split_flooded(layers.beer_pois, flood_union)
-        return AgentResponse(
-            message=f"I found {len(flooded)} beer places in the flood extent and {len(dry)} outside of it."
-        )
+    for rule in routing.highlightRules:
+        if rule.keywords and any(k.lower() in p for k in rule.keywords):
+            return _apply_highlight_rule(layers, index=index, aoi=aoi, routing=routing, rule=rule)
 
-    if ("dry" in p or "safe" in p) and "metro" in p:
-        top_n = _extract_number(p, default=20, clamp=(1, 200))
-        ranked = _find_local_dry_pubs_near_metro(
-            layers.beer_pois,
-            flood_union_4326=flood_union,
-            index=index,
-            top_n=top_n,
-            prefer_center=view_center or {
-                "lat": (aoi.min_lat + aoi.max_lat) / 2.0,
-                "lon": (aoi.min_lon + aoi.max_lon) / 2.0,
-            },
-            metro_near_m=500.0,
-        )
-        ids = {pt.id for pt, _ in ranked}
-        return AgentResponse(
-            message=(
-                f"Here are {len(ranked)} dry beer places near the nearest metro station (meters), "
-                "preferring results local to your current viewport."
-            ),
-            highlight=Highlight(point_ids=ids, title=f"Top {len(ranked)} dry + near metro"),
-            focus_map=True,
-        )
+    point_kw = {routing.pointLabelSingular.lower(), routing.pointLabelPlural.lower()}
+    mentions_points = any(k and k in p for k in point_kw)
 
-    if "recommend" in p and ("pub" in p or "beer" in p):
-        n = _extract_number(p, default=5, clamp=(1, 25))
+    if (
+        any(k in p for k in routing.countKeywords)
+        and any(k in p for k in routing.maskKeywords)
+        and mentions_points
+    ):
+        return _count_points_in_mask(layers, index=index, aoi=aoi, routing=routing)
+
+    if any(k in p for k in routing.recommendKeywords) and mentions_points:
+        n = _extract_number(p, default=5, clamp=(1, 50))
         b = aoi.normalized()
-        prefer_center = {"lat": (b.min_lat + b.max_lat) / 2.0, "lon": (b.min_lon + b.max_lon) / 2.0}
-        ranked = _recommend_safe_pubs(
-            layers.beer_pois,
-            flood_union_4326=flood_union,
+        prefer_center = view_center or {"lat": (b.min_lat + b.max_lat) / 2.0, "lon": (b.min_lon + b.max_lon) / 2.0}
+        ranked = _recommend_points(
+            layers,
             index=index,
+            aoi=aoi,
+            routing=routing,
             top_n=n,
-            # Interpret "near metro" as near a station/entrance within a radius.
-            metro_near_m=300.0,
-            tram_near_m=350.0,
-            tram_penalty=1.5,
             prefer_center=prefer_center,
         )
         ids = {pt.id for pt, _ in ranked}
-        names = [(_label(pt) or pt.id) for pt, _ in ranked]
-        bullets = "\n".join([f"- {name}" for name in names])
+        bullets = "\n".join([f"- {(_label(pt) or pt.id)}" for pt, _ in ranked])
         return AgentResponse(
-            message=f"My {len(ranked)} recommendations (dry + near metro):\n{bullets}",
-            highlight=Highlight(point_ids=ids, title=f"Recommended {len(ranked)}"),
+            message=f"My {len(ranked)} recommendations:\n{bullets}",
+            highlight=Highlight(
+                layer_id=routing.primaryPointsLayerId,
+                feature_ids=ids,
+                title=f"Recommended {len(ranked)}",
+            ),
             focus_map=True,
         )
 
+    # Fallback help.
     return AgentResponse(
         message=(
-            "I didn't recognize that prompt yet. Try: 'how many pubs are flooded?', "
-            "'find dry pubs near metro', or 'recommend 5 safe pubs'."
+            "I didn't recognize that prompt yet. Try:\n"
+            f"- show layers\n"
+            f"- how many {routing.pointLabelPlural} are flooded?\n"
+            f"- recommend 5 {routing.pointLabelPlural}\n"
         )
     )
 
 
-def _split_flooded(
-    points: list[PointFeature],
-    flood_union_4326,
-) -> tuple[list[PointFeature], list[PointFeature]]:
-    flooded: list[PointFeature] = []
-    dry: list[PointFeature] = []
-    for pt in points:
-        (flooded if is_point_flooded(pt, flood_union_4326) else dry).append(pt)
-    return flooded, dry
+def _count_points_in_mask(
+    layers: LayerBundle, *, index: GeoIndex, aoi: BBox, routing: ScenarioRouting
+) -> AgentResponse:
+    pts_layer = layers.get(routing.primaryPointsLayerId)
+    if pts_layer is None or pts_layer.kind != "points":
+        return AgentResponse(message="This scenario has no configured primary point layer.")
+    pts = [f for f in pts_layer.features if isinstance(f, PointFeature)]
 
+    if not routing.maskPolygonsLayerId:
+        return AgentResponse(message=f"I found {len(pts)} {routing.pointLabelPlural}.")
 
-def _rank_dry_by_metro_station(
-    points: list[PointFeature],
-    *,
-    flood_union_4326,
-    index: GeoIndex,
-    top_n: int,
-) -> list[tuple[PointFeature, float]]:
-    _, dry = _split_flooded(points, flood_union_4326)
-    scored = [
-        (
-            pt,
-            distance_to_nearest_station_m(
-                pt,
-                station_tree_32633=index.metro_station_tree_32633,
-                station_points_32633=index.metro_station_points_32633,
-            ),
+    u = index.polygon_union_for_aoi(routing.maskPolygonsLayerId, aoi)
+    in_mask = [pt for pt in pts if is_point_in_union(pt, u)]
+    out_mask = [pt for pt in pts if not is_point_in_union(pt, u)]
+    return AgentResponse(
+        message=(
+            f"I found {len(in_mask)} {routing.pointLabelPlural} in {routing.maskLabel} "
+            f"and {len(out_mask)} outside of it."
         )
-        for pt in dry
-    ]
-    scored.sort(key=lambda x: x[1])
-    return scored[:top_n]
+    )
 
 
-def _find_local_dry_pubs_near_metro(
-    points: list[PointFeature],
+def _apply_highlight_rule(
+    layers: LayerBundle,
     *,
-    flood_union_4326,
     index: GeoIndex,
+    aoi: BBox,
+    routing: ScenarioRouting,
+    rule: ScenarioHighlightRule,
+) -> AgentResponse:
+    layer = layers.get(rule.layerId)
+    if layer is None:
+        return AgentResponse(message=f"I couldn't find layer '{rule.layerId}'.")
+
+    feats = layer.features
+
+    # Optional props filter.
+    if rule.props:
+        filtered = []
+        for f in feats:
+            props = getattr(f, "props", None) or {}
+            ok = True
+            for k, allowed in (rule.props or {}).items():
+                v = props.get(k)
+                if v is None or str(v) not in set(allowed or []):
+                    ok = False
+                    break
+            if ok:
+                filtered.append(f)
+        feats = filtered
+
+    # Optional mask filter (primarily for points).
+    if rule.maskLayerId:
+        u = index.polygon_union_for_aoi(rule.maskLayerId, aoi)
+        if layer.kind == "points":
+            pts = [f for f in feats if isinstance(f, PointFeature)]
+            if rule.maskMode == "OUTSIDE_MASK":
+                feats = [pt for pt in pts if not is_point_in_union(pt, u)]
+            else:
+                feats = [pt for pt in pts if is_point_in_union(pt, u)]
+
+    ids = [getattr(f, "id", "") for f in feats if getattr(f, "id", "")]
+    ids = ids[: int(rule.maxFeatures or 500)]
+    if not ids:
+        # Be helpful: in map-first UIs, this often means "zoom/pan to a different area".
+        return AgentResponse(
+            message=(
+                "I couldn’t find anything matching that request in your current map view. "
+                "Try zooming out a bit (or panning) and ask again."
+            )
+        )
+
+    title = rule.title or f"Highlighted ({layer.title})"
+    # Human-friendly message for the chat drawer (map is primary UI).
+    msg = f"Highlighted {len(ids)} {layer.title} in your current map view."
+    if rule.maskLayerId and rule.maskMode == "IN_MASK":
+        msg = f"Highlighted {len(ids)} {layer.title} that overlap {routing.maskLabel} in your current map view."
+    if rule.maskLayerId and rule.maskMode == "OUTSIDE_MASK":
+        msg = f"Highlighted {len(ids)} {layer.title} outside {routing.maskLabel} in your current map view."
+    return AgentResponse(
+        message=msg,
+        highlight=Highlight(layer_id=layer.id, feature_ids=set(ids), title=title),
+        focus_map=(layer.kind == "points"),
+    )
+
+
+def _recommend_points(
+    layers: LayerBundle,
+    *,
+    index: GeoIndex,
+    aoi: BBox,
+    routing: ScenarioRouting,
     top_n: int,
     prefer_center: dict[str, float],
-    metro_near_m: float,
 ) -> list[tuple[PointFeature, float]]:
-    """
-    Return dry pubs "near metro" that feel local to the current viewport.
-
-    Rationale:
-    - Purely sorting by distance-to-station can pick pubs spread across Prague (many are near some station).
-    - When the user is zoomed in, they expect results within/near the visible area.
-
-    Policy:
-    - Compute metro-station distance (meters).
-    - If there are enough pubs within `metro_near_m`, pick the most viewport-local ones first.
-    - Otherwise fall back to "closest-to-station" while still using viewport locality as a tiebreak.
-    """
-    _, dry = _split_flooded(points, flood_union_4326)
-    if not dry:
+    pts_layer = layers.get(routing.primaryPointsLayerId)
+    if pts_layer is None or pts_layer.kind != "points":
+        return []
+    pts = [f for f in pts_layer.features if isinstance(f, PointFeature)]
+    if not pts:
         return []
 
-    scored = [
-        (
-            pt,
-            distance_to_nearest_station_m(
-                pt,
-                station_tree_32633=index.metro_station_tree_32633,
-                station_points_32633=index.metro_station_points_32633,
-            ),
-        )
-        for pt in dry
-    ]
+    # Apply mask if configured.
+    candidates = pts
+    if routing.maskPolygonsLayerId:
+        u = index.polygon_union_for_aoi(routing.maskPolygonsLayerId, aoi)
+        candidates = [pt for pt in pts if not is_point_in_union(pt, u)]
 
-    cx, cy = _project_4326_to_32633(prefer_center["lon"], prefer_center["lat"])
+    if not candidates:
+        return []
+
+    cx, cy = transformer_4326_to_3857().transform(prefer_center["lon"], prefer_center["lat"])
 
     def local_key(pt: PointFeature) -> tuple[float, str]:
-        return (_dist_to_center_m(pt, cx, cy), pt.id)
+        x, y = transformer_4326_to_3857().transform(pt.lon, pt.lat)
+        dx = float(x) - float(cx)
+        dy = float(y) - float(cy)
+        return (dx * dx + dy * dy, pt.id)
 
-    near = [(pt, d) for pt, d in scored if d <= metro_near_m]
-    if len(near) >= top_n:
-        near.sort(key=lambda x: (local_key(x[0]), x[1]))
-        return near[:top_n]
+    # If no proximity rules, just pick local points.
+    if not routing.proximity:
+        candidates.sort(key=local_key)
+        return [(pt, 0.0) for pt in candidates[:top_n]]
+
+    scored: list[tuple[PointFeature, float]] = []
+    for pt in candidates:
+        best = float("inf")
+        for rule in routing.proximity:
+            d = index.distance_to_nearest_point_m(pt, point_layer_id=rule.layerId)
+            if d <= rule.maxMeters:
+                best = min(best, float(d) * float(rule.penalty))
+        if best != float("inf"):
+            scored.append((pt, best))
+
+    if not scored:
+        candidates.sort(key=local_key)
+        return [(pt, 0.0) for pt in candidates[:top_n]]
 
     scored.sort(key=lambda x: (x[1], local_key(x[0])))
     return scored[:top_n]
 
 
-def _recommend_safe_pubs(
-    points: list[PointFeature],
-    *,
-    flood_union_4326,
-    index: GeoIndex,
-    top_n: int,
-    metro_near_m: float,
-    tram_near_m: float,
-    tram_penalty: float,
-    prefer_center: dict[str, float],
-) -> list[tuple[PointFeature, float]]:
-    """
-    Recommend \"safe\" pubs inside the current AOI in a way that feels natural.
-
-    We still require \"near metro\", but we interpret it as \"within near_m meters\".
-    Within that band, we prefer pubs closer to the user's current viewport center
-    (so recommendations stay local and don't force zooming out).
-    """
-    _, dry = _split_flooded(points, flood_union_4326)
-
-    metro_scored = [
-        (
-            pt,
-            distance_to_nearest_station_m(
-                pt,
-                station_tree_32633=index.metro_station_tree_32633,
-                station_points_32633=index.metro_station_points_32633,
-            ),
-        )
-        for pt in dry
-    ]
-    near_metro = [(pt, d) for pt, d in metro_scored if d <= metro_near_m]
-
-    cx, cy = _project_4326_to_32633(prefer_center["lon"], prefer_center["lat"])
-
-    def local_key(pt: PointFeature) -> tuple[float, str]:
-        return (_dist_to_center_m(pt, cx, cy), pt.id)
-
-    # Prefer metro: pick local pubs within the station-radius band.
-    near_metro.sort(key=lambda x: (local_key(x[0]), x[1]))
-    selected: list[tuple[PointFeature, float]] = near_metro[:top_n]
-    if len(selected) >= top_n:
-        return selected
-
-    # Fill remainder from tram stops (fallback) if present.
-    selected_ids = {pt.id for pt, _ in selected}
-    if index.tram_stop_points_32633:
-        tram_scored: list[tuple[PointFeature, float]] = []
-        for pt in dry:
-            if pt.id in selected_ids:
-                continue
-            d_tram = distance_to_nearest_station_m(
-                pt,
-                station_tree_32633=index.tram_stop_tree_32633,
-                station_points_32633=index.tram_stop_points_32633,
-            )
-            if d_tram <= tram_near_m:
-                tram_scored.append((pt, float(d_tram)))
-
-        tram_scored.sort(
-            key=lambda x: (float(x[1]) * float(tram_penalty), local_key(x[0]), x[0].id)
-        )
-        for pt, d in tram_scored:
-            if len(selected) >= top_n:
-                break
-            selected.append((pt, d))
-            selected_ids.add(pt.id)
-
-        if len(selected) >= top_n:
-            return selected
-
-    # If still short, fall back to closest-to-metro-station ranking.
-    metro_scored.sort(key=lambda x: (x[1], x[0].id))
-    for pt, d in metro_scored:
-        if pt.id in selected_ids:
-            continue
-        selected.append((pt, d))
-        if len(selected) >= top_n:
-            break
-
-    return selected[:top_n]
+def _label(pt: PointFeature) -> str | None:
+    props = pt.props or {}
+    return (props.get("label") or props.get("name") or None)
 
 
-def _project_4326_to_32633(lon: float, lat: float) -> tuple[float, float]:
-    t = transformer_4326_to_32633()
-    x, y = t.transform(float(lon), float(lat))
-    return float(x), float(y)
-
-
-def _dist_to_center_m(pt: PointFeature, cx: float, cy: float) -> float:
-    x, y = _project_4326_to_32633(pt.lon, pt.lat)
-    dx = x - cx
-    dy = y - cy
-    return float((dx * dx + dy * dy) ** 0.5)
-
-
-def _extract_number(text: str, default: int, clamp: tuple[int, int]) -> int:
-    m = re.search(r"\\b(\\d{1,3})\\b", text)
-    n = int(m.group(1)) if m else default
+def _extract_number(prompt: str, *, default: int, clamp: tuple[int, int]) -> int:
+    m = re.search(r"(\d+)", prompt)
+    if not m:
+        return default
+    try:
+        n = int(m.group(1))
+    except Exception:
+        return default
     lo, hi = clamp
     return max(lo, min(hi, n))
-
-
-def _label(pt: PointFeature) -> str | None:
-    return pt.props.get("label") or pt.props.get("name")
 
