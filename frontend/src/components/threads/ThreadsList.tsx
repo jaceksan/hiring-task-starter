@@ -1,14 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
+import { useAppUi } from "@/components/layout/AppUiContext";
 import { formatDate } from "@/lib/formatDate";
 import { QUERIES } from "@/lib/queries";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
 
 export const ThreadsList = () => {
+	const { scenarioId } = useAppUi();
 	const { isSuccess, data, isError, error, isLoading } = useQuery(
-		QUERIES.threads.list,
+		QUERIES.threads.list(scenarioId),
 	);
 
 	if (isLoading) {

@@ -32,13 +32,17 @@ const LS_PREFIX = "htsapp_";
 
 const LS_KEYS = {
 	threads: {
-		list: `${LS_PREFIX}threads_list`,
-		detail: (id: number) => `${LS_PREFIX}thread-${id}`,
+		list: (scenarioId: string) => `${LS_PREFIX}threads_list__${scenarioId}`,
+		detail: (scenarioId: string, id: number) =>
+			`${LS_PREFIX}thread__${scenarioId}__${id}`,
 	},
 };
 
-const listThreads = () => {
-	const result = LS.getItem(LS_KEYS.threads.list, threadsMetaSchema);
+const listThreads = (scenarioId: string) => {
+	const result = LS.getItem(
+		LS_KEYS.threads.list(scenarioId),
+		threadsMetaSchema,
+	);
 
 	if (isFailure(result)) {
 		if (result.error === "NOT_FOUND") {
@@ -49,16 +53,19 @@ const listThreads = () => {
 	return result;
 };
 
-const getThread = (id: number) =>
-	LS.getItem(LS_KEYS.threads.detail(id), threadDetailSchema);
+const getThread = (scenarioId: string, id: number) =>
+	LS.getItem(LS_KEYS.threads.detail(scenarioId, id), threadDetailSchema);
 
-const saveThreadDetail = (thread: z.input<typeof threadDetailSchema>) =>
-	LS.setItem(LS_KEYS.threads.detail(thread.id), thread);
+const saveThreadDetail = (
+	scenarioId: string,
+	thread: z.input<typeof threadDetailSchema>,
+) => LS.setItem(LS_KEYS.threads.detail(scenarioId, thread.id), thread);
 
 const createThread = (
+	scenarioId: string,
 	data: Omit<z.input<typeof threadSchema>, "id" | "createdAt">,
 ) => {
-	const listResult = listThreads();
+	const listResult = listThreads(scenarioId);
 
 	const list = isSuccess(listResult) ? listResult.data : [];
 
@@ -70,13 +77,16 @@ const createThread = (
 
 	list.push(newThread);
 
-	const saveListResult = LS.setItem(LS_KEYS.threads.list, list);
+	const saveListResult = LS.setItem(LS_KEYS.threads.list(scenarioId), list);
 
 	if (isFailure(saveListResult)) {
 		return saveListResult;
 	}
 
-	const saveDetailResult = saveThreadDetail({ ...newThread, messages: [] });
+	const saveDetailResult = saveThreadDetail(scenarioId, {
+		...newThread,
+		messages: [],
+	});
 
 	if (isFailure(saveDetailResult)) {
 		return saveDetailResult;
@@ -85,8 +95,12 @@ const createThread = (
 	return success(newThread);
 };
 
-const updateThreadTitle = (threadId: number, title: string) => {
-	const getThreadResult = getThread(threadId);
+const updateThreadTitle = (
+	scenarioId: string,
+	threadId: number,
+	title: string,
+) => {
+	const getThreadResult = getThread(scenarioId, threadId);
 
 	if (isFailure(getThreadResult)) {
 		return getThreadResult;
@@ -96,13 +110,13 @@ const updateThreadTitle = (threadId: number, title: string) => {
 
 	thread.title = title;
 
-	const saveThreadResult = saveThreadDetail(thread);
+	const saveThreadResult = saveThreadDetail(scenarioId, thread);
 
 	if (isFailure(saveThreadResult)) {
 		return saveThreadResult;
 	}
 
-	const getListResult = listThreads();
+	const getListResult = listThreads(scenarioId);
 
 	if (isFailure(getListResult)) {
 		return getListResult;
@@ -116,7 +130,7 @@ const updateThreadTitle = (threadId: number, title: string) => {
 		}
 	}
 
-	const saveListResult = LS.setItem(LS_KEYS.threads.list, list);
+	const saveListResult = LS.setItem(LS_KEYS.threads.list(scenarioId), list);
 
 	if (isFailure(saveListResult)) {
 		return saveListResult;
@@ -126,10 +140,11 @@ const updateThreadTitle = (threadId: number, title: string) => {
 };
 
 const createThreadMessage = (
+	scenarioId: string,
 	threadId: number,
 	message: Omit<z.infer<typeof messageSchema>, "id" | "createdAt">,
 ) => {
-	const getResult = getThread(threadId);
+	const getResult = getThread(scenarioId, threadId);
 
 	if (isFailure(getResult)) {
 		return getResult;
@@ -145,7 +160,7 @@ const createThreadMessage = (
 
 	thread.messages.push(newMessage);
 
-	const saveDetailResult = saveThreadDetail(thread);
+	const saveDetailResult = saveThreadDetail(scenarioId, thread);
 
 	if (isFailure(saveDetailResult)) {
 		return saveDetailResult;
@@ -154,8 +169,8 @@ const createThreadMessage = (
 	return success(newMessage);
 };
 
-const clearThreadMessages = (threadId: number) => {
-	const getResult = getThread(threadId);
+const clearThreadMessages = (scenarioId: string, threadId: number) => {
+	const getResult = getThread(scenarioId, threadId);
 
 	if (isFailure(getResult)) {
 		return getResult;
@@ -164,7 +179,7 @@ const clearThreadMessages = (threadId: number) => {
 	const thread = getResult.data;
 	thread.messages = [];
 
-	const saveDetailResult = saveThreadDetail(thread);
+	const saveDetailResult = saveThreadDetail(scenarioId, thread);
 	if (isFailure(saveDetailResult)) {
 		return saveDetailResult;
 	}

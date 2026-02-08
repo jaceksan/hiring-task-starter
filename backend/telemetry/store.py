@@ -1,15 +1,23 @@
 from __future__ import annotations
 
 import json
-import os
 import queue
 import threading
 import time
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
 import duckdb
+
+from pathlib import Path
+
+from telemetry.config import telemetry_enabled, telemetry_path
+from telemetry.sql import (
+    CREATE_EVENTS_TABLE_SQL,
+    INSERT_EVENTS_SQL,
+    SLOWEST_SQL_TEMPLATE,
+    SUMMARY_SQL_TEMPLATE,
+)
 
 
 def _safe_float(v) -> float | None:
@@ -19,23 +27,6 @@ def _safe_float(v) -> float | None:
         return float(v)
     except Exception:
         return None
-
-
-def _repo_root() -> Path:
-    return Path(__file__).resolve().parents[2]
-
-
-def telemetry_path() -> Path:
-    # Store under repo so it’s easy to share/query (and stays local).
-    return Path(
-        os.getenv("PANGE_TELEMETRY_PATH")
-        or (_repo_root() / "data" / "telemetry" / "telemetry.duckdb")
-    )
-
-
-def telemetry_enabled() -> bool:
-    v = (os.getenv("PANGE_TELEMETRY") or "1").strip().lower()
-    return v not in {"0", "false", "no", "off"}
 
 
 @dataclass
@@ -49,22 +40,7 @@ class TelemetryStore:
 
     def ensure_schema(self) -> None:
         with self._lock:
-            self.conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS events (
-                  ts_ms BIGINT,
-                  endpoint TEXT,
-                  prompt TEXT,
-                  engine TEXT,
-                  view_zoom DOUBLE,
-                  aoi_min_lon DOUBLE,
-                  aoi_min_lat DOUBLE,
-                  aoi_max_lon DOUBLE,
-                  aoi_max_lat DOUBLE,
-                  stats_json TEXT
-                );
-                """
-            )
+            self.conn.execute(CREATE_EVENTS_TABLE_SQL)
 
     def start(self) -> None:
         if self._worker is not None:
@@ -171,22 +147,7 @@ class TelemetryStore:
         where_sql = f"WHERE {' AND '.join(where)}" if where else ""
 
         rows = self.query(
-            f"""
-            SELECT
-              engine,
-              endpoint,
-              COUNT(*) AS n,
-              AVG(try_cast(json_extract(stats_json, '$.timingsMs.total') AS DOUBLE)) AS avg_total_ms,
-              quantile_cont(try_cast(json_extract(stats_json, '$.timingsMs.total') AS DOUBLE), 0.50) AS p50_total_ms,
-              quantile_cont(try_cast(json_extract(stats_json, '$.timingsMs.total') AS DOUBLE), 0.95) AS p95_total_ms,
-              quantile_cont(try_cast(json_extract(stats_json, '$.timingsMs.total') AS DOUBLE), 0.99) AS p99_total_ms,
-              AVG(try_cast(json_extract(stats_json, '$.payloadBytes') AS DOUBLE)) AS avg_payload_bytes,
-              AVG(CASE WHEN try_cast(json_extract(stats_json, '$.cache.cacheHit') AS BOOLEAN) THEN 1 ELSE 0 END) AS cache_hit_rate
-            FROM events
-            {where_sql}
-            GROUP BY engine, endpoint
-            ORDER BY engine, endpoint
-            """,
+            SUMMARY_SQL_TEMPLATE.format(where_sql=where_sql),
             params,
         )
 
@@ -227,20 +188,7 @@ class TelemetryStore:
         params.append(int(max(1, min(200, limit))))
 
         rows = self.query(
-            f"""
-            SELECT
-              ts_ms,
-              engine,
-              endpoint,
-              try_cast(json_extract(stats_json, '$.timingsMs.total') AS DOUBLE) AS total_ms,
-              try_cast(json_extract(stats_json, '$.payloadBytes') AS BIGINT) AS payload_bytes,
-              try_cast(json_extract(stats_json, '$.cache.cacheHit') AS BOOLEAN) AS cache_hit,
-              view_zoom
-            FROM events
-            WHERE {" AND ".join(where)}
-            ORDER BY total_ms DESC
-            LIMIT ?
-            """,
+            SLOWEST_SQL_TEMPLATE.format(where_sql=" AND ".join(where)),
             params,
         )
         out: list[dict[str, Any]] = []
@@ -293,11 +241,7 @@ class TelemetryStore:
                 return
             with self._lock:
                 self.conn.executemany(
-                    """
-                    INSERT INTO events
-                      (ts_ms, endpoint, prompt, engine, view_zoom, aoi_min_lon, aoi_min_lat, aoi_max_lon, aoi_max_lat, stats_json)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
+                    INSERT_EVENTS_SQL,
                     [
                         (
                             e["ts_ms"],
@@ -348,47 +292,5 @@ class TelemetryStore:
         flush_batch()
 
 
-_STORE: TelemetryStore | None = None
-_STORE_LOCK = threading.RLock()
-
-
-def get_store() -> TelemetryStore | None:
-    global _STORE
-    if not telemetry_enabled():
-        return None
-    with _STORE_LOCK:
-        path = telemetry_path()
-        if _STORE is not None:
-            # If env/config changes the path during a dev session (or across tests),
-            # reopen the store on the new path.
-            if _STORE.path.resolve() == path.resolve():
-                return _STORE
-            try:
-                _STORE.stop(timeout_s=2.0)
-                _STORE.conn.close()
-            except Exception:
-                pass
-            _STORE = None
-
-        path.parent.mkdir(parents=True, exist_ok=True)
-        # Allow internal parallelism; we serialize writes in a single writer thread.
-        conn = duckdb.connect(str(path))
-        _STORE = TelemetryStore(path=path, conn=conn)
-        _STORE.ensure_schema()
-        _STORE.start()
-        return _STORE
-
-
-def reset_store() -> None:
-    global _STORE
-    with _STORE_LOCK:
-        if _STORE is not None:
-            _STORE.reset()
-            _STORE = None
-        else:
-            # Best-effort delete even if not opened yet.
-            try:
-                p = telemetry_path()
-                p.unlink(missing_ok=True)
-            except Exception:
-                pass
+#
+# NOTE: singleton accessors live in `telemetry/singleton.py` to keep this file smaller.

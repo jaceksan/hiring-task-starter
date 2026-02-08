@@ -4,7 +4,7 @@ import os
 
 import duckdb
 
-from telemetry.store import get_store, reset_store
+from telemetry.singleton import get_store, reset_store
 
 
 def test_telemetry_store_writes_rows(tmp_path, monkeypatch):

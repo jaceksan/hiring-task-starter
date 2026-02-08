@@ -9,6 +9,13 @@ alwaysApply: true
 - Assume the user can restart backend/frontend and reset local state at any time.
 - Prefer the simplest working approach over compatibility layers/migrations.
 
+## Code size & professionalism (keep files small)
+
+- Avoid generating or growing **large files**. Prefer small, composable modules.
+- **Hard cap**: if a file would exceed ~300 lines, refactor/split it (extract hooks, helpers, components, types).
+- **Soft cap**: aim for <200 lines per file for new code.
+- Route/page files should mostly compose existing pieces; heavy logic belongs in `use*` hooks or `lib/*`.
+
 ## Validate changes (fast defaults)
 
 - Prefer fast checks over production builds.

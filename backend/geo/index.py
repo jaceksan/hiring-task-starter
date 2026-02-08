@@ -11,6 +11,7 @@ from shapely.ops import unary_union
 from shapely.strtree import STRtree
 
 from geo.aoi import BBox
+from geo.tile_bbox import tile_bbox_as_tuple
 from geo.tiles import tiles_for_bbox
 from layers.types import (
     GeometryKind,
@@ -289,14 +290,3 @@ def _bounded_cache_put(cache: dict, key, value, *, max_items: int) -> None:
                 cache.pop(oldest, None)
         except Exception:
             pass
-
-
-def tile_bbox_as_tuple(z: int, x: int, y: int) -> tuple[float, float, float, float]:
-    """
-    Inline tile bbox helper to avoid circular imports.
-    """
-    # Lazily import to keep this module small and independent.
-    from geo.tiles import tile_bbox_4326
-
-    tb = tile_bbox_4326(z, x, y)
-    return (tb.min_lon, tb.min_lat, tb.max_lon, tb.max_lat)

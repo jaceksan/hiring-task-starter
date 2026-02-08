@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { SpoolIcon } from "lucide-react";
+import { useAppUi } from "@/components/layout/AppUiContext";
 import { DB } from "@/lib/db";
 import { QUERIES } from "@/lib/queries";
 import { isFailure } from "@/lib/result";
@@ -9,15 +10,16 @@ import { Button } from "../ui/button";
 
 export const NewThreadButton = () => {
 	const navigate = useNavigate();
+	const { scenarioId } = useAppUi();
 
 	const queryClient = useQueryClient();
 
 	const { mutate, isPending } = useMutation({
-		mutationKey: ["thread-create"],
+		mutationKey: ["thread-create", scenarioId],
 		mutationFn: async () => {
 			await sleep(300);
 
-			const result = DB.threads.create({ title: "New thread" });
+			const result = DB.threads.create(scenarioId, { title: "New thread" });
 
 			if (isFailure(result)) {
 				throw result.error;
@@ -30,7 +32,7 @@ export const NewThreadButton = () => {
 		},
 		onSuccess: (thread) => {
 			queryClient.invalidateQueries({
-				queryKey: QUERIES.threads.list.queryKey,
+				queryKey: QUERIES.threads.list(scenarioId).queryKey,
 			});
 
 			navigate({ to: "/thread/$threadId", params: { threadId: thread.id } });
