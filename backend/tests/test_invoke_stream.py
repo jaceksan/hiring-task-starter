@@ -1,7 +1,6 @@
 import asyncio
 
-from main import ApiBbox, ApiMapContext, ApiMessage, ApiMessageSenderEnum, ApiThread, handle_incoming_message
-from main import ApiCenter, ApiMapView
+from main import ApiBbox, ApiCenter, ApiMapContext, ApiMapView, ApiMessage, ApiMessageSenderEnum, ApiThread, handle_incoming_message
 
 
 def test_invoke_stream_emits_required_event_types():

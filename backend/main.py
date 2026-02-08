@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from asyncio import sleep
 from enum import Enum
 from functools import lru_cache
@@ -11,9 +12,11 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from agent.router import route_prompt
+from engine.duckdb import DuckDBEngine
+from engine.in_memory import InMemoryEngine
+from engine.types import LayerEngine, MapContext
 from geo.aoi import BBox
-from geo.ops import build_geo_index
-from layers.load_prague import load_prague_layers
+from lod.policy import apply_lod
 from plotly.build_plot import build_prague_plot
 
 app = FastAPI()
@@ -67,10 +70,67 @@ class ApiThread(BaseModel):
     map: ApiMapContext
 
 
+class ApiPlotRequest(BaseModel):
+    map: ApiMapContext
+    highlight: dict | None = None
+
+
 @app.post("/invoke")
 def invoke(body: ApiThread):
     return StreamingResponse(
         handle_incoming_message(body), media_type="text/event-stream"
+    )
+
+
+@app.post("/plot")
+def plot(body: ApiPlotRequest):
+    """
+    Return a Plotly payload for the given map context.
+
+    Used by the frontend to refresh LOD automatically on pan/zoom without creating chat messages.
+    """
+    bbox = body.map.bbox
+    aoi = BBox(
+        min_lon=bbox.minLon,
+        min_lat=bbox.minLat,
+        max_lon=bbox.maxLon,
+        max_lat=bbox.maxLat,
+    ).normalized()
+
+    ctx = MapContext(
+        aoi=aoi,
+        view_center={"lat": body.map.view.center.lat, "lon": body.map.view.center.lon},
+        view_zoom=body.map.view.zoom,
+    )
+
+    result = _engine().get(ctx)
+    aoi_layers = result.layers
+
+    lod_layers, beer_clusters = apply_lod(
+        aoi_layers,
+        view_zoom=ctx.view_zoom,
+        highlight_point_ids=set(body.highlight.get("pointIds") or [])
+        if body.highlight
+        else None,
+    )
+
+    highlight = None
+    if body.highlight and body.highlight.get("pointIds"):
+        from plotly.build_plot import Highlight as PlotHighlight
+
+        highlight = PlotHighlight(
+            point_ids=set(body.highlight.get("pointIds") or []),
+            title=body.highlight.get("title") or "Highlighted",
+        )
+
+    return build_prague_plot(
+        lod_layers,
+        highlight=highlight,
+        aoi=aoi,
+        view_center=ctx.view_center,
+        view_zoom=ctx.view_zoom,
+        focus_map=False,
+        beer_clusters=beer_clusters,
     )
 
 
@@ -85,17 +145,17 @@ def format_event(type: EventType, data: str):
 
 
 @lru_cache(maxsize=1)
-def _layers_and_index():
-    layers = load_prague_layers()
-    index = build_geo_index(layers)
-    return layers, index
+def _engine() -> LayerEngine:
+    engine = (os.getenv("PANGE_ENGINE") or "in_memory").strip().lower()
+    if engine == "duckdb":
+        return DuckDBEngine()
+    return InMemoryEngine()
 
 
 async def handle_incoming_message(thread: ApiThread):
     prompt = thread.messages[-1].text if thread.messages else ""
 
     try:
-        layers, index = _layers_and_index()
         bbox = thread.map.bbox
         aoi = BBox(
             min_lon=bbox.minLon,
@@ -104,7 +164,16 @@ async def handle_incoming_message(thread: ApiThread):
             max_lat=bbox.maxLat,
         ).normalized()
 
-        aoi_layers = index.slice_layers(aoi)
+        ctx = MapContext(
+            aoi=aoi,
+            view_center={"lat": thread.map.view.center.lat, "lon": thread.map.view.center.lon},
+            view_zoom=thread.map.view.zoom,
+        )
+
+        result = _engine().get(ctx)
+        aoi_layers = result.layers
+        index = result.index
+
         response = route_prompt(prompt, layers=aoi_layers, index=index, aoi=aoi)
 
         # Stream a short explanation.
@@ -112,14 +181,23 @@ async def handle_incoming_message(thread: ApiThread):
             yield format_event(EventType.append, word)
             await sleep(0.02)
 
+        lod_layers, beer_clusters = apply_lod(
+            aoi_layers,
+            view_zoom=thread.map.view.zoom,
+            highlight_point_ids=response.highlight.point_ids
+            if response.highlight is not None
+            else None,
+        )
+
         # Send the map payload before commit so frontend attaches it to the message.
         plot = build_prague_plot(
-            aoi_layers,
+            lod_layers,
             highlight=response.highlight,
             aoi=aoi,
-            view_center={"lat": thread.map.view.center.lat, "lon": thread.map.view.center.lon},
-            view_zoom=thread.map.view.zoom,
+            view_center=ctx.view_center,
+            view_zoom=ctx.view_zoom,
             focus_map=response.focus_map,
+            beer_clusters=beer_clusters,
         )
         yield format_event(EventType.plot_data, json.dumps(plot))
 

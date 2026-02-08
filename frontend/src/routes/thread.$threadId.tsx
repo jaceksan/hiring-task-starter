@@ -58,6 +58,9 @@ function RouteComponent() {
   );
 
   const plotContainerRef = useRef<HTMLDivElement | null>(null);
+  const plotRefreshTimeoutRef = useRef<number | null>(null);
+  const plotRefreshAbortRef = useRef<AbortController | null>(null);
+  const lastPlotRefreshKeyRef = useRef<string | null>(null);
   const [partialMessage, setPartialMessage] = useState<string | null>(null);
   const [plotData, setPlotData] = useState<Pick<PlotParams, "data" | "layout">>(
     () => {
@@ -165,6 +168,58 @@ function RouteComponent() {
       };
     }
     return calcBboxFromCenterZoom(mapView.center, mapView.zoom, viewport);
+  };
+
+  const currentHighlight = () => {
+    const meta = (plotData.layout as any)?.meta;
+    const h = meta?.highlight;
+    if (!h || !Array.isArray(h.pointIds) || h.pointIds.length === 0) return null;
+    return { pointIds: h.pointIds as string[], title: (h.title as string) || "Highlighted" };
+  };
+
+  const schedulePlotRefresh = (next: {
+    center: { lat: number; lon: number };
+    zoom: number;
+    bbox: { minLon: number; minLat: number; maxLon: number; maxLat: number };
+  }) => {
+    if (isPending || partialMessage !== null) return;
+
+    const key = JSON.stringify({
+      z: Math.round(next.zoom * 10) / 10,
+      b: {
+        minLon: Math.round(next.bbox.minLon * 10_000) / 10_000,
+        minLat: Math.round(next.bbox.minLat * 10_000) / 10_000,
+        maxLon: Math.round(next.bbox.maxLon * 10_000) / 10_000,
+        maxLat: Math.round(next.bbox.maxLat * 10_000) / 10_000,
+      },
+    });
+    if (lastPlotRefreshKeyRef.current === key) return;
+    lastPlotRefreshKeyRef.current = key;
+
+    if (plotRefreshTimeoutRef.current !== null) {
+      window.clearTimeout(plotRefreshTimeoutRef.current);
+    }
+    plotRefreshTimeoutRef.current = window.setTimeout(async () => {
+      plotRefreshAbortRef.current?.abort();
+      const ac = new AbortController();
+      plotRefreshAbortRef.current = ac;
+      try {
+        const resp = await fetch("http://localhost:8000/plot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            map: { bbox: next.bbox, view: { center: next.center, zoom: next.zoom } },
+            highlight: currentHighlight(),
+          }),
+          signal: ac.signal,
+        });
+        if (!resp.ok) return;
+        const payload = (await resp.json()) as Pick<PlotParams, "data" | "layout">;
+        setPlotData(payload);
+      } catch {
+        // ignore abort/network errors
+      }
+    }, 250);
   };
 
   const { mutate, isPending } = useMutation({
@@ -419,6 +474,9 @@ function RouteComponent() {
                 const zoom = typeof nextZoom === "number" ? (nextZoom as number) : prev.zoom;
                 const viewport = getViewportSize();
                 const bbox = viewport ? calcBboxFromCenterZoom(center, zoom, viewport) : prev.bbox;
+                if (bbox) {
+                  schedulePlotRefresh({ center, zoom, bbox });
+                }
                 return { center, zoom, bbox };
               });
             }}

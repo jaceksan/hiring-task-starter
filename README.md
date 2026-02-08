@@ -33,6 +33,18 @@ This MVP now runs **AOI-first**: the frontend sends the current map viewport as 
 
 How to observe it: zoom in and pan — the number of rendered POIs/lines should drop and responses should stay snappy.
 
+### LOD (zoom-aware) performance
+
+On top of AOI slicing, the backend applies **zoom-aware level-of-detail (LOD)** to keep the map responsive when zoomed out:
+
+- **Beer POIs**: clustered into aggregated markers at low zoom (trace name `Beer POIs (clusters)`)
+- **Lines + polygons**: simplified as zoom decreases to reduce vertex counts
+- **Payload budgets**: hard caps ensure we don't ship huge Plotly traces
+
+### Future option: DuckDB engine (not implemented yet)
+
+The backend now has an engine abstraction to allow a future **DuckDB/GeoParquet** engine. Today it uses the in-memory engine by default.
+
 ### Data sources
 
 See `data/prague/README.md` for provenance + download links.

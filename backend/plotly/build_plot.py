@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Iterable
 
 from geo.aoi import BBox
+from lod.policy import ClusterMarker
 from layers.types import LineFeature, PointFeature, PolygonFeature, PragueLayers
 
 
@@ -24,6 +25,7 @@ def build_prague_plot(
     view_center: dict[str, float] | None = None,
     view_zoom: float | None = None,
     focus_map: bool = False,
+    beer_clusters: list[ClusterMarker] | None = None,
 ) -> dict[str, Any]:
     traces: list[dict[str, Any]] = []
 
@@ -31,7 +33,10 @@ def build_prague_plot(
         traces.append(_trace_aoi_bbox(aoi))
     traces.append(_trace_flood_polygons(layers.flood_q100))
     traces.append(_trace_metro_lines(layers.metro_ways))
-    traces.append(_trace_beer_points(layers.beer_pois))
+    if beer_clusters is not None:
+        traces.append(_trace_beer_clusters(beer_clusters))
+    else:
+        traces.append(_trace_beer_points(layers.beer_pois))
 
     if highlight and highlight.point_ids:
         traces.append(_trace_highlight_points(layers.beer_pois, highlight))
@@ -42,7 +47,22 @@ def build_prague_plot(
     if focus_map and highlight and highlight.point_ids:
         selected = [p for p in layers.beer_pois if p.id in highlight.point_ids]
         if selected:
-            center, zoom = _fit_view_to_points(selected)
+            fit_center, fit_zoom = _fit_view_to_points(selected)
+            # The server doesn't know the exact client viewport; avoid aggressive zooming out.
+            # We still allow zooming in (or a small zoom-out), but we keep the user's context.
+            if view_zoom is not None:
+                min_zoom = float(view_zoom) - 0.7
+                zoom = max(fit_zoom, min_zoom)
+                center = fit_center if zoom == fit_zoom else center
+            else:
+                center, zoom = fit_center, fit_zoom
+
+    meta: dict[str, Any] = {}
+    if highlight and highlight.point_ids:
+        meta["highlight"] = {
+            "pointIds": sorted(highlight.point_ids),
+            "title": highlight.title or "Highlighted",
+        }
 
     return {
         "data": traces,
@@ -53,6 +73,7 @@ def build_prague_plot(
                 "style": "carto-positron",
             },
             "showlegend": True,
+            "meta": meta,
         },
     }
 
@@ -143,6 +164,24 @@ def _trace_beer_points(points: list[PointFeature]) -> dict[str, Any]:
     }
 
 
+def _trace_beer_clusters(clusters: list[ClusterMarker]) -> dict[str, Any]:
+    return {
+        "type": "scattermapbox",
+        "name": "Beer POIs (clusters)",
+        "lon": [c.lon for c in clusters],
+        "lat": [c.lat for c in clusters],
+        "mode": "markers+text",
+        "text": [str(c.count) for c in clusters],
+        "textposition": "middle center",
+        "marker": {
+            "size": [min(26, 8 + int(c.count**0.5) * 2) for c in clusters],
+            "color": "rgba(255, 193, 7, 0.55)",
+            "line": {"color": "rgba(255, 193, 7, 0.9)", "width": 1},
+        },
+        "hovertemplate": "%{text} places<extra></extra>",
+    }
+
+
 def _trace_highlight_points(points: list[PointFeature], highlight: Highlight) -> dict[str, Any]:
     selected = [p for p in points if p.id in highlight.point_ids]
     return {
@@ -172,8 +211,12 @@ def _fit_view_to_points(points: list[PointFeature]) -> tuple[dict[str, float], f
 
     # Add padding so markers aren't on the edges.
     # This intentionally over-pads a bit because the server does not know the exact viewport size.
-    pad_lon = max(0.002, (max_lon - min_lon) * 0.60)
-    pad_lat = max(0.002, (max_lat - min_lat) * 0.60)
+    # We pad quite aggressively because:
+    # - the right-side map viewport is smaller than the full window
+    # - legends and marker labels take space
+    # - Mapbox may cull markers near edges
+    pad_lon = max(0.003, (max_lon - min_lon) * 1.00)
+    pad_lat = max(0.003, (max_lat - min_lat) * 1.00)
     min_lon -= pad_lon
     max_lon += pad_lon
     min_lat -= pad_lat
@@ -211,6 +254,6 @@ def _approx_zoom_for_bbox(*, min_lon: float, max_lon: float, min_lat: float, max
 
     z = min(z_lon, z_lat)
     # Back off slightly so all highlighted points are visible even with legends/side panels.
-    z -= 0.9
-    return float(max(2.0, min(16.5, z)))
+    z -= 1.3
+    return float(max(2.0, min(16.0, z)))
 
