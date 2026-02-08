@@ -11,6 +11,7 @@ from shapely.ops import unary_union
 from shapely.strtree import STRtree
 
 from geo.aoi import BBox
+from geo.tiles import tile_bbox_4326, tiles_for_bbox
 from layers.types import LineFeature, PointFeature, PolygonFeature, PragueLayers
 
 
@@ -49,6 +50,9 @@ class GeoIndex:
         default_factory=dict, repr=False
     )
 
+    # Tile caches (z, x, y) -> result
+    _tile_slice_cache: dict[tuple[int, int, int], PragueLayers] = field(default_factory=dict, repr=False)
+
     def slice_layers(self, aoi: BBox, *, decimals: int = 4) -> PragueLayers:
         """
         Slice all three layers to AOI using STRtrees (fast bbox selection).
@@ -75,6 +79,55 @@ class GeoIndex:
 
         _bounded_cache_put(self._slice_cache, key, sliced, max_items=64)
         return sliced
+
+    def slice_layers_tiled(self, aoi: BBox, *, tile_zoom: int) -> PragueLayers:
+        """
+        Slice layers by covering slippy tiles and merge (dedupe by feature id).
+
+        This gives stable cache keys while panning: tile IDs only change when crossing tile boundaries.
+        """
+        tiles = tiles_for_bbox(tile_zoom, aoi)
+        if not tiles:
+            return PragueLayers(flood_q100=[], metro_ways=[], beer_pois=[])
+
+        # Stable iteration order for deterministic outputs.
+        tiles = sorted(tiles, key=lambda t: (t[1], t[2]))
+
+        flood_by_id: dict[str, PolygonFeature] = {}
+        metro_by_id: dict[str, LineFeature] = {}
+        beer_by_id: dict[str, PointFeature] = {}
+
+        for z, x, y in tiles:
+            key = (int(z), int(x), int(y))
+            cached = self._tile_slice_cache.get(key)
+            if cached is None:
+                tb = tile_bbox_4326(z, x, y)
+                bbox = _bbox_polygon(tb)
+
+                flood_idx = _to_int_list(self.flood_tree_4326.query(bbox))
+                metro_idx = _to_int_list(self.metro_tree_4326.query(bbox))
+                beer_idx = _to_int_list(self.beer_tree_4326.query(bbox))
+
+                cached = PragueLayers(
+                    flood_q100=[self.flood_features[i] for i in flood_idx],
+                    metro_ways=[self.metro_features[i] for i in metro_idx],
+                    beer_pois=[self.beer_features[i] for i in beer_idx],
+                )
+                _bounded_cache_put(self._tile_slice_cache, key, cached, max_items=256)
+
+            for f in cached.flood_q100:
+                flood_by_id.setdefault(f.id, f)
+            for f in cached.metro_ways:
+                metro_by_id.setdefault(f.id, f)
+            for f in cached.beer_pois:
+                beer_by_id.setdefault(f.id, f)
+
+        # Deterministic ordering.
+        flood = [flood_by_id[k] for k in sorted(flood_by_id.keys())]
+        metro = [metro_by_id[k] for k in sorted(metro_by_id.keys())]
+        beer = [beer_by_id[k] for k in sorted(beer_by_id.keys())]
+
+        return PragueLayers(flood_q100=flood, metro_ways=metro, beer_pois=beer)
 
     def flood_union_for_aoi(self, aoi: BBox, *, decimals: int = 4) -> Polygon | MultiPolygon:
         """

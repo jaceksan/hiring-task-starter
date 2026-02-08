@@ -49,7 +49,7 @@ def apply_lod(
     beer_pois = layers.beer_pois
 
     if _should_cluster_points(zoom, len(beer_pois), b.max_points_rendered):
-        beer_clusters = _cluster_points(beer_pois, zoom=zoom)
+        beer_clusters = _cluster_points(beer_pois, zoom=zoom)[: b.max_points_rendered]
     elif len(beer_pois) > b.max_points_rendered:
         beer_pois = _cap_points(beer_pois, b.max_points_rendered, keep_ids=highlight_point_ids)
 
@@ -119,6 +119,9 @@ def _cap_points(points: list[PointFeature], max_points: int, keep_ids: set[str] 
         return points
     keep_ids = keep_ids or set()
     kept = [p for p in points if p.id in keep_ids]
+    if len(kept) >= max_points:
+        kept.sort(key=lambda p: p.id)
+        return kept[:max_points]
     remaining = [p for p in points if p.id not in keep_ids]
     remaining.sort(key=lambda p: p.id)
     return [*kept, *remaining][:max_points]
@@ -147,6 +150,8 @@ def _simplify_lines_until_budget(
         if _count_line_vertices(out) <= max_vertices:
             break
         out = _simplify_lines(lines, tolerance_m=tol)
+    if _count_line_vertices(out) > max_vertices:
+        out = _cap_lines_to_vertex_budget(out, max_vertices)
     return out
 
 
@@ -164,6 +169,43 @@ def _simplify_polygons_until_budget(
         if _count_poly_vertices(out) <= max_vertices:
             break
         out = _simplify_polygons(polys, tolerance_m=tol)
+    if _count_poly_vertices(out) > max_vertices:
+        out = _cap_polys_to_vertex_budget(out, max_vertices)
+    return out
+
+
+def _cap_lines_to_vertex_budget(lines: list[LineFeature], max_vertices: int) -> list[LineFeature]:
+    """
+    Hard fallback: drop the heaviest features until under budget.
+    Deterministic: sort by vertex count desc, then id.
+    """
+    out = list(lines)
+    out.sort(key=lambda l: (-len(l.coords), l.id))
+    total = _count_line_vertices(out)
+    while out and total > max_vertices:
+        removed = out.pop(0)
+        total -= len(removed.coords)
+    # Restore deterministic order for downstream rendering/tests.
+    out.sort(key=lambda l: l.id)
+    return out
+
+
+def _cap_polys_to_vertex_budget(polys: list[PolygonFeature], max_vertices: int) -> list[PolygonFeature]:
+    """
+    Hard fallback: drop the heaviest features until under budget.
+    Deterministic: sort by vertex count desc, then id.
+    """
+    out = list(polys)
+
+    def v(p: PolygonFeature) -> int:
+        return sum(len(r) for r in p.rings)
+
+    out.sort(key=lambda p: (-v(p), p.id))
+    total = _count_poly_vertices(out)
+    while out and total > max_vertices:
+        removed = out.pop(0)
+        total -= v(removed)
+    out.sort(key=lambda p: p.id)
     return out
 
 

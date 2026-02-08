@@ -4,6 +4,7 @@ from functools import lru_cache
 
 from engine.types import EngineResult, LayerEngine, MapContext
 from geo.ops import build_geo_index
+from geo.tiles import tile_zoom_for_view_zoom
 from layers.load_prague import load_prague_layers
 
 
@@ -22,6 +23,7 @@ class InMemoryEngine(LayerEngine):
 
     def get(self, ctx: MapContext) -> EngineResult:
         _layers, index = self._base()
-        aoi_layers = index.slice_layers(ctx.aoi)
+        tile_zoom = tile_zoom_for_view_zoom(ctx.view_zoom)
+        aoi_layers = index.slice_layers_tiled(ctx.aoi, tile_zoom=tile_zoom)
         return EngineResult(layers=aoi_layers, index=index)
 

@@ -20,6 +20,7 @@ def test_cluster_points_reduces_count_when_over_budget():
 
     assert clusters is not None
     assert len(clusters) < len(points)
+    assert len(clusters) <= 50
     assert lod_layers.beer_pois == points  # analysis points remain available; clusters only affect rendering
 
 

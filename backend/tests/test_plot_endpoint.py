@@ -20,6 +20,8 @@ def test_plot_endpoint_returns_plot_payload():
     data = resp.json()
     assert set(data.keys()) == {"data", "layout"}
     assert "mapbox" in data["layout"]
+    meta = data["layout"].get("meta") or {}
+    assert "stats" in meta
 
 
 def test_plot_endpoint_can_return_clusters_at_low_zoom():
@@ -57,4 +59,5 @@ def test_plot_endpoint_preserves_highlight_when_provided():
     # More importantly: meta should carry highlight info for frontend to round-trip.
     meta = payload.get("layout", {}).get("meta", {})
     assert meta.get("highlight", {}).get("title") == "MyHighlight"
+    assert "stats" in meta
 

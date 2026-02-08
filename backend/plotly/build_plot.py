@@ -64,6 +64,24 @@ def build_prague_plot(
             "title": highlight.title or "Highlighted",
         }
 
+    rendered_markers = len(beer_clusters) if beer_clusters is not None else len(layers.beer_pois)
+    line_vertices = sum(len(l.coords) for l in layers.metro_ways)
+    poly_vertices = sum(len(r) for p in layers.flood_q100 for r in p.rings)
+    highlight_count = 0
+    if highlight and highlight.point_ids:
+        highlight_count = sum(1 for p in layers.beer_pois if p.id in highlight.point_ids)
+
+    meta["stats"] = {
+        "clusterMode": beer_clusters is not None,
+        "renderedMarkers": rendered_markers,
+        "renderedClusters": len(beer_clusters) if beer_clusters is not None else 0,
+        "renderedHighlightPoints": highlight_count,
+        "lineVertices": line_vertices,
+        "polyVertices": poly_vertices,
+        "floodPolygons": len(layers.flood_q100),
+        "metroLines": len(layers.metro_ways),
+    }
+
     return {
         "data": traces,
         "layout": {
