@@ -1,3 +1,10 @@
 # Large datasets (keep local; don't commit)
 /data/large/
 
+# Local telemetry (generated during dev)
+/data/telemetry/
+
+# Local DuckDB files (engine + experiments)
+/data/duckdb/
+/backend/data/duckdb/
+

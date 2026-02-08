@@ -13,7 +13,8 @@ def test_plot_endpoint_returns_plot_payload():
             "map": {
                 "bbox": {"minLon": 14.22, "minLat": 49.94, "maxLon": 14.70, "maxLat": 50.18},
                 "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
-            }
+            },
+            "engine": "in_memory",
         },
     )
     assert resp.status_code == 200
@@ -22,6 +23,7 @@ def test_plot_endpoint_returns_plot_payload():
     assert "mapbox" in data["layout"]
     meta = data["layout"].get("meta") or {}
     assert "stats" in meta
+    assert meta["stats"].get("engine") == "in_memory"
 
 
 def test_plot_endpoint_can_return_clusters_at_low_zoom():
@@ -32,7 +34,8 @@ def test_plot_endpoint_can_return_clusters_at_low_zoom():
             "map": {
                 "bbox": {"minLon": -20, "minLat": 30, "maxLon": 40, "maxLat": 70},
                 "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 3.0},
-            }
+            },
+            "engine": "in_memory",
         },
     )
     assert resp.status_code == 200
@@ -51,6 +54,7 @@ def test_plot_endpoint_preserves_highlight_when_provided():
                 "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
             },
             "highlight": {"pointIds": ["node/123", "node/456"], "title": "MyHighlight"},
+            "engine": "in_memory",
         },
     )
     assert resp.status_code == 200
@@ -60,4 +64,22 @@ def test_plot_endpoint_preserves_highlight_when_provided():
     meta = payload.get("layout", {}).get("meta", {})
     assert meta.get("highlight", {}).get("title") == "MyHighlight"
     assert "stats" in meta
+
+
+def test_plot_endpoint_supports_duckdb_engine():
+    client = TestClient(app)
+    resp = client.post(
+        "/plot",
+        json={
+            "map": {
+                "bbox": {"minLon": 14.22, "minLat": 49.94, "maxLon": 14.70, "maxLat": 50.18},
+                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
+            },
+            "engine": "duckdb",
+        },
+    )
+    assert resp.status_code == 200
+    payload = resp.json()
+    meta = payload.get("layout", {}).get("meta", {})
+    assert meta.get("stats", {}).get("engine") == "duckdb"
 

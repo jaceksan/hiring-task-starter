@@ -51,9 +51,13 @@ def build_prague_plot(
             # The server doesn't know the exact client viewport; avoid aggressive zooming out.
             # We still allow zooming in (or a small zoom-out), but we keep the user's context.
             if view_zoom is not None:
-                min_zoom = float(view_zoom) - 0.7
+                # Allow zooming out enough to include all highlights, but avoid huge jumps.
+                # The right-side map viewport + labels/legend often require more zoom-out than the
+                # raw bbox math suggests, so we allow a bit more than before.
+                max_zoom_out = 2.0
+                min_zoom = float(view_zoom) - max_zoom_out
+                center = fit_center
                 zoom = max(fit_zoom, min_zoom)
-                center = fit_center if zoom == fit_zoom else center
             else:
                 center, zoom = fit_center, fit_zoom
 

@@ -10,8 +10,8 @@ import { streamToAsyncGenerator } from "@/lib/streamToAsyncGenerator";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { EventSourceParserStream } from "eventsource-parser/stream";
-import { ArrowLeft, Home, Trash2 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { ArrowLeft, BarChart3, Home, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Plotly, { type PlotParams } from "react-plotly.js";
 import z from "zod";
 
@@ -46,6 +46,33 @@ function RouteComponent() {
   const { data: thread, refetch } = useSuspenseQuery(
     QUERIES.threads.detail(threadId)
   );
+
+  const [engine, setEngine] = useState<"in_memory" | "duckdb">(() => {
+    const v = window.localStorage.getItem("pange_engine");
+    return v === "duckdb" ? "duckdb" : "in_memory";
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem("pange_engine", engine);
+  }, [engine]);
+
+  const [telemetryOpen, setTelemetryOpen] = useState(false);
+  const [telemetrySummary, setTelemetrySummary] = useState<any[] | null>(null);
+  const [telemetrySlowest, setTelemetrySlowest] = useState<any[] | null>(null);
+
+  const loadTelemetry = async () => {
+    try {
+      const [s, slow] = await Promise.all([
+        fetch("http://localhost:8000/telemetry/summary?engine=duckdb").then((r) => r.json()),
+        fetch("http://localhost:8000/telemetry/slowest?engine=duckdb&limit=15").then((r) => r.json()),
+      ]);
+      setTelemetrySummary(s?.rows ?? []);
+      setTelemetrySlowest(slow?.rows ?? []);
+    } catch {
+      setTelemetrySummary([]);
+      setTelemetrySlowest([]);
+    }
+  };
 
   const examplePrompts = useMemo(
     () => [
@@ -177,6 +204,11 @@ function RouteComponent() {
     return { pointIds: h.pointIds as string[], title: (h.title as string) || "Highlighted" };
   };
 
+  const currentStats = () => {
+    const meta = (plotData.layout as any)?.meta;
+    return meta?.stats ?? null;
+  };
+
   const schedulePlotRefresh = (next: {
     center: { lat: number; lon: number };
     zoom: number;
@@ -185,6 +217,7 @@ function RouteComponent() {
     if (isPending || partialMessage !== null) return;
 
     const key = JSON.stringify({
+      e: engine,
       z: Math.round(next.zoom * 10) / 10,
       b: {
         minLon: Math.round(next.bbox.minLon * 10_000) / 10_000,
@@ -210,6 +243,7 @@ function RouteComponent() {
           body: JSON.stringify({
             map: { bbox: next.bbox, view: { center: next.center, zoom: next.zoom } },
             highlight: currentHighlight(),
+            engine,
           }),
           signal: ac.signal,
         });
@@ -246,6 +280,7 @@ function RouteComponent() {
         body: JSON.stringify({
           ...threadWithNewHumanMessage,
           map: { bbox, view: { center: mapView.center, zoom: mapView.zoom } },
+          engine,
         }),
         headers: {
           "Content-Type": "application/json",
@@ -366,6 +401,56 @@ function RouteComponent() {
             <h1 className="font-bold grow-1 whitespace-nowrap overflow-ellipsis overflow-hidden">
               {thread.title}
             </h1>
+            <div className="mr-2 flex items-center gap-1">
+              <Button
+                size="sm"
+                variant={engine === "in_memory" ? "default" : "secondary"}
+                disabled={isPending || partialMessage !== null}
+                onClick={() => setEngine("in_memory")}
+                title="Use in-memory STRtree engine"
+              >
+                In-memory
+              </Button>
+              <Button
+                size="sm"
+                variant={engine === "duckdb" ? "default" : "secondary"}
+                disabled={isPending || partialMessage !== null}
+                onClick={() => setEngine("duckdb")}
+                title="Use DuckDB engine"
+              >
+                DuckDB
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={isPending || partialMessage !== null}
+                title="Reset telemetry DB"
+                onClick={async () => {
+                  try {
+                    await fetch("http://localhost:8000/telemetry/reset", { method: "POST" });
+                  } catch {
+                    // ignore
+                  }
+                }}
+              >
+                Reset telemetry
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={isPending || partialMessage !== null}
+                title="Open telemetry summary"
+                onClick={async () => {
+                  setTelemetryOpen((v) => !v);
+                  if (!telemetryOpen) {
+                    await loadTelemetry();
+                  }
+                }}
+              >
+                <BarChart3 className="mr-1 size-4" />
+                Telemetry
+              </Button>
+            </div>
             <div className="mr-2">
               <Button
                 size="icon"
@@ -439,8 +524,129 @@ function RouteComponent() {
       <div className="col-span-6 h-full">
         <div
           ref={plotContainerRef}
-          className="w-full h-full flex justify-center items-center bg-accent"
+          className="w-full h-full flex justify-center items-center bg-accent relative"
         >
+          {telemetryOpen && (
+            <div className="absolute top-2 right-2 z-10 rounded-md border border-border bg-background/95 px-3 py-2 text-xs w-[420px] max-w-[90%] max-h-[85%] overflow-auto">
+              <div className="flex items-center justify-between mb-2">
+                <div className="font-semibold">Telemetry (DuckDB)</div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="secondary" onClick={loadTelemetry}>
+                    Refresh
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setTelemetryOpen(false)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+
+              <div className="text-muted-foreground mb-2">
+                If the backend is running, prefer this panel/API. DuckDB telemetry DB is locked for
+                external readers while the backend writes to it.
+              </div>
+
+              <div className="font-semibold mb-1">Summary</div>
+              <div className="space-y-1 mb-3">
+                {(telemetrySummary ?? []).map((row) => (
+                  <div key={`${row.engine}-${row.endpoint}`} className="border border-border rounded p-2">
+                    <div className="text-foreground font-medium">
+                      {row.endpoint} ({row.engine}) n={row.n}
+                    </div>
+                    <div className="text-muted-foreground">
+                      total ms: p50 {row.p50TotalMs?.toFixed?.(1) ?? "?"}, p95{" "}
+                      {row.p95TotalMs?.toFixed?.(1) ?? "?"}, p99 {row.p99TotalMs?.toFixed?.(1) ?? "?"}
+                    </div>
+                    <div className="text-muted-foreground">
+                      cache hit: {row.cacheHitRate?.toFixed?.(2) ?? "?"}, avg payload:{" "}
+                      {row.avgPayloadKB?.toFixed?.(1) ?? "?"}KB
+                    </div>
+                  </div>
+                ))}
+                {(telemetrySummary ?? []).length === 0 && (
+                  <div className="text-muted-foreground">No telemetry rows yet.</div>
+                )}
+              </div>
+
+              <div className="font-semibold mb-1">Slowest</div>
+              <div className="space-y-1">
+                {(telemetrySlowest ?? []).map((r) => (
+                  <div key={`${r.tsMs}-${r.endpoint}`} className="border border-border rounded p-2">
+                    <div className="text-foreground font-medium">
+                      {r.endpoint} total {r.totalMs?.toFixed?.(1) ?? "?"}ms (zoom {r.viewZoom ?? "?"})
+                    </div>
+                    <div className="text-muted-foreground">
+                      payload {r.payloadKB?.toFixed?.(1) ?? "?"}KB, cache{" "}
+                      {r.cacheHit === true ? "hit" : r.cacheHit === false ? "miss" : "?"}
+                    </div>
+                  </div>
+                ))}
+                {(telemetrySlowest ?? []).length === 0 && (
+                  <div className="text-muted-foreground">No slow rows yet.</div>
+                )}
+              </div>
+            </div>
+          )}
+          {currentStats() && (
+            <div className="absolute top-2 left-2 z-10 rounded-md border border-border bg-background/90 px-3 py-2 text-xs max-w-[320px]">
+              <div className="font-semibold mb-1">Perf</div>
+              <div className="space-y-0.5 text-muted-foreground">
+                <div>
+                  engine: <span className="text-foreground">{currentStats()?.engine ?? engine}</span>
+                </div>
+                <div>
+                  markers:{" "}
+                  <span className="text-foreground">
+                    {currentStats()?.renderedMarkers ?? "?"}
+                  </span>{" "}
+                  (clusters:{" "}
+                  <span className="text-foreground">
+                    {currentStats()?.renderedClusters ?? 0}
+                  </span>
+                  )
+                </div>
+                <div>
+                  vertices:{" "}
+                  <span className="text-foreground">
+                    L{currentStats()?.lineVertices ?? "?"}
+                  </span>{" "}
+                  /{" "}
+                  <span className="text-foreground">
+                    P{currentStats()?.polyVertices ?? "?"}
+                  </span>
+                </div>
+                {currentStats()?.cache && (
+                  <div>
+                    cache:{" "}
+                    <span className="text-foreground">
+                      {currentStats()?.cache?.cacheHit ? "hit" : "miss"}
+                    </span>{" "}
+                    (tiles {currentStats()?.cache?.tilesUsed ?? "?"}, z{" "}
+                    {currentStats()?.cache?.tileZoom ?? "?"}, zb{" "}
+                    {currentStats()?.cache?.zoomBucket ?? "?"})
+                  </div>
+                )}
+                {currentStats()?.payloadBytes && (
+                  <div>
+                    payload:{" "}
+                    <span className="text-foreground">
+                      {Math.round((currentStats()?.payloadBytes as number) / 1024)}KB
+                    </span>
+                  </div>
+                )}
+                {currentStats()?.timingsMs && (
+                  <div>
+                    ms:{" "}
+                    <span className="text-foreground">
+                      {currentStats()?.timingsMs?.total ?? "?"}
+                    </span>{" "}
+                    (get {currentStats()?.timingsMs?.engineGet ?? "?"}, lod{" "}
+                    {currentStats()?.timingsMs?.lod ?? "?"}, plot{" "}
+                    {currentStats()?.timingsMs?.plot ?? "?"})
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <Plotly
             data={plotData.data}
             layout={{

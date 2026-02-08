@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from asyncio import sleep
 from enum import Enum
 from functools import lru_cache
@@ -19,6 +20,7 @@ from geo.aoi import BBox
 from geo.tiles import tile_zoom_for_view_zoom, tiles_for_bbox
 from lod.policy import apply_lod
 from plotly.build_plot import build_prague_plot
+from telemetry.store import get_store, reset_store
 
 app = FastAPI()
 
@@ -69,11 +71,13 @@ class ApiThread(BaseModel):
     title: str
     messages: list[ApiMessage]
     map: ApiMapContext
+    engine: str | None = None
 
 
 class ApiPlotRequest(BaseModel):
     map: ApiMapContext
     highlight: dict | None = None
+    engine: str | None = None
 
 
 @app.post("/invoke")
@@ -104,15 +108,21 @@ def plot(body: ApiPlotRequest):
         view_zoom=body.map.view.zoom,
     )
 
-    result = _engine().get(ctx)
+    engine_name = _default_engine_name() if body.engine is None else _normalize_engine(body.engine)
+    t0 = time.perf_counter()
+    result = _engine(engine_name).get(ctx)
+    t_engine_get_ms = (time.perf_counter() - t0) * 1000.0
     aoi_layers = result.layers
 
+    t1 = time.perf_counter()
     (lod_layers, beer_clusters), cache_stats = _apply_lod_cached(
+        engine_name=engine_name,
         layers=aoi_layers,
         aoi=aoi,
         view_zoom=ctx.view_zoom,
         highlight_point_ids=set(body.highlight.get("pointIds") or []) if body.highlight else None,
     )
+    t_lod_ms = (time.perf_counter() - t1) * 1000.0
 
     highlight = None
     if body.highlight and body.highlight.get("pointIds"):
@@ -123,6 +133,7 @@ def plot(body: ApiPlotRequest):
             title=body.highlight.get("title") or "Highlighted",
         )
 
+    t2 = time.perf_counter()
     payload = build_prague_plot(
         lod_layers,
         highlight=highlight,
@@ -132,11 +143,73 @@ def plot(body: ApiPlotRequest):
         focus_map=False,
         beer_clusters=beer_clusters,
     )
+    t_plot_ms = (time.perf_counter() - t2) * 1000.0
+
+    payload_bytes = len(json.dumps(payload, ensure_ascii=False))
     try:
         payload["layout"]["meta"]["stats"]["cache"] = cache_stats
+        payload["layout"]["meta"]["stats"]["engine"] = engine_name
+        payload["layout"]["meta"]["stats"]["payloadBytes"] = payload_bytes
+        payload["layout"]["meta"]["stats"]["timingsMs"] = {
+            "engineGet": round(t_engine_get_ms, 2),
+            "lod": round(t_lod_ms, 2),
+            "plot": round(t_plot_ms, 2),
+            "total": round((time.perf_counter() - t0) * 1000.0, 2),
+        }
+    except Exception:
+        pass
+
+    # Persist telemetry for later analysis (best-effort).
+    try:
+        store = get_store()
+        if store is not None:
+            store.record(
+                endpoint="/plot",
+                prompt=None,
+                engine=engine_name,
+                view_zoom=ctx.view_zoom,
+                aoi={
+                    "minLon": aoi.min_lon,
+                    "minLat": aoi.min_lat,
+                    "maxLon": aoi.max_lon,
+                    "maxLat": aoi.max_lat,
+                },
+                stats=(payload.get("layout", {}).get("meta", {}) or {}).get("stats", {}),
+            )
     except Exception:
         pass
     return payload
+
+
+@app.post("/telemetry/reset")
+def telemetry_reset():
+    reset_store()
+    return {"ok": True}
+
+
+@app.get("/telemetry/summary")
+def telemetry_summary(engine: str | None = None, endpoint: str | None = None, since_ms: int | None = None):
+    store = get_store()
+    if store is None:
+        return {"enabled": False, "rows": []}
+    # Best-effort: include recent writes.
+    try:
+        store.flush(timeout_s=0.5)
+    except Exception:
+        pass
+    return {"enabled": True, "rows": store.summary(engine=engine, endpoint=endpoint, since_ms=since_ms)}
+
+
+@app.get("/telemetry/slowest")
+def telemetry_slowest(engine: str | None = None, endpoint: str | None = None, limit: int = 25):
+    store = get_store()
+    if store is None:
+        return {"enabled": False, "rows": []}
+    try:
+        store.flush(timeout_s=0.5)
+    except Exception:
+        pass
+    return {"enabled": True, "rows": store.slowest(engine=engine, endpoint=endpoint, limit=limit)}
 
 
 class EventType(str, Enum):
@@ -150,9 +223,20 @@ def format_event(type: EventType, data: str):
 
 
 @lru_cache(maxsize=1)
-def _engine() -> LayerEngine:
-    engine = (os.getenv("PANGE_ENGINE") or "in_memory").strip().lower()
-    if engine == "duckdb":
+def _default_engine_name() -> str:
+    return _normalize_engine(os.getenv("PANGE_ENGINE"))
+
+
+def _normalize_engine(name: str | None) -> str:
+    n = (name or "in_memory").strip().lower()
+    if n in {"duckdb", "in_memory"}:
+        return n
+    return "in_memory"
+
+
+@lru_cache(maxsize=2)
+def _engine(name: str) -> LayerEngine:
+    if name == "duckdb":
         return DuckDBEngine()
     return InMemoryEngine()
 
@@ -171,7 +255,14 @@ def _bounded_cache_put(cache: dict, key, value, *, max_items: int) -> None:
             pass
 
 
-def _apply_lod_cached(*, layers, aoi: BBox, view_zoom: float, highlight_point_ids: set[str] | None):
+def _apply_lod_cached(
+    *,
+    engine_name: str,
+    layers,
+    aoi: BBox,
+    view_zoom: float,
+    highlight_point_ids: set[str] | None,
+):
     """
     Cache LOD output by tile coverage and zoom bucket.
 
@@ -181,7 +272,7 @@ def _apply_lod_cached(*, layers, aoi: BBox, view_zoom: float, highlight_point_id
     tiles = tuple(sorted(tiles_for_bbox(tile_zoom, aoi), key=lambda t: (t[1], t[2])))
     zoom_bucket = int(round(float(view_zoom) * 2.0))  # 0.5 zoom buckets
     highlight_key = tuple(sorted(highlight_point_ids or ()))
-    key = (tile_zoom, zoom_bucket, tiles, highlight_key)
+    key = (engine_name, tile_zoom, zoom_bucket, tiles, highlight_key)
 
     cached = _lod_cache.get(key)
     if cached is not None:
@@ -225,25 +316,34 @@ async def handle_incoming_message(thread: ApiThread):
             view_zoom=thread.map.view.zoom,
         )
 
-        result = _engine().get(ctx)
+        engine_name = _default_engine_name() if thread.engine is None else _normalize_engine(thread.engine)
+        t0 = time.perf_counter()
+        result = _engine(engine_name).get(ctx)
+        t_engine_get_ms = (time.perf_counter() - t0) * 1000.0
         aoi_layers = result.layers
         index = result.index
 
+        t1 = time.perf_counter()
         response = route_prompt(prompt, layers=aoi_layers, index=index, aoi=aoi)
+        t_route_ms = (time.perf_counter() - t1) * 1000.0
 
         # Stream a short explanation.
         for word in response.message.replace("\n", " \n ").split():
             yield format_event(EventType.append, word)
             await sleep(0.02)
 
+        t2 = time.perf_counter()
         (lod_layers, beer_clusters), cache_stats = _apply_lod_cached(
+            engine_name=engine_name,
             layers=aoi_layers,
             aoi=aoi,
             view_zoom=thread.map.view.zoom,
             highlight_point_ids=response.highlight.point_ids if response.highlight is not None else None,
         )
+        t_lod_ms = (time.perf_counter() - t2) * 1000.0
 
         # Send the map payload before commit so frontend attaches it to the message.
+        t3 = time.perf_counter()
         plot = build_prague_plot(
             lod_layers,
             highlight=response.highlight,
@@ -253,11 +353,42 @@ async def handle_incoming_message(thread: ApiThread):
             focus_map=response.focus_map,
             beer_clusters=beer_clusters,
         )
+        t_plot_ms = (time.perf_counter() - t3) * 1000.0
         try:
             plot["layout"]["meta"]["stats"]["cache"] = cache_stats
+            plot["layout"]["meta"]["stats"]["engine"] = engine_name
+            plot_json = json.dumps(plot, ensure_ascii=False)
+            plot["layout"]["meta"]["stats"]["payloadBytes"] = len(plot_json)
+            plot["layout"]["meta"]["stats"]["timingsMs"] = {
+                "engineGet": round(t_engine_get_ms, 2),
+                "route": round(t_route_ms, 2),
+                "lod": round(t_lod_ms, 2),
+                "plot": round(t_plot_ms, 2),
+                "total": round((time.perf_counter() - t0) * 1000.0, 2),
+            }
+        except Exception:
+            plot_json = json.dumps(plot)
+
+        # Persist telemetry for later analysis (best-effort).
+        try:
+            store = get_store()
+            if store is not None:
+                store.record(
+                    endpoint="/invoke",
+                    prompt=prompt,
+                    engine=engine_name,
+                    view_zoom=ctx.view_zoom,
+                    aoi={
+                        "minLon": aoi.min_lon,
+                        "minLat": aoi.min_lat,
+                        "maxLon": aoi.max_lon,
+                        "maxLat": aoi.max_lat,
+                    },
+                    stats=(plot.get("layout", {}).get("meta", {}) or {}).get("stats", {}),
+                )
         except Exception:
             pass
-        yield format_event(EventType.plot_data, json.dumps(plot))
+        yield format_event(EventType.plot_data, plot_json)
 
         # Commit the message (punctuation ends the buffer on frontend).
         yield format_event(EventType.commit, ".")

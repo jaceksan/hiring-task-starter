@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 
 from geo.aoi import BBox
-from geo.ops import GeoIndex, distance_to_metro_m, is_point_flooded
+from geo.ops import GeoIndex, distance_to_metro_m, is_point_flooded, transformer_4326_to_32633
 from layers.types import PointFeature, PragueLayers
 from plotly.build_plot import Highlight
 
@@ -62,11 +62,17 @@ def route_prompt(prompt: str, layers: PragueLayers, index: GeoIndex, aoi: BBox) 
 
     if "recommend" in p and ("pub" in p or "beer" in p):
         n = _extract_number(p, default=5, clamp=(1, 25))
-        ranked = _rank_dry_by_metro(
+        b = aoi.normalized()
+        prefer_center = {"lat": (b.min_lat + b.max_lat) / 2.0, "lon": (b.min_lon + b.max_lon) / 2.0}
+        ranked = _recommend_safe_pubs(
             layers.beer_pois,
             flood_union_4326=flood_union,
             metro_union_32633=index.metro_union_32633,
             top_n=n,
+            # Treat \"near metro\" as \"within radius\" (not \"exactly on the line\").
+            # This makes recommendations feel more reasonable and less biased towards distance=0.
+            near_m=300.0,
+            prefer_center=prefer_center,
         )
         ids = {pt.id for pt, _ in ranked}
         names = [(_label(pt) or pt.id) for pt, _ in ranked]
@@ -107,6 +113,51 @@ def _rank_dry_by_metro(
     scored = [(pt, distance_to_metro_m(pt, metro_union_32633)) for pt in dry]
     scored.sort(key=lambda x: x[1])
     return scored[:top_n]
+
+
+def _recommend_safe_pubs(
+    points: list[PointFeature],
+    *,
+    flood_union_4326,
+    metro_union_32633,
+    top_n: int,
+    near_m: float,
+    prefer_center: dict[str, float],
+) -> list[tuple[PointFeature, float]]:
+    """
+    Recommend \"safe\" pubs inside the current AOI in a way that feels natural.
+
+    We still require \"near metro\", but we interpret it as \"within near_m meters\".
+    Within that band, we prefer pubs closer to the user's current viewport center
+    (so recommendations stay local and don't force zooming out).
+    """
+    _, dry = _split_flooded(points, flood_union_4326)
+
+    scored = [(pt, distance_to_metro_m(pt, metro_union_32633)) for pt in dry]
+    near = [(pt, d) for pt, d in scored if d <= near_m]
+
+    # If there aren't enough within the band, fall back to closest-to-metro ranking.
+    if len(near) < top_n:
+        scored.sort(key=lambda x: x[1])
+        return scored[:top_n]
+
+    # Otherwise, pick local pubs within the band.
+    cx, cy = _project_4326_to_32633(prefer_center["lon"], prefer_center["lat"])
+    near.sort(key=lambda x: (_dist_to_center_m(x[0], cx, cy), x[0].id))
+    return near[:top_n]
+
+
+def _project_4326_to_32633(lon: float, lat: float) -> tuple[float, float]:
+    t = transformer_4326_to_32633()
+    x, y = t.transform(float(lon), float(lat))
+    return float(x), float(y)
+
+
+def _dist_to_center_m(pt: PointFeature, cx: float, cy: float) -> float:
+    x, y = _project_4326_to_32633(pt.lon, pt.lat)
+    dx = x - cx
+    dy = y - cy
+    return float((dx * dx + dy * dy) ** 0.5)
 
 
 def _extract_number(text: str, default: int, clamp: tuple[int, int]) -> int:
