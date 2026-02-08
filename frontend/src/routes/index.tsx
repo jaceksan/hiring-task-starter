@@ -1,11 +1,49 @@
 import { createFileRoute } from "@tanstack/react-router";
 import Plotly from "react-plotly.js";
+import { useAppUi } from "@/components/layout/AppUiContext";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/")({
   component: App,
 });
 
 function App() {
+  const { scenarioId } = useAppUi();
+  const [view, setView] = useState<{ lat: number; lon: number; zoom: number }>({
+    lat: 50.0755,
+    lon: 14.4378,
+    zoom: 10.5,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await fetch("http://localhost:8000/scenarios");
+        if (!resp.ok) return;
+        const list = (await resp.json()) as any[];
+        const match = Array.isArray(list) ? list.find((s) => s?.id === scenarioId) : null;
+        const dv = match?.defaultView;
+        const c = dv?.center;
+        const z = dv?.zoom;
+        if (
+          c &&
+          typeof c.lat === "number" &&
+          typeof c.lon === "number" &&
+          typeof z === "number" &&
+          !cancelled
+        ) {
+          setView({ lat: c.lat as number, lon: c.lon as number, zoom: z as number });
+        }
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [scenarioId]);
+
   return (
     <div className="w-full h-full bg-accent relative">
       <Plotly
@@ -16,8 +54,8 @@ function App() {
         ]}
         layout={{
           mapbox: {
-            center: { lat: 50.0755, lon: 14.4378 },
-            zoom: 10.5,
+            center: { lat: view.lat, lon: view.lon },
+            zoom: view.zoom,
             style: "carto-positron",
           },
           showlegend: false,

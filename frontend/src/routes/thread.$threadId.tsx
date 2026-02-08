@@ -48,15 +48,15 @@ function RouteComponent() {
     QUERIES.threads.detail(threadId)
   );
 
-  const { engine, telemetryOpen, setTelemetryOpen, autoMinimizeChat } = useAppUi();
+  const { scenarioId, engine, telemetryOpen, setTelemetryOpen, autoMinimizeChat } = useAppUi();
   const [telemetrySummary, setTelemetrySummary] = useState<any[] | null>(null);
   const [telemetrySlowest, setTelemetrySlowest] = useState<any[] | null>(null);
 
   const loadTelemetry = async () => {
     try {
       const [s, slow] = await Promise.all([
-        fetch("http://localhost:8000/telemetry/summary?engine=duckdb").then((r) => r.json()),
-        fetch("http://localhost:8000/telemetry/slowest?engine=duckdb&limit=15").then((r) => r.json()),
+        fetch(`http://localhost:8000/telemetry/summary?engine=${engine}`).then((r) => r.json()),
+        fetch(`http://localhost:8000/telemetry/slowest?engine=${engine}&limit=15`).then((r) => r.json()),
       ]);
       setTelemetrySummary(s?.rows ?? []);
       setTelemetrySlowest(slow?.rows ?? []);
@@ -70,9 +70,9 @@ function RouteComponent() {
     if (telemetryOpen) {
       void loadTelemetry();
     }
-  }, [telemetryOpen]);
+  }, [telemetryOpen, engine]);
 
-  const examplePrompts = useMemo(
+  const defaultExamplePrompts = useMemo(
     () => [
       "show layers",
       "how many pubs are flooded?",
@@ -81,6 +81,7 @@ function RouteComponent() {
     ],
     []
   );
+  const [examplePrompts, setExamplePrompts] = useState<string[]>(defaultExamplePrompts);
 
   const plotContainerRef = useRef<HTMLDivElement | null>(null);
   const plotRefreshTimeoutRef = useRef<number | null>(null);
@@ -203,8 +204,15 @@ function RouteComponent() {
   const currentHighlight = () => {
     const meta = (plotData.layout as any)?.meta;
     const h = meta?.highlight;
-    if (!h || !Array.isArray(h.pointIds) || h.pointIds.length === 0) return null;
-    return { pointIds: h.pointIds as string[], title: (h.title as string) || "Highlighted" };
+    const ids = (h?.featureIds ?? h?.pointIds) as unknown;
+    if (!h || !Array.isArray(ids) || ids.length === 0) return null;
+    const layerId =
+      typeof h.layerId === "string" && h.layerId.length > 0 ? (h.layerId as string) : null;
+    return {
+      layerId,
+      featureIds: ids as string[],
+      title: (h.title as string) || "Highlighted",
+    };
   };
 
   const currentStats = () => {
@@ -220,6 +228,7 @@ function RouteComponent() {
     if (isPending || partialMessage !== null) return;
 
     const key = JSON.stringify({
+      s: scenarioId,
       e: engine,
       z: Math.round(next.zoom * 10) / 10,
       b: {
@@ -251,6 +260,7 @@ function RouteComponent() {
             },
             highlight: currentHighlight(),
             engine,
+            scenarioId,
           }),
           signal: ac.signal,
         });
@@ -289,6 +299,7 @@ function RouteComponent() {
           ...threadWithNewHumanMessage,
           map: { bbox, view: { center: mapView.center, zoom: mapView.zoom }, viewport },
           engine,
+          scenarioId,
         }),
         headers: {
           "Content-Type": "application/json",
@@ -354,6 +365,15 @@ function RouteComponent() {
 
           case "plot_data": {
             try {
+              // If a background /plot refresh is in-flight, abort it. Otherwise it can
+              // overwrite this authoritative plot update (e.g. highlights "flash" then disappear).
+              plotRefreshAbortRef.current?.abort();
+              plotRefreshAbortRef.current = null;
+              if (plotRefreshTimeoutRef.current !== null) {
+                window.clearTimeout(plotRefreshTimeoutRef.current);
+                plotRefreshTimeoutRef.current = null;
+              }
+
               const plot = JSON.parse(event.data) as Pick<PlotParams, "data" | "layout">;
               // Storing Plotly payload per-message can exceed localStorage quota quickly.
               // Keep it in React state always; persist only if reasonably small.
@@ -453,6 +473,65 @@ function RouteComponent() {
     ro.observe(el);
     return () => ro.disconnect();
   }, [engine, isPending, partialMessage]);
+
+  // When scenario changes, re-center to its default view (map-first mental model).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await fetch("http://localhost:8000/scenarios");
+        if (!resp.ok) return;
+        const list = (await resp.json()) as any[];
+        const match = Array.isArray(list) ? list.find((s) => s?.id === scenarioId) : null;
+        const dv = match?.defaultView;
+        const prompts = match?.examplePrompts;
+        const center = dv?.center;
+        const zoom = dv?.zoom;
+        if (
+          Array.isArray(prompts) &&
+          prompts.length > 0 &&
+          prompts.every((p: any) => typeof p === "string") &&
+          !cancelled
+        ) {
+          setExamplePrompts(prompts as string[]);
+        } else if (!cancelled) {
+          setExamplePrompts(defaultExamplePrompts);
+        }
+        if (
+          center &&
+          typeof center.lat === "number" &&
+          typeof center.lon === "number" &&
+          typeof zoom === "number" &&
+          !cancelled
+        ) {
+          const viewport = getViewportSize();
+          const nextCenter = { lat: center.lat as number, lon: center.lon as number };
+          const nextZoom = zoom as number;
+          const bbox = viewport ? calcBboxFromCenterZoom(nextCenter, nextZoom, viewport) : null;
+          setMapView({ center: nextCenter, zoom: nextZoom, bbox });
+          setPlotData((prev) => {
+            const layout: any = prev.layout ?? {};
+            const mb: any = layout.mapbox ?? {};
+            return {
+              ...prev,
+              layout: {
+                ...layout,
+                mapbox: { ...mb, center: nextCenter, zoom: nextZoom },
+              },
+            };
+          });
+          if (bbox) {
+            schedulePlotRefresh({ center: nextCenter, zoom: nextZoom, bbox });
+          }
+        }
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [scenarioId, defaultExamplePrompts]);
 
   return (
     <div className="w-full h-full">

@@ -1,9 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { useAppUi } from "@/components/layout/AppUiContext";
 import { BarChart3 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 export function TopBar() {
   const {
+    scenarioId,
+    setScenarioId,
     engine,
     setEngine,
     telemetryOpen,
@@ -12,8 +15,91 @@ export function TopBar() {
     setAutoMinimizeChat,
   } = useAppUi();
 
+  const [scenarios, setScenarios] = useState<
+    {
+      id: string;
+      title: string;
+      defaultView: any;
+      dataSize?: string;
+      hasGeoParquet?: boolean;
+      enabled?: boolean;
+    }[]
+  >([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await fetch("http://localhost:8000/scenarios");
+        if (!resp.ok) return;
+        const data = (await resp.json()) as {
+          id: string;
+          title: string;
+          defaultView: any;
+          dataSize?: string;
+          hasGeoParquet?: boolean;
+          enabled?: boolean;
+        }[];
+        if (!cancelled) setScenarios(Array.isArray(data) ? data : []);
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const scenarioOptions = useMemo(() => {
+    if (scenarios.length > 0) return scenarios;
+    return [
+      {
+        id: "prague_transport",
+        title: "Prague Flood & Transport",
+        defaultView: null,
+        dataSize: "small",
+        hasGeoParquet: false,
+        enabled: true,
+      },
+    ];
+  }, [scenarios]);
+
+  const selectedScenario = useMemo(() => {
+    return scenarioOptions.find((s) => s.id === scenarioId) ?? scenarioOptions[0] ?? null;
+  }, [scenarioOptions, scenarioId]);
+
+  const isLargeScenario = (selectedScenario?.dataSize ?? "small").toLowerCase() === "large";
+  const requiresDuckdb = isLargeScenario || Boolean(selectedScenario?.hasGeoParquet);
+
+  useEffect(() => {
+    if (requiresDuckdb && engine !== "duckdb") {
+      setEngine("duckdb");
+    }
+  }, [requiresDuckdb, engine, setEngine]);
+
   return (
     <div className="w-full flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        <div className="text-xs text-muted-foreground">Scenario</div>
+        <select
+          className="h-8 rounded-md border border-border bg-background px-2 text-sm max-w-[260px]"
+          value={scenarioId}
+          onChange={(e) => setScenarioId(e.target.value)}
+          title="Select scenario pack"
+        >
+          {scenarioOptions.map((s) => (
+            <option
+              key={s.id}
+              value={s.id}
+              disabled={s.enabled === false}
+              title={s.enabled === false ? "Not enabled yet" : undefined}
+            >
+              {s.title}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="flex items-center gap-2">
         <div className="text-xs text-muted-foreground">Engine</div>
         <select
@@ -24,7 +110,9 @@ export function TopBar() {
           }
           title="Select backend engine"
         >
-          <option value="in_memory">In-memory</option>
+          <option value="in_memory" disabled={requiresDuckdb}>
+            In-memory{requiresDuckdb ? " (disabled for this scenario)" : ""}
+          </option>
           <option value="duckdb">DuckDB</option>
         </select>
       </div>

@@ -3,6 +3,8 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 type Engine = "in_memory" | "duckdb";
 
 type AppUiState = {
+  scenarioId: string;
+  setScenarioId: (id: string) => void;
   engine: Engine;
   setEngine: (e: Engine) => void;
   telemetryOpen: boolean;
@@ -14,6 +16,15 @@ type AppUiState = {
 const Ctx = createContext<AppUiState | null>(null);
 
 export function AppUiProvider(props: { children: React.ReactNode }) {
+  const [scenarioId, setScenarioId] = useState<string>(() => {
+    const v = window.localStorage.getItem("pange_scenario");
+    return v?.trim() ? v : "prague_transport";
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem("pange_scenario", scenarioId);
+  }, [scenarioId]);
+
   const [engine, setEngine] = useState<Engine>(() => {
     const v = window.localStorage.getItem("pange_engine");
     return v === "duckdb" ? "duckdb" : "in_memory";
@@ -41,6 +52,8 @@ export function AppUiProvider(props: { children: React.ReactNode }) {
 
   const value = useMemo<AppUiState>(
     () => ({
+      scenarioId,
+      setScenarioId,
       engine,
       setEngine,
       telemetryOpen,
@@ -48,7 +61,7 @@ export function AppUiProvider(props: { children: React.ReactNode }) {
       autoMinimizeChat,
       setAutoMinimizeChat,
     }),
-    [engine, telemetryOpen, autoMinimizeChat]
+    [scenarioId, engine, telemetryOpen, autoMinimizeChat]
   );
 
   return <Ctx.Provider value={value}>{props.children}</Ctx.Provider>;
