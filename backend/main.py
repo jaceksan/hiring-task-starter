@@ -61,9 +61,15 @@ class ApiMapView(BaseModel):
     zoom: float
 
 
+class ApiViewport(BaseModel):
+    width: int
+    height: int
+
+
 class ApiMapContext(BaseModel):
     bbox: ApiBbox
     view: ApiMapView
+    viewport: ApiViewport | None = None
 
 
 class ApiThread(BaseModel):
@@ -106,6 +112,11 @@ def plot(body: ApiPlotRequest):
         aoi=aoi,
         view_center={"lat": body.map.view.center.lat, "lon": body.map.view.center.lon},
         view_zoom=body.map.view.zoom,
+        viewport=(
+            {"width": int(body.map.viewport.width), "height": int(body.map.viewport.height)}
+            if body.map.viewport is not None
+            else None
+        ),
     )
 
     engine_name = _default_engine_name() if body.engine is None else _normalize_engine(body.engine)
@@ -140,6 +151,7 @@ def plot(body: ApiPlotRequest):
         aoi=aoi,
         view_center=ctx.view_center,
         view_zoom=ctx.view_zoom,
+        viewport=ctx.viewport,
         focus_map=False,
         beer_clusters=beer_clusters,
     )
@@ -314,6 +326,11 @@ async def handle_incoming_message(thread: ApiThread):
             aoi=aoi,
             view_center={"lat": thread.map.view.center.lat, "lon": thread.map.view.center.lon},
             view_zoom=thread.map.view.zoom,
+            viewport=(
+                {"width": int(thread.map.viewport.width), "height": int(thread.map.viewport.height)}
+                if thread.map.viewport is not None
+                else None
+            ),
         )
 
         engine_name = _default_engine_name() if thread.engine is None else _normalize_engine(thread.engine)
@@ -356,6 +373,7 @@ async def handle_incoming_message(thread: ApiThread):
             aoi=aoi,
             view_center=ctx.view_center,
             view_zoom=ctx.view_zoom,
+            viewport=ctx.viewport,
             focus_map=response.focus_map,
             beer_clusters=beer_clusters,
         )

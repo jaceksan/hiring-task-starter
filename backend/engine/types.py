@@ -17,6 +17,8 @@ class MapContext:
     aoi: BBox
     view_center: dict[str, float]  # {"lat": ..., "lon": ...}
     view_zoom: float
+    # Optional: real pixel size of the map viewport. Used for server-side "fit view" heuristics.
+    viewport: dict[str, int] | None = None
 
 
 @dataclass(frozen=True)

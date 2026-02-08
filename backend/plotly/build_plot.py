@@ -24,6 +24,7 @@ def build_prague_plot(
     aoi: BBox | None = None,
     view_center: dict[str, float] | None = None,
     view_zoom: float | None = None,
+    viewport: dict[str, int] | None = None,
     focus_map: bool = False,
     beer_clusters: list[ClusterMarker] | None = None,
 ) -> dict[str, Any]:
@@ -50,7 +51,7 @@ def build_prague_plot(
     if focus_map and highlight and highlight.point_ids:
         selected = [p for p in layers.beer_pois if p.id in highlight.point_ids]
         if selected:
-            fit_center, fit_zoom = _fit_view_to_points(selected)
+            fit_center, fit_zoom = _fit_view_to_points(selected, viewport=viewport)
             # The server doesn't know the exact client viewport; avoid aggressive zooming out.
             # We still allow zooming in (or a small zoom-out), but we keep the user's context.
             if view_zoom is not None:
@@ -101,6 +102,17 @@ def build_prague_plot(
                 "style": "carto-positron",
             },
             "showlegend": True,
+            # Keep legend inside the map area (top-right) so the left sidebar stays clean.
+            "legend": {
+                "x": 0.99,
+                "y": 0.99,
+                "xanchor": "right",
+                "yanchor": "top",
+                "bgcolor": "rgba(255, 255, 255, 0.75)",
+                "bordercolor": "rgba(120, 120, 120, 0.35)",
+                "borderwidth": 1,
+                "font": {"size": 11},
+            },
             "meta": meta,
         },
     }
@@ -329,7 +341,11 @@ def _trace_highlight_points(points: list[PointFeature], highlight: Highlight) ->
     }
 
 
-def _fit_view_to_points(points: list[PointFeature]) -> tuple[dict[str, float], float]:
+def _fit_view_to_points(
+    points: list[PointFeature],
+    *,
+    viewport: dict[str, int] | None,
+) -> tuple[dict[str, float], float]:
     """
     Approximate a center+zoom that fits the provided points.
 
@@ -355,19 +371,32 @@ def _fit_view_to_points(points: list[PointFeature]) -> tuple[dict[str, float], f
     max_lat += pad_lat
 
     center = {"lat": (min_lat + max_lat) / 2, "lon": (min_lon + max_lon) / 2}
-    zoom = _approx_zoom_for_bbox(min_lon=min_lon, max_lon=max_lon, min_lat=min_lat, max_lat=max_lat)
+    zoom = _approx_zoom_for_bbox(
+        min_lon=min_lon,
+        max_lon=max_lon,
+        min_lat=min_lat,
+        max_lat=max_lat,
+        viewport=viewport,
+    )
     return center, zoom
 
 
-def _approx_zoom_for_bbox(*, min_lon: float, max_lon: float, min_lat: float, max_lat: float) -> float:
+def _approx_zoom_for_bbox(
+    *,
+    min_lon: float,
+    max_lon: float,
+    min_lat: float,
+    max_lat: float,
+    viewport: dict[str, int] | None,
+) -> float:
     """
     Very rough WebMercator zoom approximation from bbox spans.
     """
     import math
 
-    # Typical visible map area in this app (right panel).
-    viewport_w = 900
-    viewport_h = 650
+    # Use real map viewport size if available; otherwise fall back to a reasonable default.
+    viewport_w = int((viewport or {}).get("width") or 900)
+    viewport_h = int((viewport or {}).get("height") or 650)
     tile_size = 256
 
     lon_span = max(1e-6, abs(max_lon - min_lon))

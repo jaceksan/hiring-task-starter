@@ -4,6 +4,7 @@ import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 
 import type { QueryClient } from "@tanstack/react-query";
+import { AppShell } from "@/components/layout/AppShell";
 
 interface MyRouterContext {
   queryClient: QueryClient;
@@ -12,7 +13,9 @@ interface MyRouterContext {
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   component: () => (
     <>
-      <Outlet />
+      <AppShell>
+        <Outlet />
+      </AppShell>
       <TanStackDevtools
         config={{
           position: "bottom-right",

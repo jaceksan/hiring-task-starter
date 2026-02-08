@@ -2,6 +2,7 @@ import { DefaultComposer } from "@/components/chat/composer/DefaultComposer";
 import { Messages } from "@/components/chat/messages/Messages";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { useAppUi } from "@/components/layout/AppUiContext";
 import { DB } from "@/lib/db";
 import { formatDate } from "@/lib/formatDate";
 import { QUERIES } from "@/lib/queries";
@@ -10,7 +11,7 @@ import { streamToAsyncGenerator } from "@/lib/streamToAsyncGenerator";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { EventSourceParserStream } from "eventsource-parser/stream";
-import { ArrowLeft, BarChart3, Home, Trash2 } from "lucide-react";
+import { Home, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Plotly, { type PlotParams } from "react-plotly.js";
 import z from "zod";
@@ -47,16 +48,7 @@ function RouteComponent() {
     QUERIES.threads.detail(threadId)
   );
 
-  const [engine, setEngine] = useState<"in_memory" | "duckdb">(() => {
-    const v = window.localStorage.getItem("pange_engine");
-    return v === "duckdb" ? "duckdb" : "in_memory";
-  });
-
-  useEffect(() => {
-    window.localStorage.setItem("pange_engine", engine);
-  }, [engine]);
-
-  const [telemetryOpen, setTelemetryOpen] = useState(false);
+  const { engine, telemetryOpen, setTelemetryOpen, autoMinimizeChat } = useAppUi();
   const [telemetrySummary, setTelemetrySummary] = useState<any[] | null>(null);
   const [telemetrySlowest, setTelemetrySlowest] = useState<any[] | null>(null);
 
@@ -73,6 +65,12 @@ function RouteComponent() {
       setTelemetrySlowest([]);
     }
   };
+
+  useEffect(() => {
+    if (telemetryOpen) {
+      void loadTelemetry();
+    }
+  }, [telemetryOpen]);
 
   const examplePrompts = useMemo(
     () => [
@@ -138,6 +136,7 @@ function RouteComponent() {
     zoom: initialZoom,
     bbox: null,
   }));
+  const mapViewRef = useRef(mapView);
 
   const getViewportSize = () => {
     const el = plotContainerRef.current;
@@ -197,6 +196,10 @@ function RouteComponent() {
     return calcBboxFromCenterZoom(mapView.center, mapView.zoom, viewport);
   };
 
+  useEffect(() => {
+    mapViewRef.current = mapView;
+  }, [mapView]);
+
   const currentHighlight = () => {
     const meta = (plotData.layout as any)?.meta;
     const h = meta?.highlight;
@@ -241,7 +244,11 @@ function RouteComponent() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            map: { bbox: next.bbox, view: { center: next.center, zoom: next.zoom } },
+            map: {
+              bbox: next.bbox,
+              view: { center: next.center, zoom: next.zoom },
+              viewport: getViewportSize(),
+            },
             highlight: currentHighlight(),
             engine,
           }),
@@ -275,11 +282,12 @@ function RouteComponent() {
       const { data: threadWithNewHumanMessage } = await refetch();
 
       const bbox = getCurrentBbox();
+      const viewport = getViewportSize();
       const response = await fetch("http://localhost:8000/invoke", {
         method: "POST",
         body: JSON.stringify({
           ...threadWithNewHumanMessage,
-          map: { bbox, view: { center: mapView.center, zoom: mapView.zoom } },
+          map: { bbox, view: { center: mapView.center, zoom: mapView.zoom }, viewport },
           engine,
         }),
         headers: {
@@ -338,6 +346,9 @@ function RouteComponent() {
             message = "";
             data = undefined;
             setPartialMessage(null);
+            if (autoMinimizeChat) {
+              setDrawerOpen(false);
+            }
             break;
           }
 
@@ -386,146 +397,69 @@ function RouteComponent() {
     },
   });
 
-  return (
-    <div className="grid grid-cols-10 w-full h-screen">
-      <div className="col-span-4 h-full border-border border-r">
-        <div className="h-full flex flex-col">
-          <div className="p-3 flex items-center">
-            <div className="mr-2">
-              <Button size="icon" asChild variant="ghost">
-                <Link to="/">
-                  <ArrowLeft />
-                </Link>
-              </Button>
-            </div>
-            <h1 className="font-bold grow-1 whitespace-nowrap overflow-ellipsis overflow-hidden">
-              {thread.title}
-            </h1>
-            <div className="mr-2 flex items-center gap-1">
-              <Button
-                size="sm"
-                variant={engine === "in_memory" ? "default" : "secondary"}
-                disabled={isPending || partialMessage !== null}
-                onClick={() => setEngine("in_memory")}
-                title="Use in-memory STRtree engine"
-              >
-                In-memory
-              </Button>
-              <Button
-                size="sm"
-                variant={engine === "duckdb" ? "default" : "secondary"}
-                disabled={isPending || partialMessage !== null}
-                onClick={() => setEngine("duckdb")}
-                title="Use DuckDB engine"
-              >
-                DuckDB
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={isPending || partialMessage !== null}
-                title="Reset telemetry DB"
-                onClick={async () => {
-                  try {
-                    await fetch("http://localhost:8000/telemetry/reset", { method: "POST" });
-                  } catch {
-                    // ignore
-                  }
-                }}
-              >
-                Reset telemetry
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={isPending || partialMessage !== null}
-                title="Open telemetry summary"
-                onClick={async () => {
-                  setTelemetryOpen((v) => !v);
-                  if (!telemetryOpen) {
-                    await loadTelemetry();
-                  }
-                }}
-              >
-                <BarChart3 className="mr-1 size-4" />
-                Telemetry
-              </Button>
-            </div>
-            <div className="mr-2">
-              <Button
-                size="icon"
-                variant="ghost"
-                title="Clear messages"
-                disabled={isPending || partialMessage !== null}
-                onClick={async () => {
-                  const result = DB.threads.messages.clear(threadId);
-                  if (isFailure(result)) {
-                    console.error("ERROR_CLEARING_THREAD_MESSAGES", { result });
-                    return;
-                  }
-                  setPartialMessage(null);
-                  await refetch();
-                }}
-              >
-                <Trash2 />
-              </Button>
-            </div>
-            <div className="text-sm text-muted-foreground shrink-0">
-              {formatDate(thread.createdAt)}
-            </div>
-          </div>
-          <div className="grow overflow-hidden">
-            <ScrollArea>
-              <Messages.Container>
-                {thread.messages.map((message) => (
-                  <Messages.Message key={message.id} sender={message.author}>
-                    {message.text}
-                  </Messages.Message>
-                ))}
-                {partialMessage !== null && (
-                  <Messages.Message sender="ai">
-                    {partialMessage}
-                    {" \u2588"}
-                  </Messages.Message>
-                )}
-              </Messages.Container>
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const messagesScrollRootRef = useRef<HTMLDivElement | null>(null);
 
-              <ScrollBar orientation="vertical" />
-            </ScrollArea>
-          </div>
-          <div className="p-3">
-            <div className="mb-2">
-              <div className="text-xs text-muted-foreground mb-1">
-                Example questions
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {examplePrompts.map((prompt) => (
-                  <Button
-                    key={prompt}
-                    size="sm"
-                    variant="secondary"
-                    disabled={isPending || partialMessage !== null}
-                    onClick={() => mutate(prompt)}
-                  >
-                    {prompt}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <DefaultComposer
-              onSubmit={(message) => {
-                mutate(message);
-              }}
-              disabled={isPending || partialMessage !== null}
-            />
-          </div>
-        </div>
-      </div>
-      <div className="col-span-6 h-full">
-        <div
-          ref={plotContainerRef}
-          className="w-full h-full flex justify-center items-center bg-accent relative"
-        >
+  const scrollMessagesToBottom = (behavior: ScrollBehavior) => {
+    const root = messagesScrollRootRef.current;
+    if (!root) return;
+    const viewport = root.querySelector<HTMLElement>(
+      '[data-slot="scroll-area-viewport"]'
+    );
+    if (!viewport) return;
+    viewport.scrollTo({ top: viewport.scrollHeight, behavior });
+  };
+
+  // When opening the drawer (or after reload), jump to the latest message.
+  useEffect(() => {
+    if (!drawerOpen) return;
+    // Let layout settle first (Plotly resize + drawer transition).
+    const id = window.setTimeout(() => scrollMessagesToBottom("auto"), 0);
+    return () => window.clearTimeout(id);
+  }, [drawerOpen]);
+
+  // When new messages arrive while drawer is open, follow the conversation.
+  useEffect(() => {
+    if (!drawerOpen) return;
+    scrollMessagesToBottom("smooth");
+  }, [drawerOpen, thread.messages.length, partialMessage]);
+
+  const lastAiText = useMemo(() => {
+    const msgs = thread.messages;
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      if (msgs[i]?.author === "ai") return (msgs[i]?.text ?? "").trim();
+    }
+    return "";
+  }, [thread.messages]);
+
+  const lastAiPreview = useMemo(() => {
+    const t = lastAiText.replace(/\s+/g, " ").trim();
+    if (!t) return "";
+    return t.length > 140 ? `${t.slice(0, 140)}…` : t;
+  }, [lastAiText]);
+
+  // Keep AOI bbox in sync when the map container is resized (e.g. chat drawer expand/collapse).
+  useEffect(() => {
+    const el = plotContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      const viewport = getViewportSize();
+      if (!viewport) return;
+      const { center, zoom } = mapViewRef.current;
+      const bbox = calcBboxFromCenterZoom(center, zoom, viewport);
+      setMapView((prev) => ({ ...prev, bbox }));
+      schedulePlotRefresh({ center, zoom, bbox });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [engine, isPending, partialMessage]);
+
+  return (
+    <div className="w-full h-full">
+      <div
+        ref={plotContainerRef}
+        className="w-full h-full flex justify-center items-center bg-accent relative"
+      >
           {telemetryOpen && (
             <div className="absolute top-2 right-2 z-10 rounded-md border border-border bg-background/95 px-3 py-2 text-xs w-[420px] max-w-[90%] max-h-[85%] overflow-auto">
               <div className="flex items-center justify-between mb-2">
@@ -654,6 +588,8 @@ function RouteComponent() {
               margin: { l: 0, r: 0, t: 0, b: 0 },
             }}
             config={{ scrollZoom: true, displayModeBar: false }}
+            useResizeHandler={true}
+            style={{ width: "100%", height: "100%" }}
             className="w-full h-full overflow-hidden"
             onRelayout={(event) => {
               // Plotly relayout event payload is a shallow object with keys like:
@@ -687,6 +623,112 @@ function RouteComponent() {
               });
             }}
           />
+      </div>
+
+      {/* Bottom chat drawer (collapsible) */}
+      <div
+        className={[
+          "absolute left-0 right-0 bottom-0 z-20",
+          "border-t border-border bg-background/95 backdrop-blur",
+          drawerOpen ? "h-[42vh]" : "h-[60px]",
+        ].join(" ")}
+      >
+        <div className="h-full flex flex-col min-h-0">
+          <div className="h-[60px] shrink-0 px-3 flex items-center gap-2 border-b border-border">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setDrawerOpen((v) => !v)}
+              title={drawerOpen ? "Collapse chat" : "Expand chat"}
+            >
+              {drawerOpen ? "Collapse" : "Chat"}
+            </Button>
+
+            <div className="font-semibold whitespace-nowrap overflow-hidden overflow-ellipsis">
+              {thread.title}
+            </div>
+
+            {!drawerOpen && lastAiPreview && (
+              <div className="text-xs text-muted-foreground whitespace-nowrap overflow-hidden overflow-ellipsis">
+                {lastAiPreview}
+              </div>
+            )}
+
+            <div className="ml-auto flex items-center gap-1">
+              <Button
+                size="icon"
+                variant="ghost"
+                title="Clear messages"
+                disabled={isPending || partialMessage !== null}
+                onClick={async () => {
+                  const result = DB.threads.messages.clear(threadId);
+                  if (isFailure(result)) {
+                    console.error("ERROR_CLEARING_THREAD_MESSAGES", { result });
+                    return;
+                  }
+                  setPartialMessage(null);
+                  await refetch();
+                }}
+              >
+                <Trash2 />
+              </Button>
+              <div className="text-xs text-muted-foreground shrink-0 ml-1">
+                {formatDate(thread.createdAt)}
+              </div>
+            </div>
+          </div>
+
+          {drawerOpen && (
+            <>
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <div ref={messagesScrollRootRef} className="h-full">
+                  <ScrollArea className="h-full">
+                  <Messages.Container>
+                    {thread.messages.map((message) => (
+                      <Messages.Message key={message.id} sender={message.author}>
+                        {message.text}
+                      </Messages.Message>
+                    ))}
+                    {partialMessage !== null && (
+                      <Messages.Message sender="ai">
+                        {partialMessage}
+                        {" \u2588"}
+                      </Messages.Message>
+                    )}
+                  </Messages.Container>
+                  <ScrollBar orientation="vertical" />
+                  </ScrollArea>
+                </div>
+              </div>
+
+              <div className="p-3 border-t border-border">
+                <div className="mb-2">
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Example questions
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {examplePrompts.map((prompt) => (
+                      <Button
+                        key={prompt}
+                        size="sm"
+                        variant="secondary"
+                        disabled={isPending || partialMessage !== null}
+                        onClick={() => mutate(prompt)}
+                      >
+                        {prompt}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <DefaultComposer
+                  onSubmit={(message) => {
+                    mutate(message);
+                  }}
+                  disabled={isPending || partialMessage !== null}
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
