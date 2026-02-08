@@ -70,6 +70,22 @@ class TelemetryStore:
         self._worker = threading.Thread(target=self._run, name="telemetry-writer", daemon=True)
         self._worker.start()
 
+    def stop(self, *, timeout_s: float = 2.0) -> None:
+        """
+        Stop the writer thread (best-effort) and prevent further flushes.
+        """
+        try:
+            self._stop.set()
+        except Exception:
+            pass
+        w = self._worker
+        if w is not None and w.is_alive():
+            try:
+                w.join(timeout=timeout_s)
+            except Exception:
+                pass
+        self._worker = None
+
     def record(
         self,
         *,
@@ -237,11 +253,9 @@ class TelemetryStore:
 
     def reset(self) -> None:
         # Delete the database file to reclaim space.
+        # First stop the background thread so it can't write to a closed connection.
+        self.stop(timeout_s=2.0)
         with self._lock:
-            try:
-                self._stop.set()
-            except Exception:
-                pass
             try:
                 self.conn.close()
             except Exception:
@@ -333,6 +347,7 @@ def get_store() -> TelemetryStore | None:
             if _STORE.path.resolve() == path.resolve():
                 return _STORE
             try:
+                _STORE.stop(timeout_s=2.0)
                 _STORE.conn.close()
             except Exception:
                 pass
