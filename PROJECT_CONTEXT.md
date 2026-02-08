@@ -82,20 +82,23 @@ The core “PangeAI-ish” value demonstrated:
   - done: updated `.cursor/rules/general.mdc` to instruct running these targets
 
 - [x] Rename `thread.$threadId.tsx` file and related folder (terrible name)
-  - done: moved to folder-based route `routes/thread/$threadId.tsx` + `routes/thread/$threadId/*`
-  - done: implemented scenario-scoped chats/threads so they don’t get mixed across scenarios (threads storage is per-scenario; navigating between scenarios won’t keep you on an incompatible thread route)
+  - done: removed `$` from filesystem names; route lives in `frontend/src/routes/thread/threadId.tsx` + `frontend/src/routes/thread/threadId/*`
+  - note: TanStack route path still uses `/thread/$threadId` internally for params typing, but `$` no longer appears in filenames/folders
 
 - [x] Extend Cursor rule file to prevent Cursor generating large files in the future
   - done: added explicit file size caps + “split into modules” guidance in `.cursor/rules/general.mdc`
 
 ## A) Speed of iteration / tooling
-- [ ] Create root `Makefile` with targets:
-  - `lint`, `types`, `test`, `test-integration` for backend + frontend
+- [x] Create root `Makefile` with targets:
+  - done: `lint-all` / `lint-backend` / `lint-frontend`
+  - done: `types-all` / `types-frontend` (backend currently no-op)
+  - done: `test-all` / `test-backend` (frontend currently no-op)
+  - done: `test-integration-all` / `test-integration-backend` (frontend currently no-op)
   - consider adding Astral’s type checker (“ty”) for backend typing checks
-  - update `.cursor/rules/general.mdc` to instruct running `make …` for validations
-- [ ] Keep backend tests fast:
+  - done: updated `.cursor/rules/general.mdc` to instruct running these targets
+- [x] Keep backend tests fast:
   - ensure slow/heavy tests are under `-m integration`
-  - keep unit suite consistently < ~5s
+  - verified: backend unit tests are ~5s (`pytest` reported 4.82s; wall clock ~5.60s)
 - [ ] Frontend test strategy:
   - keep Playwright e2e stable + minimal
   - decide if any unit tests are worth it (likely optional for demo)
@@ -135,29 +138,26 @@ The core “PangeAI-ish” value demonstrated:
   - add scenario + prompt + styling rules in YAML
 
 ## D) UX / data modeling cleanup
-- [ ] Scenario-scoped threads:
-  - when switching scenario, thread list + chat should show only threads for that scenario
-  - decide if API paths include scenarioId or only payload param
-  - update local storage schema/migrations accordingly
-- [ ] Example prompts should be scenario-specific:
-  - store `examplePrompts` in scenario YAML
-  - UI should swap examples when scenario changes
-  - add a TODO/examples authoring workflow
+- [x] Scenario-scoped threads:
+  - done: threads/messages are stored per-scenario in localStorage keys
+  - done: changing scenario while on a thread route navigates back to `/` to avoid cross-scenario threadId collisions
+- [x] Example prompts should be scenario-specific:
+  - done: `examplePrompts` live in scenario YAML and UI swaps them on scenario change
 
 ## E) Data/fixtures policy (mostly resolved, keep guardrails)
-- [ ] Derived data policy:
-  - keep small Prague GeoParquet fixtures committed for reproducible tests
-  - keep whole-CZ derived data ignored
-  - ensure `.gitignore` remains correct as datasets evolve
+- [x] Derived data policy:
+  - done: small Prague GeoParquet fixtures are committed for reproducible tests
+  - done: whole-CZ derived data is ignored via `.gitignore` (`/data/derived/.../cz_bbox/**/*`)
+  - keep `.gitignore` correct as datasets evolve
 
 ## Additional TODOs we added during this conversation
 - [ ] Delete `PROJECT_CONTEXT.md` once we are done (cleanup)
-- [ ] You have to fix many issues in frontend code you generated. Consider extending Cursor rule file to prevent these issues. If rules you decide to add are too big, notify me about it and let's discuss to which rule file we should put it and if it should be always ON
-- [ ] Consider refactoring files longer than 300 lines so the code does not look unprofessional.
+- [x] You have to fix many issues in frontend code you generated. Consider extending Cursor rule file to prevent these issues. If rules you decide to add are too big, notify me about it and let's discuss to which rule file we should put it and if it should be always ON
+- [x] Consider refactoring files longer than 300 lines so the code does not look unprofessional.
 
 ## Relevant context / decisions (so the next chat has it)
-- Makefile design decision: keep a root dispatcher Makefile, but prioritize single-scope targets (e.g. `backend-test`, `frontend-types`) and provide `*-all` aggregates; avoids forcing “run both” when only backend/frontend changes.
-- Lint autofix idea: use `make fix-frontend` (Biome) and `make fix-backend` (Ruff) as the default “try to autocorrect first” workflow before re-running strict checks.
+- Makefile design decision: standardized root targets to `*-all` + `*-backend` + `*-frontend` (e.g. `make test-all`, `make types-all`, `make lint-all`) to avoid ambiguity.
+- Lint autofix idea: use `make fix-all` (or `make fix-frontend` / `make fix-backend`) as the default “try to autocorrect first” workflow before re-running strict checks.
 
 ---
 
