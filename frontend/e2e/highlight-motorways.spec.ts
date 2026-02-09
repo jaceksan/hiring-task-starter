@@ -57,33 +57,34 @@ test("highlight motorways renders and persists across /plot refresh", async ({
 	await disableAutoMinimizeChat(page);
 	await selectPragueGeoParquetScenario(page);
 
-	// Force a deterministic AOI+zoom for the invoke request so roads geometry is decoded.
+	let seenInvokeBody: any = null;
 	await page.route("**/invoke", async (route) => {
-		const req = route.request();
-		const raw = req.postData();
-		if (!raw) return route.continue();
-		try {
-			const body = JSON.parse(raw);
-			body.map = body.map ?? {};
-			body.map.view = body.map.view ?? {};
-			body.map.view.zoom = 12.0;
-			body.map.view.center = { lat: 50.0755, lon: 14.4378 };
-			body.map.bbox = {
-				minLon: 14.22,
-				minLat: 49.94,
-				maxLon: 14.7,
-				maxLat: 50.18,
-			};
-			await route.continue({ postData: JSON.stringify(body) });
-		} catch {
-			await route.continue();
+		const raw = route.request().postData();
+		if (raw) {
+			try {
+				seenInvokeBody = JSON.parse(raw);
+			} catch {
+				seenInvokeBody = null;
+			}
 		}
+		await route.continue();
 	});
 
 	await page.getByRole("button", { name: /start new thread/i }).click();
 	await page.waitForURL(/\/thread\/\d+$/);
 
 	await openChatDrawer(page);
+
+	// Zoom in enough so GeoParquet roads geometry is decoded for highlight.
+	await zoomMapboxBy(page, 1.75);
+	const expectedZoom = await page.evaluate(() => {
+		const el = document.querySelector(".js-plotly-plot") as any;
+		const map = el?._fullLayout?.mapbox?._subplot?.map;
+		const z = map?.getZoom?.();
+		return typeof z === "number" ? z : null;
+	});
+	expect(expectedZoom).not.toBeNull();
+
 	const input = page.getByPlaceholder("Ask PangeAI...");
 	await input.fill("highlight motorways");
 
@@ -96,6 +97,12 @@ test("highlight motorways renders and persists across /plot refresh", async ({
 	// Wait for the chat message.
 	const msg = page.getByText(/Highlighted \d+ Roads \(lines\)/i);
 	await expect(msg).toBeVisible();
+
+	// Regression guard: invoke payload should reflect the actual current map zoom.
+	expect(seenInvokeBody?.map?.view?.zoom).toBeDefined();
+	expect(Number(seenInvokeBody.map.view.zoom)).toBeGreaterThanOrEqual(
+		(expectedZoom as number) - 0.1,
+	);
 
 	// The highlight trace should not be empty.
 	await expect

@@ -286,6 +286,21 @@ export function usePlotController(args: {
 		};
 	}, []);
 
+	const getAuthoritativeMapContext = useCallback(() => {
+		const domView = readViewFromPlotDom();
+		if (!domView.center || typeof domView.zoom !== "number") return null;
+		const viewport = getViewportSize();
+		const bbox = viewport
+			? calcBboxFromCenterZoom(domView.center, domView.zoom, viewport)
+			: null;
+		return {
+			center: domView.center,
+			zoom: domView.zoom,
+			bbox,
+			viewport,
+		};
+	}, [getViewportSize, readViewFromPlotDom]);
+
 	const applyUserView = useCallback(
 		(next: { center: MapCenter; zoom: number }) => {
 			const prev = mapViewRef.current;
@@ -365,6 +380,7 @@ export function usePlotController(args: {
 		getStats,
 		schedulePlotRefresh,
 		abortPlotRefresh,
+		getAuthoritativeMapContext,
 		setInvokeBusy,
 		onRelayout,
 	};

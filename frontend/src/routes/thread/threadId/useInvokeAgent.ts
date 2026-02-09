@@ -20,6 +20,12 @@ export function useInvokeAgent(args: {
 	mapView: MapViewState;
 	getCurrentBbox: () => BBox;
 	getViewportSize: () => ViewportSize | null;
+	getAuthoritativeMapContext?: () => {
+		center: { lat: number; lon: number };
+		zoom: number;
+		bbox: BBox | null;
+		viewport: ViewportSize | null;
+	} | null;
 	setPlotData: (next: Pick<PlotParams, "data" | "layout">) => void;
 	setMapView: (next: MapViewState) => void;
 	abortPlotRefresh: () => void;
@@ -34,6 +40,7 @@ export function useInvokeAgent(args: {
 		mapView,
 		getCurrentBbox,
 		getViewportSize,
+		getAuthoritativeMapContext,
 		setPlotData,
 		setMapView,
 		abortPlotRefresh,
@@ -72,15 +79,20 @@ export function useInvokeAgent(args: {
 				throw new Error("REFETCH_THREAD_RETURNED_NO_DATA");
 			}
 
-			const bbox = getCurrentBbox();
-			const viewport = getViewportSize();
+			// IMPORTANT: mapView state can lag behind the actual Mapbox view when the user
+			// zooms/pans and immediately submits a prompt. Prefer the authoritative DOM view.
+			const authoritative = getAuthoritativeMapContext?.() ?? null;
+			const bbox = authoritative?.bbox ?? getCurrentBbox();
+			const viewport = authoritative?.viewport ?? getViewportSize();
+			const viewCenter = authoritative?.center ?? mapView.center;
+			const viewZoom = authoritative?.zoom ?? mapView.zoom;
 			const response = await fetch("http://localhost:8000/invoke", {
 				method: "POST",
 				body: JSON.stringify({
 					...threadWithNewHumanMessage,
 					map: {
 						bbox,
-						view: { center: mapView.center, zoom: mapView.zoom },
+						view: { center: viewCenter, zoom: viewZoom },
 						viewport,
 					},
 					engine,
