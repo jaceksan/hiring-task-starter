@@ -16,9 +16,9 @@ from engine.duckdb_impl.geoparquet.config import (
 )
 from engine.duckdb_impl.geoparquet.decode import (
     decode_line_rows,
-    decode_point_rows,
     decode_polygon_rows,
 )
+from engine.duckdb_impl.geoparquet.points import query_geoparquet_points_layer_bbox
 from engine.duckdb_impl.geoparquet.policy import (
     allowed_classes,
     choose_by_max_zoom,
@@ -28,8 +28,6 @@ from engine.duckdb_impl.geoparquet.sql import (
     query_candidate_ids,
     query_geometry_rows_for_ids,
     query_geometry_rows_no_policy,
-    query_points_rows,
-    query_points_rows_sampled,
 )
 from engine.duckdb_impl.geoparquet.stats import base_stats
 from geo.aoi import BBox
@@ -81,75 +79,15 @@ def query_geoparquet_layer_bbox(
     c_expr = class_expr(cols.class_col)
 
     if kind == "points":
-        max_candidates_int = int(max_candidates) if max_candidates is not None else None
-        cand_limit = int(safety)
-        if max_candidates_int is not None:
-            cand_limit = max(1, min(int(cand_limit), int(max_candidates_int)))
-
-        span_lon = float(b.max_lon - b.min_lon)
-        span_lat = float(b.max_lat - b.min_lat)
-        use_sample = (
-            max_candidates_int is not None
-            and max_candidates_int < safety
-            and max(span_lon, span_lat) > 1.0
-        )
-        cap_meta: dict[str, Any] = {
-            "safetyLimit": int(safety),
-            "policyMaxCandidates": max_candidates_int,
-            "hardCap": None,
-            "effectiveLimit": int(cand_limit),
-            "cappedBy": ["policyMaxCandidates"]
-            if (max_candidates_int is not None and max_candidates_int < safety)
-            else [],
-            "sampled": bool(use_sample),
-        }
-
-        t_db0 = time.perf_counter()
-        rows = (
-            query_points_rows_sampled(
-                conn,
-                path=str(path),
-                where_sql=where_sql,
-                where_params=where_params,
-                id_col=cols.id_col,
-                xmin_expr=bbox["xmin"],
-                ymin_expr=bbox["ymin"],
-                name_col=cols.name_col,
-                class_col=cols.class_col,
-                limit=cand_limit,
-            )
-            if use_sample
-            else query_points_rows(
-                conn,
-                path=str(path),
-                where_sql=where_sql,
-                where_params=where_params,
-                id_col=cols.id_col,
-                xmin_expr=bbox["xmin"],
-                ymin_expr=bbox["ymin"],
-                name_expr=n_expr,
-                class_expr=c_expr,
-                limit=cand_limit,
-            )
-        )
-        t_db_ms = (time.perf_counter() - t_db0) * 1000.0
-
-        t_dec0 = time.perf_counter()
-        feats = decode_point_rows(rows)
-        t_decode_ms = (time.perf_counter() - t_dec0) * 1000.0
-
-        layer = Layer(
-            id=layer_id, kind="points", title=title, features=feats, style=style or {}
-        )
-        return layer, base_stats(
+        return query_geoparquet_points_layer_bbox(
+            conn,
             layer_id=layer_id,
-            kind="points",
-            view_zoom=float(view_zoom),
-            n=len(feats),
-            duckdb_ms=t_db_ms,
-            decode_ms=t_decode_ms,
-            total_ms=(time.perf_counter() - t0) * 1000.0,
-            cap=cap_meta,
+            title=title,
+            style=style or {},
+            path=path,
+            aoi=aoi,
+            view_zoom=view_zoom,
+            source_options=source_options,
         )
 
     # Lines/polygons: decode geometry (optionally with a zoom+class “overview” policy).

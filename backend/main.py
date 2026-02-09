@@ -16,10 +16,17 @@ from api.invoke_stream import (
     _normalize_engine,
     handle_incoming_message,
 )
-from engine.types import MapContext
+from engine.duckdb_impl.geoparquet.pins import query_geoparquet_layer_pinned_ids
+from engine.types import LayerBundle, MapContext
 from geo.aoi import BBox
+from layers.types import Layer
 from plotly.build_map import build_map_plot
-from scenarios.registry import default_scenario_id, get_scenario, list_scenarios
+from scenarios.registry import (
+    default_scenario_id,
+    get_scenario,
+    list_scenarios,
+    resolve_repo_path,
+)
 from telemetry.singleton import get_store, reset_store
 
 app = FastAPI()
@@ -138,6 +145,68 @@ def plot(body: ApiPlotRequest):
     result = _engine(engine_name).get(ctx)
     t_engine_get_ms = (time.perf_counter() - t0) * 1000.0
     aoi_layers = result.layers
+
+    # Pin highlighted features into the layer bundle so they don't disappear across zoom changes
+    # when base layer queries are capped. (Best-effort; only for DuckDB+GeoParquet layers.)
+    if engine_name == "duckdb" and body.highlight:
+        hl_layer_id = body.highlight.get("layerId")
+        hl_ids_raw = body.highlight.get("featureIds") or body.highlight.get("pointIds")
+        if (
+            isinstance(hl_layer_id, str)
+            and hl_layer_id
+            and isinstance(hl_ids_raw, list)
+        ):
+            try:
+                layer_cfg = next(
+                    (cfg for cfg in scenario.layers if cfg.id == hl_layer_id), None
+                )
+                if (
+                    layer_cfg is not None
+                    and layer_cfg.source.type == "geoparquet"
+                    and isinstance(layer_cfg.source.geoparquet, dict)
+                ):
+                    import duckdb as _duckdb  # local import to keep startup light
+
+                    conn = _duckdb.connect(database=":memory:", read_only=False)
+                    try:
+                        pinned = query_geoparquet_layer_pinned_ids(
+                            conn,
+                            layer_id=layer_cfg.id,
+                            kind=layer_cfg.kind,
+                            title=layer_cfg.title,
+                            style=layer_cfg.style or {},
+                            path=resolve_repo_path(layer_cfg.source.path),
+                            aoi=aoi,
+                            view_zoom=ctx.view_zoom,
+                            source_options=layer_cfg.source.geoparquet or None,
+                            ids=set(str(x) for x in hl_ids_raw if isinstance(x, str)),
+                        )
+                    finally:
+                        try:
+                            conn.close()
+                        except Exception:
+                            pass
+
+                    base_layers = list(aoi_layers.layers)
+                    for i, layer in enumerate(base_layers):
+                        if layer.id != layer_cfg.id:
+                            continue
+                        merged = {getattr(f, "id", ""): f for f in layer.features}
+                        for f in pinned.features:
+                            fid = getattr(f, "id", "")
+                            if fid:
+                                merged[fid] = f
+                        base_layers[i] = Layer(
+                            id=layer.id,
+                            kind=layer.kind,
+                            title=layer.title,
+                            features=[merged[k] for k in sorted(merged.keys()) if k],
+                            style=layer.style,
+                        )
+                        break
+                    aoi_layers = LayerBundle(layers=base_layers)
+            except Exception:
+                pass
 
     t1 = time.perf_counter()
     (lod_layers, beer_clusters), cache_stats = _apply_lod_cached(

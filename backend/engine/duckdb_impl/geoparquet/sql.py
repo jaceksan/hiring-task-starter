@@ -83,6 +83,36 @@ def query_points_rows_sampled(
     ).fetchall()
 
 
+def query_points_rows_for_ids(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    path: str,
+    where_sql: str,
+    where_params: tuple[float, float, float, float],
+    id_col: str,
+    xmin_expr: str,
+    ymin_expr: str,
+    name_expr: str,
+    class_expr: str,
+    ids: list[str],
+    limit: int,
+) -> list[tuple]:
+    return conn.execute(
+        f"""
+        SELECT CAST({id_col} AS VARCHAR) AS id,
+               CAST({xmin_expr} AS DOUBLE) AS lon,
+               CAST({ymin_expr} AS DOUBLE) AS lat,
+               {name_expr},
+               {class_expr}
+          FROM read_parquet(?)
+         WHERE {where_sql}
+           AND CAST({id_col} AS VARCHAR) = ANY(?)
+         LIMIT {int(limit)}
+        """,
+        [str(path), *where_params, ids],
+    ).fetchall()
+
+
 def query_geometry_rows_no_policy(
     conn: duckdb.DuckDBPyConnection,
     *,
