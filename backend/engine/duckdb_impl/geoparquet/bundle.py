@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
 from typing import Any
 
@@ -36,33 +37,43 @@ def _geoparquet_bundle_cached(
     )
     view_zoom = float(zoom_bucket) / 2.0
 
-    conn = duckdb.connect(
-        database=":memory:", read_only=False, config={"threads": int(duckdb_threads())}
-    )
-    try:
-        out_layers: list[Layer] = []
-        layer_stats: list[dict[str, Any]] = []
-        for layer_cfg in scenario.layers:
-            if layer_cfg.source.type != "geoparquet":
-                out_layers.append(
-                    Layer(
-                        id=layer_cfg.id,
-                        kind=layer_cfg.kind,
-                        title=layer_cfg.title,
-                        features=[],
-                        style=layer_cfg.style or {},
-                    )
-                )
-                layer_stats.append(
-                    {
-                        "layerId": layer_cfg.id,
-                        "kind": layer_cfg.kind,
-                        "source": layer_cfg.source.type,
-                        "n": 0,
-                    }
-                )
-                continue
-            p = resolve_repo_path(layer_cfg.source.path)
+    # Option A: keep single /plot response, but query GeoParquet layers concurrently.
+    # This avoids the complexity of partial Plotly merges on the frontend while reducing
+    # perceived latency when one layer dominates.
+    gp_layers = [lc for lc in scenario.layers if lc.source.type == "geoparquet"]
+    max_workers = max(1, min(4, len(gp_layers)))
+    total_threads = int(duckdb_threads())
+    per_conn_threads = max(1, total_threads // max_workers) if total_threads > 0 else 1
+
+    out_layers: list[Layer] = [
+        Layer(
+            id=layer_cfg.id,
+            kind=layer_cfg.kind,
+            title=layer_cfg.title,
+            features=[],
+            style=layer_cfg.style or {},
+        )
+        for layer_cfg in scenario.layers
+    ]
+    layer_stats: list[dict[str, Any]] = [
+        {
+            "layerId": layer_cfg.id,
+            "kind": layer_cfg.kind,
+            "source": layer_cfg.source.type,
+            "n": 0,
+        }
+        for layer_cfg in scenario.layers
+    ]
+
+    def _query_one(i: int) -> tuple[int, Layer, dict[str, Any]]:
+        layer_cfg = scenario.layers[i]
+        p = resolve_repo_path(layer_cfg.source.path)
+        conn = duckdb.connect(
+            database=":memory:",
+            read_only=False,
+            config={"threads": int(per_conn_threads)},
+        )
+        try:
             layer, stats = query_geoparquet_layer_bbox(
                 conn,
                 layer_id=layer_cfg.id,
@@ -74,18 +85,45 @@ def _geoparquet_bundle_cached(
                 view_zoom=view_zoom,
                 source_options=layer_cfg.source.geoparquet or None,
             )
-            out_layers.append(layer)
-            layer_stats.append(stats)
-        return LayerBundle(layers=out_layers), {
-            "aoiKey": aoi_key,
-            "zoomBucket": zoom_bucket,
-            "layers": layer_stats,
-        }
-    finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
+            return i, layer, stats
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+    gp_indexes = [
+        i for i, lc in enumerate(scenario.layers) if lc.source.type == "geoparquet"
+    ]
+    if gp_indexes:
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            futures = {pool.submit(_query_one, i): i for i in gp_indexes}
+            for fut in as_completed(futures):
+                i = futures[fut]
+                try:
+                    idx, layer, stats = fut.result()
+                    out_layers[idx] = layer
+                    layer_stats[idx] = stats
+                except Exception:
+                    # Best-effort: keep the layer empty and record a minimal error marker.
+                    layer_stats[i] = {
+                        "layerId": scenario.layers[i].id,
+                        "kind": scenario.layers[i].kind,
+                        "source": "geoparquet",
+                        "n": 0,
+                        "skippedReason": "error",
+                    }
+
+    return LayerBundle(layers=out_layers), {
+        "aoiKey": aoi_key,
+        "zoomBucket": zoom_bucket,
+        "layers": layer_stats,
+        "parallel": {
+            "enabled": bool(gp_indexes),
+            "workers": int(max_workers),
+            "perConnThreads": int(per_conn_threads),
+        },
+    }
 
 
 def query_geoparquet_layers_cached(
