@@ -2,11 +2,19 @@
 
 ### Status
 
-Investigated (higher complexity than it initially appears; see “Complexity & pitfalls”).
+Completed (Option A delivered; Option B deferred to MVT context).
 
 ### Goal
 
 Split the current “all layers in one `/plot` call” model into **generic per-layer calls**, so slow layers don’t block fast ones.
+
+### Outcome (completed)
+
+- Implemented **Option A**: GeoParquet layers are queried concurrently on the backend behind the existing single `/plot` call.
+- **Option B** (true per-layer requests + incremental Plotly merge) is deferred:
+  - higher frontend complexity (trace identity/merge, partial refresh UX, staleness fan-out)
+  - higher backend risk unless we add a real per-layer fetch path (to avoid N× work)
+- Commit: `3ad6155`
 
 ### Current architecture (what we have today)
 
