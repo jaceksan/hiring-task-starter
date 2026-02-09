@@ -80,6 +80,21 @@ def query_geoparquet_layer_bbox(
     c_expr = class_expr(cols.class_col)
 
     if kind == "points":
+        max_candidates_int = int(max_candidates) if max_candidates is not None else None
+        cand_limit = int(safety)
+        if max_candidates_int is not None:
+            cand_limit = max(1, min(int(cand_limit), int(max_candidates_int)))
+
+        cap_meta: dict[str, Any] = {
+            "safetyLimit": int(safety),
+            "policyMaxCandidates": max_candidates_int,
+            "hardCap": None,
+            "effectiveLimit": int(cand_limit),
+            "cappedBy": ["policyMaxCandidates"]
+            if (max_candidates_int is not None and max_candidates_int < safety)
+            else [],
+        }
+
         t_db0 = time.perf_counter()
         rows = query_points_rows(
             conn,
@@ -91,7 +106,7 @@ def query_geoparquet_layer_bbox(
             ymin_expr=bbox["ymin"],
             name_expr=n_expr,
             class_expr=c_expr,
-            limit=safety,
+            limit=cand_limit,
         )
         t_db_ms = (time.perf_counter() - t_db0) * 1000.0
 
@@ -110,7 +125,7 @@ def query_geoparquet_layer_bbox(
             duckdb_ms=t_db_ms,
             decode_ms=t_decode_ms,
             total_ms=(time.perf_counter() - t0) * 1000.0,
-            cap={"safetyLimit": int(safety), "effectiveLimit": int(safety)},
+            cap=cap_meta,
         )
 
     # Lines/polygons: decode geometry (optionally with a zoom+class “overview” policy).
