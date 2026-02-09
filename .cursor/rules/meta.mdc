@@ -12,4 +12,9 @@ alwaysApply: true
 - Avoid duplicating information across rule files; put shared guidance in `general` or `workflow`.
 - When rules grow, **split** by concern rather than adding sections indefinitely.
 - If a rule is meant for a specific area, scope it via `globs` (e.g. `frontend/**/*`, `backend/**/*`) rather than keeping it always-on.
+- Prefer workflows that enable manual verification:
+  - commit changes
+  - let the user test
+  - follow up with fixup commits
+  - squash before the first push when appropriate
 

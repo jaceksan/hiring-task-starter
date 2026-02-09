@@ -10,6 +10,11 @@ alwaysApply: true
   - `make fix-all`
   - `make types-all`
 - Do **not** run `make lint-*` targets by default. Only run lint/verification targets if the user explicitly asks or when debugging a failing CI check.
+- Do **not** push by default. Prefer:
+  - implement → commit → ask the user to manually test
+  - apply fixups as new commits if issues are found
+  - push only when the user explicitly asks
+- If the user asks to push and there are multiple fixup commits **not yet pushed**, autosquash them into a clean history before pushing.
 
 ## Tests (only when relevant)
 
