@@ -2,11 +2,6 @@
 
 The order of items below is the priority order (top = highest). Each item has up to three concise sub-bullets; when needed, the last sub-bullet links to a detail file in `backlog/`.
 
-- **P1 — Refactor Cursor rules + adopt backlog workflow (DX accelerator)**
-  - Split rules into focused files (`workflow`, `backend`, `frontend`, `backlog`) and keep them small.
-  - Extend rules to always drive work from `BACKLOG.md` order, with detail files for deeper context.
-  - Details: [`backlog/0001-cursor-rules-refactor.md`](backlog/0001-cursor-rules-refactor.md)
-
 - **P1 — Fix `make` target naming/usage (remove redundancy, clarify “fix vs lint vs types”)**
   - Make `fix-*` imply “apply autofixes”, and `lint-*` imply “verify (no writes)”.
   - Align frontend linting on `biome check` (not `biome lint`) so formatting is verified too.

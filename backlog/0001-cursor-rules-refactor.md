@@ -1,5 +1,10 @@
 ## Refactor Cursor rules + backlog workflow
 
+### Outcome (completed)
+
+- Implemented and validated; you confirmed the rules now work well in practice.
+- Landed in commit `64f03d9` (“chore: replace project context with ordered backlog”).
+
 ### Goals
 
 - Keep `.cursor/rules/` **small and focused** (frontend/backend/workflow/backlog).
