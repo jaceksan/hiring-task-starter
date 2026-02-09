@@ -140,9 +140,11 @@ def query_geoparquet_layer_bbox(
     # tens of thousands of WKB geometries only to drop most of them later.
     hard_cap = None
     if kind == "lines":
-        hard_cap = 25_000
+        # Lines (roads) are by far the densest layer; keep a strict cap to ensure
+        # /plot refreshes remain interactive even on worst-case AOIs.
+        hard_cap = 12_000
     elif kind == "polygons":
-        hard_cap = 10_000
+        hard_cap = 6_000
     if hard_cap is not None:
         cand_limit = max(1, min(int(cand_limit), int(hard_cap)))
 
