@@ -70,7 +70,7 @@ def query_candidate_ids(
     allow_classes: set[str] | None,
     name_expr: str,
     class_expr: str,
-    order_by_sql: str,
+    order_by_sql: str | None,
     limit: int,
 ) -> list[str]:
     class_filter_sql = ""
@@ -79,6 +79,10 @@ def query_candidate_ids(
         class_filter_sql = f" AND CAST({class_col} AS VARCHAR) = ANY(?)"
         params.append(sorted(allow_classes))
 
+    order_by_clause = ""
+    if isinstance(order_by_sql, str) and order_by_sql.strip():
+        order_by_clause = f" ORDER BY {order_by_sql.strip()}"
+
     rows = conn.execute(
         f"""
         SELECT CAST({id_col} AS VARCHAR) AS id,
@@ -86,7 +90,7 @@ def query_candidate_ids(
                {class_expr}
           FROM read_parquet(?)
          WHERE {where_sql}{class_filter_sql}
-         ORDER BY {order_by_sql}
+         {order_by_clause}
          LIMIT {int(limit)}
         """,
         params,

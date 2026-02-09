@@ -68,17 +68,16 @@ def allowed_classes(policy: Any, zoom: float) -> set[str] | None:
     return allowed or None
 
 
-def order_by(policy: Any, *, bbox: dict[str, str]) -> str:
+def order_by(policy: Any, *, bbox: dict[str, str]) -> str | None:
     """
     Render-policy ordering expression for candidate selection.
 
-    Default: prefer large bbox diagonal (cheap importance proxy without geometry decoding).
+    Default: no ordering for performance.
+    (Ordering forces a sort over large candidate sets; prefer tight caps instead.)
     """
     if not isinstance(policy, dict):
         policy = {}
     raw = policy.get("orderBy")
     if isinstance(raw, str) and raw.strip():
         return str(raw).strip()
-    dx = f"CAST({bbox['xmax']} AS DOUBLE) - CAST({bbox['xmin']} AS DOUBLE)"
-    dy = f"CAST({bbox['ymax']} AS DOUBLE) - CAST({bbox['ymin']} AS DOUBLE)"
-    return f"({dx}*{dx} + {dy}*{dy}) DESC"
+    return None
