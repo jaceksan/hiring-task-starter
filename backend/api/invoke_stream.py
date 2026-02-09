@@ -74,12 +74,13 @@ def _apply_lod_cached(
     highlight_feature_ids: set[str] | None,
 ):
     """
-    Cache LOD output by tile coverage and zoom bucket.
+    Cache LOD output by AOI bucket + zoom bucket.
 
     This is primarily used by `/plot` refreshes on pan/zoom and should make them cheap.
     """
     tile_zoom = tile_zoom_for_view_zoom(view_zoom)
     tiles = tuple(sorted(tiles_for_bbox(tile_zoom, aoi), key=lambda t: (t[1], t[2])))
+    aoi_key = aoi.rounded_key(decimals=4)
     zoom_bucket = int(round(float(view_zoom) * 2.0))  # 0.5 zoom buckets
     highlight_key = (
         highlight_layer_id or "",
@@ -92,6 +93,7 @@ def _apply_lod_cached(
         tile_zoom,
         zoom_bucket,
         tiles,
+        aoi_key,
         highlight_key,
     )
 
@@ -101,6 +103,7 @@ def _apply_lod_cached(
             "tileZoom": tile_zoom,
             "tilesUsed": len(tiles),
             "zoomBucket": zoom_bucket / 2.0,
+            "aoiKey": aoi_key,
             "cacheHit": True,
         }
 
@@ -117,6 +120,7 @@ def _apply_lod_cached(
         "tileZoom": tile_zoom,
         "tilesUsed": len(tiles),
         "zoomBucket": zoom_bucket / 2.0,
+        "aoiKey": aoi_key,
         "cacheHit": False,
     }
 
