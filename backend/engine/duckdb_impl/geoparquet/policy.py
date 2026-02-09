@@ -82,4 +82,3 @@ def order_by(policy: Any, *, bbox: dict[str, str]) -> str:
     dx = f"CAST({bbox['xmax']} AS DOUBLE) - CAST({bbox['xmin']} AS DOUBLE)"
     dy = f"CAST({bbox['ymax']} AS DOUBLE) - CAST({bbox['ymin']} AS DOUBLE)"
     return f"({dx}*{dx} + {dy}*{dy}) DESC"
-

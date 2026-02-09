@@ -16,7 +16,9 @@ def decode_point_rows(rows: list[tuple]) -> list[PointFeature]:
             props["label"] = str(name)
         if fclass:
             props["fclass"] = str(fclass)
-        feats.append(PointFeature(id=str(fid), lon=float(lon), lat=float(lat), props=props))
+        feats.append(
+            PointFeature(id=str(fid), lon=float(lon), lat=float(lat), props=props)
+        )
     return feats
 
 
@@ -48,7 +50,9 @@ def decode_line_rows(rows: list[tuple]) -> list[LineFeature]:
             for i, part in enumerate(getattr(geom, "geoms", []) or []):
                 coords = [(float(x), float(y)) for x, y in part.coords]
                 if len(coords) >= 2:
-                    feats.append(LineFeature(id=f"{fid}:{i}", coords=coords, props=props))
+                    feats.append(
+                        LineFeature(id=f"{fid}:{i}", coords=coords, props=props)
+                    )
     return feats
 
 
@@ -80,4 +84,3 @@ def decode_polygon_rows(rows: list[tuple]) -> list[PolygonFeature]:
                 _poly_to_feature(f"{fid}:{i}", part, props)
 
     return feats2
-

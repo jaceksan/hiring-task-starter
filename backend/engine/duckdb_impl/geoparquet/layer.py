@@ -19,7 +19,11 @@ from engine.duckdb_impl.geoparquet.decode import (
     decode_point_rows,
     decode_polygon_rows,
 )
-from engine.duckdb_impl.geoparquet.policy import allowed_classes, choose_by_max_zoom, order_by
+from engine.duckdb_impl.geoparquet.policy import (
+    allowed_classes,
+    choose_by_max_zoom,
+    order_by,
+)
 from engine.duckdb_impl.geoparquet.sql import (
     query_candidate_ids,
     query_geometry_rows_for_ids,
@@ -61,7 +65,9 @@ def query_geoparquet_layer_bbox(
     cols = parse_columns(opts)
     geom_min_zoom = float(opts.get("minZoomForGeometry") or default_geom_min_zoom())
 
-    policy = opts.get("renderPolicy") if isinstance(opts.get("renderPolicy"), dict) else None
+    policy = (
+        opts.get("renderPolicy") if isinstance(opts.get("renderPolicy"), dict) else None
+    )
     allow = allowed_classes(policy, float(view_zoom))
     order_by_sql = order_by(policy, bbox=bbox)
     max_candidates = choose_by_max_zoom(
@@ -93,7 +99,9 @@ def query_geoparquet_layer_bbox(
         feats = decode_point_rows(rows)
         t_decode_ms = (time.perf_counter() - t_dec0) * 1000.0
 
-        layer = Layer(id=layer_id, kind="points", title=title, features=feats, style=style or {})
+        layer = Layer(
+            id=layer_id, kind="points", title=title, features=feats, style=style or {}
+        )
         return layer, base_stats(
             layer_id=layer_id,
             kind="points",
@@ -107,7 +115,9 @@ def query_geoparquet_layer_bbox(
     # Lines/polygons: decode geometry (optionally with a zoom+class “overview” policy).
     # Default behavior (no renderPolicy): no decoding below minZoomForGeometry.
     if float(view_zoom) < geom_min_zoom and not allow:
-        layer = Layer(id=layer_id, kind=kind, title=title, features=[], style=style or {})
+        layer = Layer(
+            id=layer_id, kind=kind, title=title, features=[], style=style or {}
+        )
         return layer, base_stats(
             layer_id=layer_id,
             kind=kind,
@@ -125,6 +135,17 @@ def query_geoparquet_layer_bbox(
     if max_candidates is not None:
         cand_limit = max(1, min(int(cand_limit), int(max_candidates)))
 
+    # Hard caps to keep decoding/serialization stable on dense line/polygon layers.
+    # LOD runs *after* decoding; without a pre-cap, we can spend seconds decoding
+    # tens of thousands of WKB geometries only to drop most of them later.
+    hard_cap = None
+    if kind == "lines":
+        hard_cap = 25_000
+    elif kind == "polygons":
+        hard_cap = 10_000
+    if hard_cap is not None:
+        cand_limit = max(1, min(int(cand_limit), int(hard_cap)))
+
     t_db0 = time.perf_counter()
     if not policy_enabled:
         rows = query_geometry_rows_no_policy(
@@ -136,10 +157,13 @@ def query_geoparquet_layer_bbox(
             geom_col=cols.geom_col,
             name_expr=n_expr,
             class_expr=c_expr,
-            limit=limit,
+            limit=cand_limit,
         )
-        policy_meta = {"enabled": False, "allowedClasses": 0, "candLimit": int(limit)}
-        cand_limit = int(limit)
+        policy_meta = {
+            "enabled": False,
+            "allowedClasses": 0,
+            "candLimit": int(cand_limit),
+        }
     else:
         ids = query_candidate_ids(
             conn,
@@ -155,7 +179,9 @@ def query_geoparquet_layer_bbox(
             limit=cand_limit,
         )
         if not ids:
-            layer = Layer(id=layer_id, kind=kind, title=title, features=[], style=style or {})
+            layer = Layer(
+                id=layer_id, kind=kind, title=title, features=[], style=style or {}
+            )
             return layer, base_stats(
                 layer_id=layer_id,
                 kind=kind,
@@ -164,7 +190,11 @@ def query_geoparquet_layer_bbox(
                 duckdb_ms=0.0,
                 decode_ms=0.0,
                 total_ms=(time.perf_counter() - t0) * 1000.0,
-                policy={"enabled": True, "allowedClasses": len(allow or []), "candLimit": int(cand_limit)},
+                policy={
+                    "enabled": True,
+                    "allowedClasses": len(allow or []),
+                    "candLimit": int(cand_limit),
+                },
             )
         rows = query_geometry_rows_for_ids(
             conn,
@@ -178,14 +208,20 @@ def query_geoparquet_layer_bbox(
             ids=ids,
             limit=cand_limit,
         )
-        policy_meta = {"enabled": True, "allowedClasses": len(allow or []), "candLimit": int(cand_limit)}
+        policy_meta = {
+            "enabled": True,
+            "allowedClasses": len(allow or []),
+            "candLimit": int(cand_limit),
+        }
     t_db_ms = (time.perf_counter() - t_db0) * 1000.0
 
     t_dec0 = time.perf_counter()
     if kind == "lines":
         feats = decode_line_rows(rows)
         t_decode_ms = (time.perf_counter() - t_dec0) * 1000.0
-        layer = Layer(id=layer_id, kind="lines", title=title, features=feats, style=style or {})
+        layer = Layer(
+            id=layer_id, kind="lines", title=title, features=feats, style=style or {}
+        )
         return layer, base_stats(
             layer_id=layer_id,
             kind="lines",
@@ -199,7 +235,9 @@ def query_geoparquet_layer_bbox(
 
     feats2 = decode_polygon_rows(rows)
     t_decode_ms = (time.perf_counter() - t_dec0) * 1000.0
-    layer = Layer(id=layer_id, kind="polygons", title=title, features=feats2, style=style or {})
+    layer = Layer(
+        id=layer_id, kind="polygons", title=title, features=feats2, style=style or {}
+    )
     return layer, base_stats(
         layer_id=layer_id,
         kind="polygons",
@@ -210,4 +248,3 @@ def query_geoparquet_layer_bbox(
         total_ms=(time.perf_counter() - t0) * 1000.0,
         policy=policy_meta,
     )
-

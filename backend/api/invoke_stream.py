@@ -237,7 +237,9 @@ async def handle_incoming_message(thread):
 
         # If highlights were requested but clipped by budgets/policy, make it explicit.
         try:
-            stats = (plot.get("layout", {}).get("meta", {}) or {}).get("stats", {}) or {}
+            stats = (plot.get("layout", {}).get("meta", {}) or {}).get(
+                "stats", {}
+            ) or {}
             req = int(stats.get("highlightRequested") or 0)
             rend = int(stats.get("highlightRendered") or 0)
             if req and rend and rend < req:

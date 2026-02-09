@@ -44,30 +44,34 @@ layers:
             secondary_link: 7.0
             tertiary: 9.0
             tertiary_link: 9.0
-            residential: 12.5
-            unclassified: 12.5
-            service: 13.0
-            living_street: 13.0
-            cycleway: 13.0
-            footway: 13.5
-            path: 13.5
-            steps: 14.0
-            track: 14.0
-            track_grade1: 14.0
-            track_grade2: 14.0
-            track_grade3: 14.0
-            track_grade4: 14.0
-            track_grade5: 14.0
-            pedestrian: 14.0
-            bridleway: 14.0
-            busway: 12.0
+            # Minor classes are extremely dense in the CZ dataset. Keep them off until very
+            # high zoom; otherwise decoding + JSON serialization become unstable (multi-second).
+            residential: 13.5
+            unclassified: 13.5
+            service: 14.0
+            living_street: 14.0
+            cycleway: 14.5
+            busway: 14.5
+            footway: 15.0
+            path: 15.0
+            steps: 15.5
+            track: 15.5
+            track_grade1: 15.5
+            track_grade2: 15.5
+            track_grade3: 15.5
+            track_grade4: 15.5
+            track_grade5: 15.5
+            pedestrian: 15.5
+            bridleway: 15.5
           # Hard cap of “geometry candidates” before any Python simplification/LOD.
           # Keys are maxZoom thresholds.
           maxCandidatesByZoom:
-            7.5: 4000
-            9.0: 12000
-            12.0: 40000
-            24.0: 80000
+            7.5: 3000
+            9.0: 8000
+            12.0: 20000
+            13.5: 25000
+            15.0: 30000
+            24.0: 40000
     style:
       line:
         color: "rgba(55, 71, 79, 0.55)"
@@ -93,10 +97,10 @@ layers:
             wetland: 9.5
             riverbank: 11.5
           maxCandidatesByZoom:
-            7.5: 800
-            9.0: 1500
-            12.0: 5000
-            24.0: 10000
+            7.5: 600
+            9.0: 1200
+            12.0: 3500
+            24.0: 7000
     style:
       fillcolor: "rgba(30, 136, 229, 0.15)"
       line:

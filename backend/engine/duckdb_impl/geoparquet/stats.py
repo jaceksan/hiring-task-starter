@@ -33,4 +33,3 @@ def base_stats(
     if geom_min_zoom is not None:
         out["geomMinZoom"] = float(geom_min_zoom)
     return out
-

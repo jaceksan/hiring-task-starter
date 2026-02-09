@@ -120,4 +120,3 @@ def query_geometry_rows_for_ids(
         """,
         [str(path), *where_params, ids],
     ).fetchall()
-

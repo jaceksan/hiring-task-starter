@@ -49,7 +49,9 @@ class DuckDBEngine(LayerEngine):
                 view_zoom=ctx.view_zoom,
             )
             index = build_geo_index(layers)
-            return EngineResult(layers=layers, index=index, stats={"geoparquet": gp_stats})
+            return EngineResult(
+                layers=layers, index=index, stats={"geoparquet": gp_stats}
+            )
 
         base = _seeded_base(
             _duckdb_path_for_scenario(ctx.scenario_id, override_path=self.path),

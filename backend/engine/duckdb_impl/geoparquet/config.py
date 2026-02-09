@@ -54,7 +54,4 @@ def name_expr(name_col: str | None) -> str:
 
 
 def class_expr(class_col: str | None) -> str:
-    return (
-        f"CAST({class_col} AS VARCHAR) AS fclass" if class_col else "NULL AS fclass"
-    )
-
+    return f"CAST({class_col} AS VARCHAR) AS fclass" if class_col else "NULL AS fclass"

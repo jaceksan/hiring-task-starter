@@ -42,4 +42,3 @@ def geoparquet_bbox_exprs(path: Path) -> dict[str, str]:
         f"GeoParquet missing covering bbox columns: {path}. "
         "Expected xmin/ymin/xmax/ymax or geometry_bbox(xmin,ymin,xmax,ymax)."
     )
-
