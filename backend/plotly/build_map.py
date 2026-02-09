@@ -89,11 +89,28 @@ def build_map_plot(
         if isinstance(f, PolygonFeature)
         for r in f.rings
     )
-    highlight_count = 0
+    highlight_requested = 0
+    highlight_rendered = 0
     if highlight and highlight.feature_ids:
-        highlight_count = len(
-            selected_points(layers, highlight.layer_id, highlight.feature_ids)
-        )
+        highlight_requested = len(highlight.feature_ids)
+        hl_layer = layers.get(highlight.layer_id)
+        if hl_layer is not None:
+            if hl_layer.kind == "points":
+                highlight_rendered = len(
+                    selected_points(layers, highlight.layer_id, highlight.feature_ids)
+                )
+            elif hl_layer.kind == "lines":
+                highlight_rendered = sum(
+                    1
+                    for f in (hl_layer.features or [])
+                    if isinstance(f, LineFeature) and f.id in highlight.feature_ids
+                )
+            elif hl_layer.kind == "polygons":
+                highlight_rendered = sum(
+                    1
+                    for f in (hl_layer.features or [])
+                    if isinstance(f, PolygonFeature) and f.id in highlight.feature_ids
+                )
 
     meta["stats"] = {
         "clusterMode": clusters is not None,
@@ -101,7 +118,8 @@ def build_map_plot(
         "renderedLines": lines,
         "renderedPolygons": polys,
         "renderedClusters": len(clusters) if clusters is not None else 0,
-        "renderedHighlightPoints": highlight_count,
+        "highlightRequested": highlight_requested,
+        "highlightRendered": highlight_rendered,
         "lineVertices": line_vertices,
         "polyVertices": poly_vertices,
     }

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
 from geo.aoi import BBox
 from geo.index import GeoIndex
@@ -30,6 +30,8 @@ class EngineResult:
 
     layers: LayerBundle
     index: GeoIndex
+    # Optional engine-specific stats (timings, counts) for telemetry/HUD.
+    stats: dict[str, Any] | None = None
 
 
 class LayerEngine(Protocol):

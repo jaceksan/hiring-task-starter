@@ -11,7 +11,7 @@ import duckdb
 from shapely.wkb import loads as wkb_loads
 
 from engine.duckdb_common import bounded_cache_put, duckdb_threads
-from engine.duckdb_geoparquet import query_geoparquet_layers_cached
+from engine.duckdb_impl.geoparquet.bundle import query_geoparquet_layers_cached
 from engine.duckdb_seeded_db import (
     connect,
     init_schema,
@@ -43,13 +43,13 @@ class DuckDBEngine(LayerEngine):
         scenario = get_scenario(ctx.scenario_id).config
         has_geoparquet = any(l.source.type == "geoparquet" for l in scenario.layers)
         if has_geoparquet:
-            layers = query_geoparquet_layers_cached(
+            layers, gp_stats = query_geoparquet_layers_cached(
                 scenario.id,
                 aoi=ctx.aoi,
                 view_zoom=ctx.view_zoom,
             )
             index = build_geo_index(layers)
-            return EngineResult(layers=layers, index=index)
+            return EngineResult(layers=layers, index=index, stats={"geoparquet": gp_stats})
 
         base = _seeded_base(
             _duckdb_path_for_scenario(ctx.scenario_id, override_path=self.path),
@@ -58,7 +58,7 @@ class DuckDBEngine(LayerEngine):
         base.ensure_initialized()
         tile_zoom = tile_zoom_for_view_zoom(ctx.view_zoom)
         sliced = base.slice_layers_tiled(ctx.aoi, tile_zoom=tile_zoom)
-        return EngineResult(layers=sliced, index=base.index)
+        return EngineResult(layers=sliced, index=base.index, stats=None)
 
 
 @dataclass
@@ -177,5 +177,4 @@ def _duckdb_path_for_scenario(
 
 
 #
-# NOTE: GeoParquet querying moved to `engine/duckdb_geoparquet.py` and helpers to
-# `engine/duckdb_common.py` to keep this file short.
+# NOTE: GeoParquet querying lives under `engine/duckdb_impl/geoparquet/`.

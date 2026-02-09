@@ -92,11 +92,11 @@ def test_plot_endpoint_supports_duckdb_engine(tmp_path, monkeypatch):
     # Clear caches so the app picks up the new path in this process.
     import main
     from engine import duckdb as duckdb_mod
-    from engine import duckdb_geoparquet as geop_mod
+    from engine.duckdb_impl.geoparquet import bundle as geop_bundle
 
     main._engine.cache_clear()
     duckdb_mod._seeded_base.cache_clear()
-    geop_mod._geoparquet_bundle_cached.cache_clear()
+    geop_bundle._geoparquet_bundle_cached.cache_clear()
 
     client = TestClient(app)
     resp = client.post(

@@ -198,17 +198,23 @@ def plot(body: ApiPlotRequest):
     )
     t_plot_ms = (time.perf_counter() - t2) * 1000.0
 
-    payload_bytes = len(json.dumps(payload, ensure_ascii=False))
+    t_json0 = time.perf_counter()
+    payload_json = json.dumps(payload, ensure_ascii=False)
+    t_json_ms = (time.perf_counter() - t_json0) * 1000.0
+    payload_bytes = len(payload_json)
     try:
         payload["layout"]["meta"]["stats"]["cache"] = cache_stats
         payload["layout"]["meta"]["stats"]["engine"] = engine_name
         payload["layout"]["meta"]["stats"]["scenarioId"] = ctx.scenario_id
         payload["layout"]["meta"]["stats"]["scenarioDataSize"] = scenario.dataSize
         payload["layout"]["meta"]["stats"]["payloadBytes"] = payload_bytes
+        if getattr(result, "stats", None):
+            payload["layout"]["meta"]["stats"]["engineStats"] = result.stats
         payload["layout"]["meta"]["stats"]["timingsMs"] = {
             "engineGet": round(t_engine_get_ms, 2),
             "lod": round(t_lod_ms, 2),
             "plot": round(t_plot_ms, 2),
+            "jsonSerialize": round(t_json_ms, 2),
             "total": round((time.perf_counter() - t0) * 1000.0, 2),
         }
     except Exception:

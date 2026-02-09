@@ -218,17 +218,34 @@ async def handle_incoming_message(thread):
             plot["layout"]["meta"]["stats"]["engine"] = engine_name
             plot["layout"]["meta"]["stats"]["scenarioId"] = ctx.scenario_id
             plot["layout"]["meta"]["stats"]["scenarioDataSize"] = scenario.dataSize
+            if getattr(result, "stats", None):
+                plot["layout"]["meta"]["stats"]["engineStats"] = result.stats
+            t_json0 = time.perf_counter()
             plot_json = json.dumps(plot, ensure_ascii=False)
+            t_json_ms = (time.perf_counter() - t_json0) * 1000.0
             plot["layout"]["meta"]["stats"]["payloadBytes"] = len(plot_json)
             plot["layout"]["meta"]["stats"]["timingsMs"] = {
                 "engineGet": round(t_engine_get_ms, 2),
                 "route": round(t_route_ms, 2),
                 "lod": round(t_lod_ms, 2),
                 "plot": round(t_plot_ms, 2),
+                "jsonSerialize": round(t_json_ms, 2),
                 "total": round((time.perf_counter() - t0) * 1000.0, 2),
             }
         except Exception:
             plot_json = json.dumps(plot)
+
+        # If highlights were requested but clipped by budgets/policy, make it explicit.
+        try:
+            stats = (plot.get("layout", {}).get("meta", {}) or {}).get("stats", {}) or {}
+            req = int(stats.get("highlightRequested") or 0)
+            rend = int(stats.get("highlightRendered") or 0)
+            if req and rend and rend < req:
+                note = f"(Note: matched {req}, rendered {rend} due to LOD/budget.)"
+                for word in note.split():
+                    yield format_event(EventType.append, word)
+        except Exception:
+            pass
 
         # Persist telemetry for later analysis (best-effort).
         try:
