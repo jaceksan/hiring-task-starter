@@ -43,11 +43,23 @@ export function TelemetryPanel(props: {
 						.map((l) => {
 							const duck = typeof l?.duckdbMs === "number" ? l.duckdbMs : 0;
 							const dec = typeof l?.decodeMs === "number" ? l.decodeMs : 0;
+							const cap = asRecord(l?.cap);
+							const effective =
+								typeof cap?.effectiveLimit === "number"
+									? cap.effectiveLimit
+									: null;
+							const cappedBy = Array.isArray(cap?.cappedBy)
+								? ((cap.cappedBy as unknown[]).filter(
+										(x) => typeof x === "string",
+									) as string[])
+								: [];
 							return {
 								layerId: typeof l?.layerId === "string" ? l.layerId : "?",
 								total: duck + dec,
 								duck,
 								dec,
+								effectiveLimit: effective,
+								cappedBy,
 							};
 						})
 						.reduce((a, b) => (b.total > a.total ? b : a), {
@@ -55,6 +67,8 @@ export function TelemetryPanel(props: {
 							total: 0,
 							duck: 0,
 							dec: 0,
+							effectiveLimit: null as number | null,
+							cappedBy: [] as string[],
 						})
 				: null;
 
@@ -137,6 +151,15 @@ export function TelemetryPanel(props: {
 									slowest layer: {b.slowLayer.layerId} (duck{" "}
 									{fmtMs(b.slowLayer.duck)}
 									ms, decode {fmtMs(b.slowLayer.dec)}ms)
+									{typeof b.slowLayer.effectiveLimit === "number" ? (
+										<span>
+											{" "}
+											• cap {b.slowLayer.effectiveLimit}
+											{b.slowLayer.cappedBy.length > 0
+												? ` (${b.slowLayer.cappedBy.join("+")})`
+												: ""}
+										</span>
+									) : null}
 								</div>
 							) : null}
 						</div>

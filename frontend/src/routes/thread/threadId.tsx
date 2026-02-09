@@ -140,11 +140,23 @@ function RouteComponent() {
 					.map((l) => {
 						const duck = typeof l?.duckdbMs === "number" ? l.duckdbMs : 0;
 						const dec = typeof l?.decodeMs === "number" ? l.decodeMs : 0;
+						const cap = asRecord(l?.cap);
+						const effective =
+							typeof cap?.effectiveLimit === "number"
+								? cap.effectiveLimit
+								: null;
+						const cappedBy = Array.isArray(cap?.cappedBy)
+							? ((cap.cappedBy as unknown[]).filter(
+									(x) => typeof x === "string",
+								) as string[])
+							: [];
 						return {
 							layerId: typeof l?.layerId === "string" ? l.layerId : "?",
 							total: duck + dec,
 							duck,
 							dec,
+							effectiveLimit: effective,
+							cappedBy,
 						};
 					})
 					.reduce((a, b) => (b.total > a.total ? b : a), {
@@ -152,11 +164,21 @@ function RouteComponent() {
 						total: 0,
 						duck: 0,
 						dec: 0,
+						effectiveLimit: null as number | null,
+						cappedBy: [] as string[],
 					});
 				if (best.total > 0) {
+					const capMsg =
+						typeof best.effectiveLimit === "number"
+							? ` • cap ${best.effectiveLimit}${
+									best.cappedBy.length > 0
+										? ` (${best.cappedBy.join("+")})`
+										: ""
+								}`
+							: "";
 					layerMsg = `${best.layerId} (duck ${best.duck.toFixed(
 						1,
-					)}ms, decode ${best.dec.toFixed(1)}ms)`;
+					)}ms, decode ${best.dec.toFixed(1)}ms)${capMsg}`;
 				}
 			}
 

@@ -12,6 +12,7 @@ def base_stats(
     duckdb_ms: float,
     decode_ms: float,
     total_ms: float,
+    cap: dict[str, Any] | None = None,
     policy: dict[str, Any] | None = None,
     skipped_reason: str | None = None,
     geom_min_zoom: float | None = None,
@@ -28,6 +29,8 @@ def base_stats(
     }
     if policy is not None:
         out["policy"] = policy
+    if cap is not None:
+        out["cap"] = cap
     if skipped_reason:
         out["skippedReason"] = skipped_reason
     if geom_min_zoom is not None:

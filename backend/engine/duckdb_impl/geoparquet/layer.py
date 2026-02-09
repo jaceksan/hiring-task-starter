@@ -60,7 +60,7 @@ def query_geoparquet_layer_bbox(
     where_sql = f"{bbox['xmax']} >= ? AND {bbox['xmin']} <= ? AND {bbox['ymax']} >= ? AND {bbox['ymin']} <= ?"
     where_params = (b.min_lon, b.max_lon, b.min_lat, b.max_lat)
 
-    limit = int(safety_limit(kind=kind, view_zoom=float(view_zoom)))
+    safety = int(safety_limit(kind=kind, view_zoom=float(view_zoom)))
     opts = source_options or {}
     cols = parse_columns(opts)
     geom_min_zoom = float(opts.get("minZoomForGeometry") or default_geom_min_zoom())
@@ -91,7 +91,7 @@ def query_geoparquet_layer_bbox(
             ymin_expr=bbox["ymin"],
             name_expr=n_expr,
             class_expr=c_expr,
-            limit=limit,
+            limit=safety,
         )
         t_db_ms = (time.perf_counter() - t_db0) * 1000.0
 
@@ -110,6 +110,7 @@ def query_geoparquet_layer_bbox(
             duckdb_ms=t_db_ms,
             decode_ms=t_decode_ms,
             total_ms=(time.perf_counter() - t0) * 1000.0,
+            cap={"safetyLimit": int(safety), "effectiveLimit": int(safety)},
         )
 
     # Lines/polygons: decode geometry (optionally with a zoom+class “overview” policy).
@@ -131,9 +132,10 @@ def query_geoparquet_layer_bbox(
         )
 
     policy_enabled = policy is not None
-    cand_limit = int(limit)
-    if max_candidates is not None:
-        cand_limit = max(1, min(int(cand_limit), int(max_candidates)))
+    cand_limit = int(safety)
+    max_candidates_int = int(max_candidates) if max_candidates is not None else None
+    if max_candidates_int is not None:
+        cand_limit = max(1, min(int(cand_limit), int(max_candidates_int)))
 
     # Hard caps to keep decoding/serialization stable on dense line/polygon layers.
     # LOD runs *after* decoding; without a pre-cap, we can spend seconds decoding
@@ -142,11 +144,26 @@ def query_geoparquet_layer_bbox(
     if kind == "lines":
         # Lines (roads) are by far the densest layer; keep a strict cap to ensure
         # /plot refreshes remain interactive even on worst-case AOIs.
-        hard_cap = 12_000
+        hard_cap = 9_000
     elif kind == "polygons":
-        hard_cap = 6_000
+        hard_cap = 5_000
     if hard_cap is not None:
         cand_limit = max(1, min(int(cand_limit), int(hard_cap)))
+
+    capped_by: list[str] = []
+    # Note: safetyLimit is the initial upper bound; we report only tighter caps.
+    if max_candidates_int is not None and max_candidates_int < safety:
+        capped_by.append("policyMaxCandidates")
+    if hard_cap is not None and hard_cap < min(safety, max_candidates_int or safety):
+        capped_by.append("hardCap")
+
+    cap_meta: dict[str, Any] = {
+        "safetyLimit": int(safety),
+        "policyMaxCandidates": max_candidates_int,
+        "hardCap": int(hard_cap) if hard_cap is not None else None,
+        "effectiveLimit": int(cand_limit),
+        "cappedBy": capped_by,
+    }
 
     t_db0 = time.perf_counter()
     if not policy_enabled:
@@ -192,6 +209,7 @@ def query_geoparquet_layer_bbox(
                 duckdb_ms=0.0,
                 decode_ms=0.0,
                 total_ms=(time.perf_counter() - t0) * 1000.0,
+                cap=cap_meta,
                 policy={
                     "enabled": True,
                     "allowedClasses": len(allow or []),
@@ -232,6 +250,7 @@ def query_geoparquet_layer_bbox(
             duckdb_ms=t_db_ms,
             decode_ms=t_decode_ms,
             total_ms=(time.perf_counter() - t0) * 1000.0,
+            cap=cap_meta,
             policy=policy_meta,
         )
 
@@ -248,5 +267,6 @@ def query_geoparquet_layer_bbox(
         duckdb_ms=t_db_ms,
         decode_ms=t_decode_ms,
         total_ms=(time.perf_counter() - t0) * 1000.0,
+        cap=cap_meta,
         policy=policy_meta,
     )
