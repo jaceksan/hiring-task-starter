@@ -230,6 +230,10 @@ function RouteComponent() {
 					data={plotData.data}
 					layout={{
 						...plotData.layout,
+						// Critical: preserve user pan/zoom across plot updates.
+						// Without this, any re-render that supplies a new `layout` object (e.g. /plot refresh)
+						// can reset the Mapbox view and make the map "snap back" immediately after zooming.
+						uirevision: `${scenarioId}:${threadId}`,
 						margin: { l: 0, r: 0, t: 0, b: 0 },
 					}}
 					config={{ scrollZoom: true, displayModeBar: false }}

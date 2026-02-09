@@ -6,6 +6,15 @@ export function asRecord(value: unknown): Record<string, unknown> | null {
 		: null;
 }
 
+function toNumber(value: unknown): number | null {
+	if (typeof value === "number" && Number.isFinite(value)) return value;
+	if (typeof value === "string") {
+		const n = Number.parseFloat(value);
+		return Number.isFinite(n) ? n : null;
+	}
+	return null;
+}
+
 export function getMapboxCenter(layout: unknown): MapCenter | null {
 	const r = asRecord(layout);
 	const mapbox = r ? asRecord(r.mapbox) : null;
@@ -32,24 +41,42 @@ export function getRelayoutCenter(
 	event: Record<string, unknown>,
 ): { lat: number; lon: number } | null {
 	const direct = asRecord(event["mapbox.center"]);
-	if (
-		direct &&
-		typeof direct.lat === "number" &&
-		typeof direct.lon === "number"
-	) {
-		return { lat: direct.lat, lon: direct.lon };
+	if (direct) {
+		const lat = toNumber(direct.lat);
+		const lon = toNumber(direct.lon);
+		if (lat !== null && lon !== null) {
+			return { lat, lon };
+		}
 	}
-	const lat = event["mapbox.center.lat"];
-	const lon = event["mapbox.center.lon"];
-	if (typeof lat === "number" && typeof lon === "number") {
+	const derivedObj = asRecord(event["mapbox._derived"]);
+	if (derivedObj) {
+		const lat = toNumber(derivedObj.centerLat ?? derivedObj.lat);
+		const lon = toNumber(derivedObj.centerLon ?? derivedObj.lon);
+		if (lat !== null && lon !== null) return { lat, lon };
+		const center = asRecord(derivedObj.center);
+		if (center) {
+			const dLat = toNumber(center.lat);
+			const dLon = toNumber(center.lon);
+			if (dLat !== null && dLon !== null) return { lat: dLat, lon: dLon };
+		}
+	}
+	const lat = toNumber(event["mapbox.center.lat"]);
+	const lon = toNumber(event["mapbox.center.lon"]);
+	if (lat !== null && lon !== null) {
 		return { lat, lon };
 	}
 	return null;
 }
 
 export function getRelayoutZoom(event: Record<string, unknown>): number | null {
-	const z = event["mapbox.zoom"];
-	return typeof z === "number" ? z : null;
+	const direct = toNumber(event["mapbox.zoom"]);
+	if (direct !== null) return direct;
+	const derived = asRecord(event["mapbox._derived"]);
+	if (derived) {
+		const dz = toNumber(derived.zoom);
+		if (dz !== null) return dz;
+	}
+	return toNumber(event["mapbox._derived.zoom"]);
 }
 
 export function calcBboxFromCenterZoom(

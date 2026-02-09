@@ -76,6 +76,7 @@ We decided to keep **two scenarios**:
 
 ### A) Speed of iteration / tooling
 - [ ] Consider adding Astral’s type checker (“ty”) for backend typing checks
+- [ ] Adopt type checking in backend. Use Ty from Astral. Fix all found issues.
 
 ### B) Performance (Scenario A: GeoParquet + Plotly)
 - [ ] Manually test `czech_population_infrastructure_large` scenario end-to-end and fix any issues found
