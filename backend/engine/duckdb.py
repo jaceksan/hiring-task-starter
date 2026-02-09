@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any
 
 import duckdb
-from shapely.wkb import loads as wkb_loads
 
 from engine.duckdb_common import bounded_cache_put, duckdb_threads
 from engine.duckdb_impl.geoparquet.bundle import query_geoparquet_layers_cached
@@ -23,8 +22,8 @@ from geo.aoi import BBox
 from geo.index import GeoIndex, build_geo_index
 from geo.tiles import tile_bbox_4326, tile_zoom_for_view_zoom, tiles_for_bbox
 from layers.load_scenario import load_scenario_layers
-from layers.types import Layer, LayerBundle, LineFeature, PointFeature, PolygonFeature
-from scenarios.registry import default_scenario_id, get_scenario, resolve_repo_path
+from layers.types import Layer, LayerBundle
+from scenarios.registry import default_scenario_id, get_scenario
 
 
 class DuckDBEngine(LayerEngine):
@@ -41,7 +40,9 @@ class DuckDBEngine(LayerEngine):
 
     def get(self, ctx: MapContext) -> EngineResult:
         scenario = get_scenario(ctx.scenario_id).config
-        has_geoparquet = any(l.source.type == "geoparquet" for l in scenario.layers)
+        has_geoparquet = any(
+            layer_cfg.source.type == "geoparquet" for layer_cfg in scenario.layers
+        )
         if has_geoparquet:
             layers, gp_stats = query_geoparquet_layers_cached(
                 scenario.id,
@@ -111,9 +112,13 @@ class _SeededBase:
             return LayerBundle(
                 layers=[
                     Layer(
-                        id=l.id, kind=l.kind, title=l.title, features=[], style=l.style
+                        id=layer.id,
+                        kind=layer.kind,
+                        title=layer.title,
+                        features=[],
+                        style=layer.style,
                     )
-                    for l in self.layers.layers
+                    for layer in self.layers.layers
                 ]
             )
         tiles = sorted(tiles, key=lambda t: (t[1], t[2]))
@@ -121,7 +126,9 @@ class _SeededBase:
         conn = self._conn()
         cache = self._tile_cache()
 
-        merged: dict[str, dict[str, Any]] = {l.id: {} for l in self.layers.layers}
+        merged: dict[str, dict[str, Any]] = {
+            layer.id: {} for layer in self.layers.layers
+        }
         for z, x, y in tiles:
             key = (int(z), int(x), int(y))
             cached = cache.get(key)
@@ -131,12 +138,12 @@ class _SeededBase:
                     conn, tb, scenario_id=self.scenario_id
                 )
                 bounded_cache_put(cache, key, cached, max_items=256)
-            for l in cached.layers:
-                bucket = merged.get(l.id)
+            for layer in cached.layers:
+                bucket = merged.get(layer.id)
                 if bucket is None:
                     bucket = {}
-                    merged[l.id] = bucket
-                for f in l.features:
+                    merged[layer.id] = bucket
+                for f in layer.features:
                     bucket.setdefault(getattr(f, "id", ""), f)
 
         out_layers: list[Layer] = []

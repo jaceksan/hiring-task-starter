@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import json
-import os
 import time
 from enum import Enum
-from functools import lru_cache
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,8 +18,6 @@ from api.invoke_stream import (
 )
 from engine.types import MapContext
 from geo.aoi import BBox
-from geo.tiles import tile_zoom_for_view_zoom, tiles_for_bbox
-from lod.policy import apply_lod
 from plotly.build_map import build_map_plot
 from scenarios.registry import default_scenario_id, get_scenario, list_scenarios
 from telemetry.singleton import get_store, reset_store
@@ -257,7 +253,9 @@ def scenarios():
     """
     out = []
     for s in list_scenarios():
-        has_geoparquet = any((l.source.type == "geoparquet") for l in (s.layers or []))
+        has_geoparquet = any(
+            (layer_cfg.source.type == "geoparquet") for layer_cfg in (s.layers or [])
+        )
         out.append(
             {
                 "id": s.id,

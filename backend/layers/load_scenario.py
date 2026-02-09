@@ -25,8 +25,8 @@ def load_scenario_layers(scenario_id: str | None) -> LayerBundle:
         return p
 
     out: list[Layer] = []
-    for l in cfg.layers:
-        src = l.source
+    for layer_cfg in cfg.layers:
+        src = layer_cfg.source
         path = _p(src.path)
         if src.type == "geojson_polygons":
             feats = load_geojson_polygons(path)
@@ -36,7 +36,7 @@ def load_scenario_layers(scenario_id: str | None) -> LayerBundle:
             feats = load_overpass_lines(path)
         elif src.type == "geoparquet":
             raise ValueError(
-                f"Scenario '{cfg.id}' includes GeoParquet layer '{l.id}'. "
+                f"Scenario '{cfg.id}' includes GeoParquet layer '{layer_cfg.id}'. "
                 "Use DuckDB engine for GeoParquet-backed scenarios."
             )
         else:
@@ -44,7 +44,11 @@ def load_scenario_layers(scenario_id: str | None) -> LayerBundle:
 
         out.append(
             Layer(
-                id=l.id, kind=l.kind, title=l.title, features=feats, style=l.style or {}
+                id=layer_cfg.id,
+                kind=layer_cfg.kind,
+                title=layer_cfg.title,
+                features=feats,
+                style=layer_cfg.style or {},
             )
         )
 

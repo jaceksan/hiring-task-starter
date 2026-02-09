@@ -11,7 +11,6 @@ import duckdb
 
 from pathlib import Path
 
-from telemetry.config import telemetry_enabled, telemetry_path
 from telemetry.sql import (
     CREATE_EVENTS_TABLE_SQL,
     INSERT_EVENTS_SQL,

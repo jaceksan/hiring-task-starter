@@ -32,6 +32,7 @@ lint-all: lint-backend lint-frontend
 lint-backend:
 	@cd backend && uv run python -m compileall -q .
 	@cd backend && uv run ruff format --check .
+	@cd backend && uv run ruff check .
 
 lint-frontend:
 	@cd frontend && npm run -s check
@@ -65,6 +66,7 @@ test-e2e-frontend:
 
 fix-backend:
 	@cd backend && uv run ruff format .
+	@cd backend && uv run ruff check --fix .
 
 fix-frontend:
 	@cd frontend && npm run -s check -- --write

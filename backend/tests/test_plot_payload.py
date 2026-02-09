@@ -18,5 +18,5 @@ def test_build_map_plot_shape():
 
     names = {t.get("name") for t in plot["data"]}
     cfg = get_scenario("prague_transport").config
-    for l in cfg.layers:
-        assert l.title in names
+    for layer_cfg in cfg.layers:
+        assert layer_cfg.title in names

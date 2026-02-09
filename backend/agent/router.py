@@ -36,7 +36,7 @@ def route_prompt(
     p = (prompt or "").strip().lower()
 
     if not p or any(k in p for k in routing.showLayersKeywords):
-        titles = [f"- {l.title} ({l.kind})" for l in layers.layers]
+        titles = [f"- {layer.title} ({layer.kind})" for layer in layers.layers]
         return AgentResponse(message="Loaded layers:\n" + "\n".join(titles))
 
     for rule in routing.highlightRules:

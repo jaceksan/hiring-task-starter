@@ -100,13 +100,23 @@ def seed_all_layers(conn: duckdb.DuckDBPyConnection, layers: LayerBundle) -> Non
     # Seed only if empty (per DB file).
     if _count(conn, "points") == 0:
         point_rows = []
-        for l in layers.of_kind("points"):
-            for f in l.features:
+        for layer in layers.of_kind("points"):
+            for f in layer.features:
                 if not isinstance(f, PointFeature):
                     continue
                 props = json.dumps(f.props or {}, ensure_ascii=False)
                 point_rows.append(
-                    (l.id, f.id, f.lon, f.lat, props, f.lon, f.lat, f.lon, f.lat)
+                    (
+                        layer.id,
+                        f.id,
+                        f.lon,
+                        f.lat,
+                        props,
+                        f.lon,
+                        f.lat,
+                        f.lon,
+                        f.lat,
+                    )
                 )
         conn.executemany(
             "INSERT OR IGNORE INTO points VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -115,14 +125,14 @@ def seed_all_layers(conn: duckdb.DuckDBPyConnection, layers: LayerBundle) -> Non
 
     if _count(conn, "lines") == 0:
         line_rows = []
-        for l in layers.of_kind("lines"):
-            for f in l.features:
+        for layer in layers.of_kind("lines"):
+            for f in layer.features:
                 if not isinstance(f, LineFeature):
                     continue
                 min_lon, min_lat, max_lon, max_lat = _bbox_coords(f.coords)
                 line_rows.append(
                     (
-                        l.id,
+                        layer.id,
                         f.id,
                         json.dumps(f.coords),
                         json.dumps(f.props or {}, ensure_ascii=False),
@@ -138,14 +148,14 @@ def seed_all_layers(conn: duckdb.DuckDBPyConnection, layers: LayerBundle) -> Non
 
     if _count(conn, "polygons") == 0:
         poly_rows = []
-        for l in layers.of_kind("polygons"):
-            for f in l.features:
+        for layer in layers.of_kind("polygons"):
+            for f in layer.features:
                 if not isinstance(f, PolygonFeature):
                     continue
                 min_lon, min_lat, max_lon, max_lat = _bbox_rings(f.rings)
                 poly_rows.append(
                     (
-                        l.id,
+                        layer.id,
                         f.id,
                         json.dumps(f.rings),
                         json.dumps(f.props or {}, ensure_ascii=False),

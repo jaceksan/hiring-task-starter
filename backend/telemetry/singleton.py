@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import threading
-from typing import cast
 
 import duckdb
 
-from telemetry.store import TelemetryStore, telemetry_enabled, telemetry_path
+from telemetry.config import telemetry_enabled, telemetry_path
+from telemetry.store import TelemetryStore
 
 _STORE: TelemetryStore | None = None
 _STORE_LOCK = threading.RLock()

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Iterable
+from typing import Any
 
 from geo.aoi import BBox
 from lod.points import ClusterMarker
-from layers.types import Layer, LayerBundle, LineFeature, PointFeature, PolygonFeature
+from layers.types import LayerBundle, LineFeature, PolygonFeature
 from plotly.traces import (
     selected_points,
     trace_aoi_bbox,
@@ -36,15 +36,15 @@ def build_map_plot(
         traces.append(trace_aoi_bbox(aoi))
 
     # Render layers in a stable order: polygons -> lines -> points.
-    for l in layers.of_kind("polygons"):
-        traces.append(trace_polygons(l))
-    for l in layers.of_kind("lines"):
-        traces.append(trace_lines(l))
-    for l in layers.of_kind("points"):
-        if clusters is not None and cluster_layer_id and l.id == cluster_layer_id:
-            traces.append(trace_point_clusters(l, clusters))
+    for layer in layers.of_kind("polygons"):
+        traces.append(trace_polygons(layer))
+    for layer in layers.of_kind("lines"):
+        traces.append(trace_lines(layer))
+    for layer in layers.of_kind("points"):
+        if clusters is not None and cluster_layer_id and layer.id == cluster_layer_id:
+            traces.append(trace_point_clusters(layer, clusters))
         else:
-            traces.append(trace_points(l))
+            traces.append(trace_points(layer))
 
     if highlight and highlight.feature_ids:
         traces.append(trace_highlight_layer(layers, highlight))
@@ -73,19 +73,19 @@ def build_map_plot(
         }
 
     # Basic stats for HUD/telemetry.
-    pts = sum(len(l.features) for l in layers.of_kind("points"))
-    lines = sum(len(l.features) for l in layers.of_kind("lines"))
-    polys = sum(len(l.features) for l in layers.of_kind("polygons"))
+    pts = sum(len(layer.features) for layer in layers.of_kind("points"))
+    lines = sum(len(layer.features) for layer in layers.of_kind("lines"))
+    polys = sum(len(layer.features) for layer in layers.of_kind("polygons"))
     line_vertices = sum(
         len(f.coords)
-        for l in layers.of_kind("lines")
-        for f in l.features
+        for layer in layers.of_kind("lines")
+        for f in layer.features
         if isinstance(f, LineFeature)
     )
     poly_vertices = sum(
         len(r)
-        for l in layers.of_kind("polygons")
-        for f in l.features
+        for layer in layers.of_kind("polygons")
+        for f in layer.features
         if isinstance(f, PolygonFeature)
         for r in f.rings
     )

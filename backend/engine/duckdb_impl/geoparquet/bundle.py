@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import time
 from functools import lru_cache
 from typing import Any
 
@@ -43,32 +42,37 @@ def _geoparquet_bundle_cached(
     try:
         out_layers: list[Layer] = []
         layer_stats: list[dict[str, Any]] = []
-        for l in scenario.layers:
-            if l.source.type != "geoparquet":
+        for layer_cfg in scenario.layers:
+            if layer_cfg.source.type != "geoparquet":
                 out_layers.append(
                     Layer(
-                        id=l.id,
-                        kind=l.kind,
-                        title=l.title,
+                        id=layer_cfg.id,
+                        kind=layer_cfg.kind,
+                        title=layer_cfg.title,
                         features=[],
-                        style=l.style or {},
+                        style=layer_cfg.style or {},
                     )
                 )
                 layer_stats.append(
-                    {"layerId": l.id, "kind": l.kind, "source": l.source.type, "n": 0}
+                    {
+                        "layerId": layer_cfg.id,
+                        "kind": layer_cfg.kind,
+                        "source": layer_cfg.source.type,
+                        "n": 0,
+                    }
                 )
                 continue
-            p = resolve_repo_path(l.source.path)
+            p = resolve_repo_path(layer_cfg.source.path)
             layer, stats = query_geoparquet_layer_bbox(
                 conn,
-                layer_id=l.id,
-                kind=l.kind,
-                title=l.title,
-                style=l.style or {},
+                layer_id=layer_cfg.id,
+                kind=layer_cfg.kind,
+                title=layer_cfg.title,
+                style=layer_cfg.style or {},
                 path=p,
                 aoi=aoi,
                 view_zoom=view_zoom,
-                source_options=l.source.geoparquet or None,
+                source_options=layer_cfg.source.geoparquet or None,
             )
             out_layers.append(layer)
             layer_stats.append(stats)

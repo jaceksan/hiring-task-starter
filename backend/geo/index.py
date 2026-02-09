@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Any, Iterable
+from typing import Any
 
 from pyproj import Transformer
-from shapely.geometry import LineString, MultiLineString, MultiPolygon, Point, Polygon
+from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.geometry import box as shapely_box
 from shapely.ops import unary_union
 from shapely.strtree import STRtree
@@ -64,16 +64,22 @@ class GeoIndex:
             return LayerBundle(
                 layers=[
                     Layer(
-                        id=l.id, kind=l.kind, title=l.title, features=[], style=l.style
+                        id=layer.id,
+                        kind=layer.kind,
+                        title=layer.title,
+                        features=[],
+                        style=layer.style,
                     )
-                    for l in self.layers.layers
+                    for layer in self.layers.layers
                 ]
             )
 
         tiles = sorted(tiles, key=lambda t: (t[1], t[2]))
 
         # Merge by (layer_id, feature_id) to dedupe across tiles.
-        by_layer: dict[str, dict[str, Any]] = {l.id: {} for l in self.layers.layers}
+        by_layer: dict[str, dict[str, Any]] = {
+            layer.id: {} for layer in self.layers.layers
+        }
 
         for z, x, y in tiles:
             key = (int(z), int(x), int(y))
@@ -112,7 +118,7 @@ class GeoIndex:
     def slice_layers(self, aoi: BBox, *, decimals: int = 4) -> LayerBundle:
         key = aoi.rounded_key(decimals)
         # Cache key is per-layer-set id; we use a synthetic id derived from layer ids.
-        lid_key = ",".join([l.id for l in self.layers.layers])
+        lid_key = ",".join([layer.id for layer in self.layers.layers])
         ck = (lid_key, key)
         cached = self._slice_cache.get(ck)
         if cached is not None:
@@ -120,14 +126,17 @@ class GeoIndex:
 
         bbox = shapely_box(aoi.min_lon, aoi.min_lat, aoi.max_lon, aoi.max_lat)
         out_layers: list[Layer] = []
-        for l in self.layers.layers:
-            tree = self._layer_tree.get(l.id)
-            geoms = self._layer_geoms.get(l.id) or []
-            feats = self._layer_feats.get(l.id) or []
+        for layer in self.layers.layers:
+            tree = self._layer_tree.get(layer.id)
+            feats = self._layer_feats.get(layer.id) or []
             if tree is None:
                 out_layers.append(
                     Layer(
-                        id=l.id, kind=l.kind, title=l.title, features=[], style=l.style
+                        id=layer.id,
+                        kind=layer.kind,
+                        title=layer.title,
+                        features=[],
+                        style=layer.style,
                     )
                 )
                 continue
@@ -135,7 +144,11 @@ class GeoIndex:
             sliced = [feats[i] for i in idxs] if idxs else []
             out_layers.append(
                 Layer(
-                    id=l.id, kind=l.kind, title=l.title, features=sliced, style=l.style
+                    id=layer.id,
+                    kind=layer.kind,
+                    title=layer.title,
+                    features=sliced,
+                    style=layer.style,
                 )
             )
 

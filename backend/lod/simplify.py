@@ -10,7 +10,7 @@ from layers.types import LineFeature, PolygonFeature
 
 
 def count_line_vertices(lines: Iterable[LineFeature]) -> int:
-    return sum(len(l.coords) for l in lines)
+    return sum(len(line.coords) for line in lines)
 
 
 def count_poly_vertices(polys: Iterable[PolygonFeature]) -> int:
@@ -66,7 +66,7 @@ def cap_lines_to_vertex_budget(
     """
     keep = set(keep_ids or set())
     out = list(lines)
-    out.sort(key=lambda l: (-len(l.coords), l.id))
+    out.sort(key=lambda line: (-len(line.coords), line.id))
     total = count_line_vertices(out)
     while out and total > max_vertices:
         # Prefer removing non-kept, heaviest first.
@@ -81,7 +81,7 @@ def cap_lines_to_vertex_budget(
         removed = out.pop(remove_idx)
         total -= len(removed.coords)
     # Restore deterministic order for downstream rendering/tests.
-    out.sort(key=lambda l: l.id)
+    out.sort(key=lambda line: line.id)
     return out
 
 

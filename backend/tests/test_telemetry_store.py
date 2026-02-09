@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import os
-
-import duckdb
 
 from telemetry.singleton import get_store, reset_store
 

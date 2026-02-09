@@ -57,10 +57,10 @@ class LayerBundle:
 
     def get(self, layer_id: str) -> Layer | None:
         lid = (layer_id or "").strip()
-        for l in self.layers:
-            if l.id == lid:
-                return l
+        for layer in self.layers:
+            if layer.id == lid:
+                return layer
         return None
 
     def of_kind(self, kind: GeometryKind) -> list[Layer]:
-        return [l for l in self.layers if l.kind == kind]
+        return [layer for layer in self.layers if layer.kind == kind]
