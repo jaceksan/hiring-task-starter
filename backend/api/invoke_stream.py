@@ -242,8 +242,8 @@ async def handle_incoming_message(thread):
             ) or {}
             req = int(stats.get("highlightRequested") or 0)
             rend = int(stats.get("highlightRendered") or 0)
-            if req and rend and rend < req:
-                note = f"(Note: matched {req}, rendered {rend} due to LOD/budget.)"
+            if req and rend < req:
+                note = f"(Note: matched {req}, rendered {rend} due to LOD/budget/caps.)"
                 for word in note.split():
                     yield format_event(EventType.append, word)
         except Exception:

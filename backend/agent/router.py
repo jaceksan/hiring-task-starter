@@ -156,8 +156,9 @@ def _apply_highlight_rule(
             else:
                 feats = [pt for pt in pts if is_point_in_union(pt, u)]
 
-    ids = [getattr(f, "id", "") for f in feats if getattr(f, "id", "")]
-    ids = ids[: int(rule.maxFeatures or 500)]
+    ids_all = [getattr(f, "id", "") for f in feats if getattr(f, "id", "")]
+    max_features = int(rule.maxFeatures or 500)
+    ids = ids_all[:max_features]
     if not ids:
         # Be helpful: in map-first UIs, this often means "zoom/pan to a different area".
         return AgentResponse(
@@ -169,11 +170,24 @@ def _apply_highlight_rule(
 
     title = rule.title or f"Highlighted ({layer.title})"
     # Human-friendly message for the chat drawer (map is primary UI).
-    msg = f"Highlighted {len(ids)} {layer.title} in your current map view."
+    clipped_note = (
+        f" (matched {len(ids_all)}, showing {len(ids)} due to maxFeatures)"
+        if len(ids_all) > len(ids)
+        else ""
+    )
+    msg = (
+        f"Highlighted {len(ids)} {layer.title} in your current map view.{clipped_note}"
+    )
     if rule.maskLayerId and rule.maskMode == "IN_MASK":
-        msg = f"Highlighted {len(ids)} {layer.title} that overlap {routing.maskLabel} in your current map view."
+        msg = (
+            f"Highlighted {len(ids)} {layer.title} that overlap {routing.maskLabel} "
+            f"in your current map view.{clipped_note}"
+        )
     if rule.maskLayerId and rule.maskMode == "OUTSIDE_MASK":
-        msg = f"Highlighted {len(ids)} {layer.title} outside {routing.maskLabel} in your current map view."
+        msg = (
+            f"Highlighted {len(ids)} {layer.title} outside {routing.maskLabel} "
+            f"in your current map view.{clipped_note}"
+        )
     return AgentResponse(
         message=msg,
         highlight=Highlight(layer_id=layer.id, feature_ids=set(ids), title=title),

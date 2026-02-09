@@ -88,8 +88,13 @@ def apply_lod(
             else:
                 point_out[layer.id] = feats
         else:
+            keep_ids = (
+                set(highlight_feature_ids or set())
+                if highlight_layer_id is not None and layer.id == highlight_layer_id
+                else None
+            )
             point_out[layer.id] = (
-                cap_points(feats, b.max_aux_points_rendered, keep_ids=None)
+                cap_points(feats, b.max_aux_points_rendered, keep_ids=keep_ids)
                 if len(feats) > b.max_aux_points_rendered
                 else feats
             )
