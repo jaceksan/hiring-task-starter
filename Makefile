@@ -22,8 +22,8 @@ help:
 		"  test-integration-backend Run backend integration tests" \
 		"  test-integration-frontend Run frontend integration tests (Playwright e2e)" \
 		"  test-e2e-frontend        Run frontend Playwright e2e" \
-		"  fix-backend      Auto-fix backend (ruff format)" \
-		"  fix-frontend     Auto-fix frontend (biome --write)" \
+		"  fix-backend      Auto-fix backend (ruff format + ruff check --fix)" \
+		"  fix-frontend     Auto-fix frontend (biome check --write)" \
 		"  fix-all          Auto-fix backend + frontend" \
 		""
 
@@ -31,9 +31,11 @@ lint-all: lint-backend lint-frontend
 
 lint-backend:
 	@cd backend && uv run python -m compileall -q .
+	@cd backend && uv run ruff format --check .
+	@cd backend && uv run ruff check .
 
 lint-frontend:
-	@cd frontend && npm run -s lint
+	@cd frontend && npm run -s check
 
 types-all: types-backend types-frontend
 
@@ -64,6 +66,7 @@ test-e2e-frontend:
 
 fix-backend:
 	@cd backend && uv run ruff format .
+	@cd backend && uv run ruff check --fix .
 
 fix-frontend:
 	@cd frontend && npm run -s check -- --write

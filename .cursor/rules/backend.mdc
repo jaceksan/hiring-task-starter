@@ -1,0 +1,20 @@
+---
+description: Backend guardrails (FastAPI/DuckDB)
+globs:
+  - backend/**/*
+---
+
+## Hot reload & when to restart (only if necessary)
+
+Assume hot reload normally works (`npm run dev` + `uv run fastapi dev main.py`).
+
+- Mention restarting **frontend** only when:
+  - deps/config changed (`frontend/package*.json`, `frontend/vite.config.ts`)
+  - build-time env changes (`frontend/.env*`)
+  - HMR is clearly stuck
+
+- Mention restarting **backend** only when:
+  - deps changed (`backend/requirements.txt`, `backend/pyproject.toml`, `backend/uv.lock`)
+  - startup/import-time env or import order changed
+  - the reloader is clearly stuck (import errors, changes not taking effect)
+

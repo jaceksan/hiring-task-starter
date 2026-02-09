@@ -1,0 +1,25 @@
+---
+description: Backlog management rules
+alwaysApply: true
+---
+
+## Backlog management
+
+- Treat `BACKLOG.md` ordering as the priority order unless the user explicitly reprioritizes.
+- `BACKLOG.md` format:
+  - one bullet per item
+  - up to three concise sub-bullets
+  - the last sub-bullet may link a detail file in `backlog/`
+- When a backlog item needs more context (design notes, options, links, measurements), create/update its detail file under `backlog/` and keep `BACKLOG.md` concise.
+- When a follow-up conversation collects new requirements/decisions, update the corresponding backlog item and/or detail file immediately.
+
+## When an item is done
+
+- When implementing a backlog item:
+  - keep the backlog item’s bullet concise; put decisions/measurements in its detail file
+  - keep the item’s relative priority order intact unless the user reprioritizes
+- When a backlog item is completed:
+  - remove it from `BACKLOG.md` (or move it into a new bottom section `## Done (recent)` if you want short-lived visibility)
+  - add a short “Outcome” note at the top of the item’s detail file (what changed + where), and link to PR/commit if available
+  - if completion created follow-ups, add them as new backlog items at the appropriate priority
+

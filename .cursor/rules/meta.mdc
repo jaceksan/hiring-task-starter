@@ -1,0 +1,15 @@
+---
+description: Meta-rule for maintaining Cursor rules
+alwaysApply: true
+---
+
+## Rule hygiene (keep rules effective)
+
+- Keep rules **concise** and **high-signal**. Prefer checklists over prose.
+- Only add/extend rules when:
+  - the assistant repeatedly makes the same mistake, or
+  - a significant design/architecture/workflow change lands (new scenario strategy, new engine, new test strategy).
+- Avoid duplicating information across rule files; put shared guidance in `general` or `workflow`.
+- When rules grow, **split** by concern rather than adding sections indefinitely.
+- If a rule is meant for a specific area, scope it via `globs` (e.g. `frontend/**/*`, `backend/**/*`) rather than keeping it always-on.
+

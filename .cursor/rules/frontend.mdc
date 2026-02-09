@@ -1,0 +1,24 @@
+---
+description: Frontend guardrails (React/Plotly/Playwright)
+globs:
+  - frontend/**/*
+---
+
+## Frontend rules
+
+### Shadcn
+
+Use the latest version of Shadcn to install new components:
+
+```bash
+pnpx shadcn@latest add button
+```
+
+### Guardrails (avoid common regressions)
+
+- **Deterministic E2E**: avoid wheel/drag-based map interactions; prefer request interception (`page.route`) and programmatic Plotly relayout.
+- **Map invariants**:
+  - keep user map view stable unless intentionally focusing results
+  - preserve highlight IDs across plot refresh (round-trip via `layout.meta`)
+- **Persistence**: don’t write huge Plotly payloads to localStorage; fall back to text-only message persistence if needed.
+

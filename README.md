@@ -6,7 +6,7 @@ This is a repo with React frontend and Python backend to get you started on your
 
 This repo now contains an MVP that fulfills the core requirements from `requirements.pdf`:
 
-- For the **current** “what we built + what’s left” snapshot (including scenario packs, DuckDB/GeoParquet engine, LOD/budgets, telemetry), see `PROJECT_CONTEXT.md`.
+- For the **current** backlog and what’s next (including scenario packs, DuckDB/GeoParquet engine, LOD/budgets, telemetry, and MVT plans), see `BACKLOG.md`.
 
 - **Region**: Prague
 - **3 datasets, different geometries**:
