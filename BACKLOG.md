@@ -3,8 +3,8 @@
 The order of items below is the priority order (top = highest). Each item has up to three concise sub-bullets; when needed, the last sub-bullet links to a detail file in `backlog/`.
 
 - **P2 — Explore splitting `/plot` by layer (generic async loading)**
-  - Discovery item: confirm feasibility and UX/telemetry implications before implementing.
-  - Goal is generic per-layer requests (best-effort async), with incremental trace merge and stable map view.
+  - Higher complexity than it looks: needs backend per-layer fetch (avoid N× work) + deterministic Plotly trace identity for safe incremental merge.
+  - Main risks: map stability on partial updates, highlight correctness while layers stream in, and telemetry grouping (`refreshId`).
   - Details: [`backlog/0102-plot-layer-split.md`](backlog/0102-plot-layer-split.md)
 
 - **P2 — Highlighting roadmap (make LOD/budgets understandable and correct)**
