@@ -2,11 +2,6 @@
 
 The order of items below is the priority order (top = highest). Each item has up to three concise sub-bullets; when needed, the last sub-bullet links to a detail file in `backlog/`.
 
-- **P2 — Stabilize Scenario A performance (GeoParquet + Plotly baseline)**
-  - Extend telemetry to highlight the bottleneck (step + slowest layer) in a human-friendly way.
-  - Add a one-time (per page load) toast when `/plot` refresh exceeds 250ms.
-  - Details: [`backlog/0100-scenario-a-performance.md`](backlog/0100-scenario-a-performance.md)
-
 - **P2 — Explore splitting `/plot` by layer (generic async loading)**
   - Discovery item: confirm feasibility and UX/telemetry implications before implementing.
   - Goal is generic per-layer requests (best-effort async), with incremental trace merge and stable map view.

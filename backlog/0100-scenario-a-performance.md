@@ -1,5 +1,12 @@
 ## Scenario A performance (GeoParquet + Plotly)
 
+### Outcome (completed)
+
+- Implemented a slow-refresh toast with bottleneck summaries (step + slowest layer) and improved telemetry readability.
+- Tightened GeoParquet caps (roads/water/places) and added cap metadata to engine stats to make “incomplete but fast” explicit.
+- Fixed low-zoom `places` first-render bias by sampling capped points after AOI filtering.
+- Commits: `0cb8d5b`, `77684ed`, `cb801d2`, `95dd1be`
+
 ### What we can still do (without switching to MVT yet)
 
 - **Manually validate the baseline**
