@@ -3,34 +3,16 @@ description: Fast local validation workflow
 alwaysApply: true
 ---
 
-## Validate changes (fast defaults)
+## Default local validation loop (fast)
 
-- Prefer fast checks over production builds.
 - Don’t start/stop dev servers unless explicitly asked; assume the developer runs them.
+- After making changes, prefer:
+  - `make fix-all`
+  - `make types-all`
+- Do **not** run `make lint-*` targets by default. Only run lint/verification targets if the user explicitly asks or when debugging a failing CI check.
 
-### Default workflow
+## Tests (only when relevant)
 
-- Prefer running autofix first:
-  - backend: `make fix-backend`
-  - frontend: `make fix-frontend`
-- Then run typechecks when relevant:
-  - `make types-all` (or `make types-frontend`)
-
-### What “lint” means here
-
-- `make lint-frontend` runs `biome check` (verifies format + lint, no writes).
-- `make lint-backend` runs Ruff checks + format `--check` (no writes).
-- After `make fix-all`, running `make lint-all` is usually redundant (it should already pass), but it’s fine as a verification step.
-
-### Tests
-
-- Default:
-  - `make test-backend`
-- Run E2E only when UI/API/map behavior changes:
-  - `make test-e2e-frontend` (or `cd frontend && E2E_FAST=1 E2E_REUSE_ONLY=1 npm run -s e2e`)
-- Only run `cd frontend && npm run -s build` when bundling/deps/config changed or build-only failures appear.
-
-### Optional: Project AIDA (if available)
-
-If a “Project AIDA” MCP server is available in this environment, prefer using it to streamline routine developer workflow (issue/PR hygiene, checklists, release notes). Keep usage optional since it may not be present everywhere.
+- If backend logic changed: `make test-backend`
+- If UI/API/map behavior changed: `make test-e2e-frontend`
 

@@ -2,11 +2,6 @@
 
 The order of items below is the priority order (top = highest). Each item has up to three concise sub-bullets; when needed, the last sub-bullet links to a detail file in `backlog/`.
 
-- **P1 — Fix `make` target naming/usage (remove redundancy, clarify “fix vs lint vs types”)**
-  - Make `fix-*` imply “apply autofixes”, and `lint-*` imply “verify (no writes)”.
-  - Align frontend linting on `biome check` (not `biome lint`) so formatting is verified too.
-  - Details: [`backlog/0002-make-targets-workflow.md`](backlog/0002-make-targets-workflow.md)
-
 - **P2 — Stabilize Scenario A performance (GeoParquet + Plotly baseline)**
   - Use telemetry to isolate bottlenecks (`duckdbMs` vs `decodeMs` vs `jsonSerialize`) and tighten budgets/LOD deterministically.
   - Prefer changes that reduce decoded geometry volume (candidates, simplification, pre-aggregation) rather than only UI tweaks.

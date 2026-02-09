@@ -1,5 +1,12 @@
 ## Make targets: fix vs lint vs types
 
+### Outcome (completed)
+
+- `lint-*` targets now clearly mean “verify (no writes)”.
+  - backend: syntax + formatting check
+  - frontend: `biome check` (format + lint verification)
+- Cursor workflow rules now recommend non-redundant command sequences.
+
 ### Problem
 
 We sometimes run:

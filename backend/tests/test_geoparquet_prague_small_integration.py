@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import pytest
-
 from engine.duckdb import DuckDBEngine
 from engine.types import MapContext
 from geo.aoi import BBox
 
 
-@pytest.mark.integration
 def test_duckdb_geoparquet_prague_small_decodes_some_geometries():
     # Small bbox near Prague city center to keep geometry decoding quick.
     aoi = BBox(min_lon=14.41, min_lat=50.07, max_lon=14.47, max_lat=50.10)
