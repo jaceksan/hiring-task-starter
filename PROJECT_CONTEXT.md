@@ -1,176 +1,110 @@
-# Hiring task repo — high-signal summary (what we built + what’s left)
+# Hiring task repo — context + remaining plan
 
-## What this project is about
-A React + FastAPI demo of “agent-driven geospatial analysis”: user asks questions in natural language, backend does deterministic geo reasoning on a few map layers, and streams back:
+## Context (read this first)
+
+### What this project demonstrates
+A React + FastAPI demo of “agent-driven geospatial analysis”: user asks questions in natural language, backend runs deterministic geo reasoning on a few map layers, and streams back:
 - chat messages (SSE `append`/`commit`)
 - map updates (`plot_data`) rendered with Plotly/Mapbox
 
-The core “PangeAI-ish” value demonstrated:
+Core “PangeAI-ish” value:
 - combine heterogeneous layers (points/lines/polygons)
 - query by **Area Of Interest** (viewport bbox)
 - keep UX responsive via **LOD** (clustering/simplification) + **budgets**
-- optionally switch to **DuckDB + GeoParquet** for larger datasets
-- record and inspect **telemetry** to understand perf regressions
+- scale to larger datasets via **DuckDB + GeoParquet** (and next: vector tiles)
+- record **telemetry** to understand perf regressions
 
-## Repo structure (current mental model)
-- backend/
-  - FastAPI app exposing `/invoke`, `/plot`, `/scenarios`, telemetry endpoints
+### Big decision: two-scenario approach (current + “next-gen”)
+We decided to keep **two scenarios**:
+
+- **Scenario A (current, fixed)**: `czech_population_infrastructure_large`
+  - still uses DuckDB + GeoParquet + Plotly traces
+  - goal: show fast refresh via AOI caching + LOD + YAML-driven “render policy”
+  - this scenario is the baseline you can demo immediately
+
+- **Scenario B (next, heavy layers)**: a new **MVT/vector-tile** scenario
+  - goal: show the “novel” approach for truly massive line/polygon layers (roads/water) using tile-based rendering
+  - will likely add a tile endpoint (e.g. `/tiles/{scenarioId}/{layerId}/{z}/{x}/{y}.mvt`) and render as a vector overlay in the frontend
+  - note: current GeoParquet roads contain some WKB geometries DuckDB spatial can’t parse (`UNKNOWN M`), so MVT may require regenerating/normalizing geometry (or a different preprocessing pipeline)
+
+### Repo structure (mental model)
+- **backend**
+  - FastAPI app: `/invoke`, `/plot`, `/scenarios`, `/telemetry/*`
   - engines:
-    - `in_memory`: loads layers into Python structures + Shapely STRtree
-    - `duckdb`: queries GeoParquet via DuckDB; caching + safer concurrency patterns
-  - scenario registry: discovers `scenarios/*/scenario.yaml`
-  - generic plot builder producing Plotly payloads + `layout.meta.stats`
-  - routing: keyword/pattern-based “agent” rules driven by YAML (no external LLM required)
-  - LOD: point clustering, line/polygon simplification, strict caps (“budgets”)
-  - AOI/tile caches: slippy-tile slicing + zoom-bucketed LOD caches
-  - telemetry store: DuckDB-backed, persistent, includes reset + aggregated views
-- frontend/
-  - single-page, map-first UX:
-    - left: threads list
-    - top bar: scenario dropdown + engine dropdown + telemetry controls + reset
-    - main: map (legend embedded into map)
-    - bottom: chat drawer (collapsible; designed to not hide map too much)
-  - Playwright e2e tests for basic interaction + persistence (adjusted for drawer)
-- scenarios/
-  - `prague_transport` (Prague “Flood & Transport”)
-  - `prague_population_infrastructure_small` (GeoParquet small Prague bbox: roads/water/places)
-  - `czech_population_infrastructure_large` (GeoParquet whole CZ bbox: roads/water/places)
-- data/
-  - `data/derived/.../prague_bbox/*.parquet` committed (small fixtures for tests)
-  - `data/derived/.../cz_bbox/*.parquet` ignored (large files)
+    - `in_memory`: loads features in Python + STRtree slicing
+    - `duckdb`: seeded mode for “small”, GeoParquet query-on-read for “large”
+  - scenario registry: `scenarios/*/scenario.yaml`
+  - routing: keyword-based “agent” rules in YAML (no external LLM required)
+  - LOD: clustering/simplification + hard budgets
+  - telemetry store: DuckDB-backed, persistent, supports reset + aggregated views
 
-## Key product behaviors implemented
-- **Scenario packs**: switching scenario swaps layer set + defaults
-- **Engine selection**: dropdown; “in-memory” disabled when scenario requires GeoParquet (and/or labeled large)
-- **AOI-first**: requests include bbox; engine slices by AOI
-- **Automatic LOD on zoom/pan**: clusters at low zoom, raw points at high zoom; simplify lines/polys
-- **Tile + zoom-bucket caching**: pan/zoom reuses cached tile slices + LOD outputs
-- **Budget hardening**: payload never exceeds caps even in worst cases
-- **Highlighting**:
-  - question-triggered highlight for points (“show flooded places” style)
-  - question-triggered highlight for lines (“highlight motorways”)
-  - highlight stability: prevent `/plot` refresh races from overwriting highlights
-  - highlight kept through LOD (within limits)
-- **Telemetry**:
-  - persistent store in DuckDB
-  - reset button + aggregated UI panel (slowest calls, summary)
-  - safe read access considerations (read-only / lock avoidance handled)
+- **frontend**
+  - map-first layout + scenario dropdown + engine dropdown
+  - Playwright e2e as the only frontend test suite
 
-## Tests (current approach)
-- backend: pytest
-  - fast unit tests by default
-  - `@pytest.mark.integration` for “slow/heavy/real decoding” paths
-- frontend: Playwright e2e (headless)
-  - helpers to open drawer + disable auto-minimize in tests
-  - expectations adjusted to current copy + trace names
+### What was changed recently (important for the plan)
+- GeoParquet querying moved under:
+  - `backend/engine/duckdb_impl/geoparquet/`
+    - `bundle.py`: per-scenario layer loop + AOI/zoom cache
+    - `layer.py`: per-layer query orchestration
+    - `sql.py`: DuckDB queries
+    - `decode.py`: WKB -> features
+    - `policy.py`: YAML policy helpers
+    - `bbox.py`: bbox column detection
+- Large scenario now has YAML-driven prefiltering/caps:
+  - `scenarios/czech_population_infrastructure_large/scenario.yaml` → `source.geoparquet.renderPolicy`
+  - roads/water render at low zoom by decoding only “important” classes and capping candidates
+- Telemetry improvements:
+  - `layout.meta.stats.timingsMs` now includes `jsonSerialize`
+  - `layout.meta.stats.engineStats` includes per-layer GeoParquet stats (duckdbMs/decodeMs/counts)
+  - highlight stats include `highlightRequested` / `highlightRendered`
 
-## Important constraints / conventions
-- MVP repo: **backward compatibility is NOT required** (breaking changes OK; local restarts assumed)
-- `.cursorignore` intentionally ignores `data/**/*` to keep Cursor fast (even if small fixtures are committed)
+### Data reality (why roads are hard)
+- `cz_bbox/roads.parquet` is ~1.87M features; dominant `fclass` values are footway/service/residential/path.
+- Frontend Plotly traces are not meant to ship/render hundreds of thousands of line geometries in one payload.
+- Therefore: (A) configurable “render policy” + (B) tile-based rendering for the next scenario.
+
+### How to validate quickly
+- `make lint-backend`
+- `make types-all`
+- `make test-backend`
+- (optional) `make test-e2e-frontend` when UI/map behavior changes
 
 ---
 
-## TODOs (restored for copy/paste)
+## Remaining TODOs (concise plan)
 
-- [x] Simplify and standardize Makefile targets + update Cursor rules accordingly
-  - current targets like `fix-backend` vs `backend-lint` vs calling `make lint` are confusing; it’s unclear what runs
-  - done: standardized Makefile targets to:
-    - `lint-all` / `lint-backend` / `lint-frontend`
-    - `types-all` / `types-backend` / `types-frontend` (only where applicable)
-    - `test-all` / `test-backend` / `test-frontend`
-    - `test-integration-all` / `test-integration-backend` / `test-integration-frontend` (only where applicable)
-  - done: updated `.cursor/rules/general.mdc` to instruct running these targets
+### A) Speed of iteration / tooling
+- [ ] Consider adding Astral’s type checker (“ty”) for backend typing checks
 
-- [x] Rename `thread.$threadId.tsx` file and related folder (terrible name)
-  - done: removed `$` from filesystem names; route lives in `frontend/src/routes/thread/threadId.tsx` + `frontend/src/routes/thread/threadId/*`
-  - note: TanStack route path still uses `/thread/$threadId` internally for params typing, but `$` no longer appears in filenames/folders
-
-- [x] Extend Cursor rule file to prevent Cursor generating large files in the future
-  - done: added explicit file size caps + “split into modules” guidance in `.cursor/rules/general.mdc`
-
-## A) Speed of iteration / tooling
-- [x] Create root `Makefile` with targets:
-  - done: `lint-all` / `lint-backend` / `lint-frontend`
-  - done: `types-all` / `types-frontend` (backend currently no-op)
-  - done: `test-all` / `test-backend` (frontend currently no-op)
-  - done: `test-integration-all` / `test-integration-backend` (frontend currently no-op)
-  - consider adding Astral’s type checker (“ty”) for backend typing checks
-  - done: updated `.cursor/rules/general.mdc` to instruct running these targets
-- [x] Keep backend tests fast:
-  - ensure slow/heavy tests are under `-m integration`
-  - verified: backend unit tests are ~5s (`pytest` reported 4.82s; wall clock ~5.60s)
-- [x] Frontend test strategy:
-  - done: Playwright e2e is the only frontend test suite; keep it stable + minimal
-  - done: E2E assertions avoid brittle DOM legend checks; assert on Plotly trace names when needed
-  - done: can run via `make test-e2e-frontend` (alias: `make test-integration-frontend`)
-  - unit tests: optional for demo (not added)
-
-## B) Performance (large GeoParquet scenario still has slow paths)
-- [ ] Investigate why GeoParquet mode can still take ~7s at high zoom:
-  - add deeper telemetry breakdown (DuckDB scan vs geometry decode vs Python transforms vs plot build)
-  - confirm query count minimized (avoid “tens of queries per view” patterns)
+### B) Performance (Scenario A: GeoParquet + Plotly)
+- [ ] Manually test `czech_population_infrastructure_large` scenario end-to-end and fix any issues found
+- [ ] Investigate remaining high-zoom slowness (if still present):
+  - use `engineStats` per-layer timing (`duckdbMs`, `decodeMs`) and `timingsMs.jsonSerialize`
+  - ensure query count is minimized and caching behaves as expected
   - optimize further (batching, pre-aggregations, tile materialization strategy)
-- [ ] Large-layers “importance/LOD policy” (YAML-configurable):
-  - roads: show only higher classes at low/medium zoom, refine progressively
-  - water: show only large polygons (area threshold) / selected types until zoomed in
-  - caps + deterministic drop policy when budgets exceeded
-  - make this per-scenario/per-layer in YAML
+- [ ] Evolve “importance/LOD policy” (YAML-configurable) beyond the first cut:
+  - roads: refine class progression; consider bbox-size ranking and deterministic “drop” messaging
+  - water: add area-based thresholds (not only fclass) for low zoom readability
+  - formalize per-layer budgets/caps + deterministic drop rules when budgets exceeded
+  - keep it per-scenario/per-layer in YAML
 
-## C) Highlighting roadmap
+### C) Highlighting roadmap
 - [ ] Fix/clarify “incomplete road highlight due to LOD/budgets”:
-  - when matched highlights exceed budgets, either:
-    - allocate a larger budget for highlight overlays, OR
-    - deterministic subsample, OR
-    - message: “matched X, rendering Y due to budget”
+  - allocate a larger budget for highlight overlays, OR deterministic subsample
+  - always message: “matched X, rendering Y due to budget”
   - ensure multi-line highlights don’t silently collapse to 1 feature
-- [ ] Support multiple simultaneous highlight overlays:
-  - e.g., highlight flooded places (points) AND motorways (lines) together
-  - extend plot meta model: array of highlight overlays
-  - update frontend to preserve/merge highlights across actions
-- [ ] Two highlight modes:
-  - (1) triggered by question
-  - (2) static on/off overlays in map UI (useful for roads/water)
-  - design YAML + UI + payload model so both can coexist
-- [ ] “Escape roads near highlighted places” demo use case:
-  - show closest roads to highlighted points
-  - decide: one road per place vs one global best set/route
-  - keep it YAML-driven
-- [ ] Follow-up demo: polygon “intensity” shading:
-  - shaded polygons by numeric intensity (legend included)
-  - add scenario + prompt + styling rules in YAML
+- [ ] Support multiple simultaneous highlight overlays
+- [ ] Two highlight modes (question-triggered vs static toggles)
+- [ ] “Escape roads near highlighted places” demo use case (YAML-driven)
+- [ ] Follow-up demo: polygon “intensity” shading
 
-## D) UX / data modeling cleanup
-- [x] Scenario-scoped threads:
-  - done: threads/messages are stored per-scenario in localStorage keys
-  - done: changing scenario while on a thread route navigates back to `/` to avoid cross-scenario threadId collisions
-- [x] Example prompts should be scenario-specific:
-  - done: `examplePrompts` live in scenario YAML and UI swaps them on scenario change
+### D) New scenario (Scenario B: heavy layers via MVT/vector tiles)
+- [ ] Implement a new MVT-based scenario to demonstrate truly massive layers:
+  - backend tile endpoint + per-layer tile query policy
+  - frontend vector tile overlay rendering
+  - decide and implement geometry preprocessing to avoid `UNKNOWN M` WKB issues
 
-## E) Data/fixtures policy (mostly resolved, keep guardrails)
-- [x] Derived data policy:
-  - done: small Prague GeoParquet fixtures are committed for reproducible tests
-  - done: whole-CZ derived data is ignored via `.gitignore` (`/data/derived/.../cz_bbox/**/*`)
-  - keep `.gitignore` correct as datasets evolve
-
-## Additional TODOs we added during this conversation
+### Cleanup
 - [ ] Delete `PROJECT_CONTEXT.md` once we are done (cleanup)
-- [x] You have to fix many issues in frontend code you generated. Consider extending Cursor rule file to prevent these issues. If rules you decide to add are too big, notify me about it and let's discuss to which rule file we should put it and if it should be always ON
-- [x] Consider refactoring files longer than 300 lines so the code does not look unprofessional.
-
-## Relevant context / decisions (so the next chat has it)
-- Makefile design decision: standardized root targets to `*-all` + `*-backend` + `*-frontend` (e.g. `make test-all`, `make types-all`, `make lint-all`) to avoid ambiguity.
-- Lint autofix idea: use `make fix-all` (or `make fix-frontend` / `make fix-backend`) as the default “try to autocorrect first” workflow before re-running strict checks.
-
----
-
-## Notes / decisions made along the way
-- Prague “transport realism”: keep metro + tram lines distinct colors; stations/stops as points with hover; “safe pubs” ranking prefers metro, tram as fallback.
-- Zoom/focus behavior: focus should prefer viewport-local results; avoid zooming out to global extent when enough candidates exist in current AOI.
-- DuckDB stability: avoid unsafe concurrency; prioritize “safe + fast enough” over max parallelism.
-
-## Current ask from you (when starting the next chat)
-- Pick which TODO cluster to tackle next:
-  - fastest dev-speed win: Makefile + rules + test split
-  - biggest product win: multi-highlight overlays + static toggles
-  - biggest engineering win: large scenario perf redesign (reduce query count + importance/LOD policy)
 
