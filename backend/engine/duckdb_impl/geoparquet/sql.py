@@ -33,6 +33,56 @@ def query_points_rows(
     ).fetchall()
 
 
+def query_points_rows_sampled(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    path: str,
+    where_sql: str,
+    where_params: tuple[float, float, float, float],
+    id_col: str,
+    xmin_expr: str,
+    ymin_expr: str,
+    name_col: str | None,
+    class_col: str | None,
+    limit: int,
+) -> list[tuple]:
+    """
+    Sample points *after* applying the AOI filter.
+
+    Why:
+      A plain LIMIT can return a spatially biased “slice” of the Parquet file (whatever comes
+      first), which looks like a bug on the initial wide-AOI view. Sampling yields a more
+      representative overview without requiring expensive global ORDER BY.
+    """
+    name_raw = str(name_col) if name_col else "NULL"
+    class_raw = str(class_col) if class_col else "NULL"
+    name_expr = "CAST(name_raw AS VARCHAR) AS name" if name_col else "NULL AS name"
+    class_expr = (
+        "CAST(class_raw AS VARCHAR) AS fclass" if class_col else "NULL AS fclass"
+    )
+
+    return conn.execute(
+        f"""
+        SELECT CAST(id_raw AS VARCHAR) AS id,
+               CAST(lon_raw AS DOUBLE) AS lon,
+               CAST(lat_raw AS DOUBLE) AS lat,
+               {name_expr},
+               {class_expr}
+          FROM (
+                SELECT {id_col} AS id_raw,
+                       {xmin_expr} AS lon_raw,
+                       {ymin_expr} AS lat_raw,
+                       {name_raw} AS name_raw,
+                       {class_raw} AS class_raw
+                  FROM read_parquet(?)
+                 WHERE {where_sql}
+               )
+         USING SAMPLE {int(limit)} ROWS
+        """,
+        [str(path), *where_params],
+    ).fetchall()
+
+
 def query_geometry_rows_no_policy(
     conn: duckdb.DuckDBPyConnection,
     *,
