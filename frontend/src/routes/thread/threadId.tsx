@@ -23,8 +23,6 @@ import { useInvokeAgent } from "./threadId/useInvokeAgent";
 import { usePlotController } from "./threadId/usePlotController";
 import { useTelemetry } from "./threadId/useTelemetry";
 
-let slowPlotToastShown = false;
-
 export const Route = createFileRoute("/thread/$threadId")({
 	params: {
 		parse: (params) =>
@@ -99,9 +97,11 @@ function RouteComponent() {
 	);
 
 	const [slowToast, setSlowToast] = useState<{
+		count: number;
 		title: string;
 		body: string;
 	} | null>(null);
+	const slowToastLastShownAtRef = useRef<number>(0);
 	useEffect(() => {
 		if (!slowToast) return;
 		const t = window.setTimeout(() => setSlowToast(null), 10_000);
@@ -110,7 +110,6 @@ function RouteComponent() {
 
 	const maybeShowSlowToast = useMemo(() => {
 		return (stats: PlotPerfStats | null) => {
-			if (slowPlotToastShown) return;
 			const t = stats?.timingsMs;
 			const total = typeof t?.total === "number" ? t.total : null;
 			if (total === null || total <= 250) return;
@@ -161,15 +160,25 @@ function RouteComponent() {
 				}
 			}
 
-			slowPlotToastShown = true;
-			setSlowToast({
-				title: `Slow refresh: ${total.toFixed(1)}ms`,
-				body: [
-					step ? `step bottleneck: ${step.label} ${step.v.toFixed(1)}ms` : null,
-					layerMsg ? `slowest layer: ${layerMsg}` : null,
-				]
-					.filter(Boolean)
-					.join(" • "),
+			const now = Date.now();
+			const withinBurst = now - slowToastLastShownAtRef.current < 1500;
+			slowToastLastShownAtRef.current = now;
+			setSlowToast((prev) => {
+				const nextCount = withinBurst ? (prev?.count ?? 0) + 1 : 1;
+				const prefix =
+					nextCount > 1 ? `Slow refresh (x${nextCount})` : "Slow refresh";
+				return {
+					count: nextCount,
+					title: `${prefix}: ${total.toFixed(1)}ms`,
+					body: [
+						step
+							? `step bottleneck: ${step.label} ${step.v.toFixed(1)}ms`
+							: null,
+						layerMsg ? `slowest layer: ${layerMsg}` : null,
+					]
+						.filter(Boolean)
+						.join(" • "),
+				};
 			});
 		};
 	}, []);
