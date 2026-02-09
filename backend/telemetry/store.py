@@ -199,7 +199,14 @@ class TelemetryStore:
             payload_bytes,
             cache_hit,
             view_zoom,
+            stats_json,
         ) in rows:
+            stats: dict[str, Any] | None = None
+            try:
+                stats = json.loads(stats_json) if stats_json else None
+                stats = stats if isinstance(stats, dict) else None
+            except Exception:
+                stats = None
             out.append(
                 {
                     "tsMs": int(ts_ms),
@@ -211,6 +218,7 @@ class TelemetryStore:
                     else None,
                     "cacheHit": bool(cache_hit) if cache_hit is not None else None,
                     "viewZoom": _safe_float(view_zoom),
+                    "stats": stats,
                 }
             )
         return out

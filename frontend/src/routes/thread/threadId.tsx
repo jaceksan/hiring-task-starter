@@ -18,9 +18,12 @@ import { ChatDrawer } from "./threadId/ChatDrawer";
 import { PerfPanel } from "./threadId/PerfPanel";
 import { asRecord, calcBboxFromCenterZoom } from "./threadId/plotlyMapUtils";
 import { TelemetryPanel } from "./threadId/TelemetryPanel";
+import type { PlotPerfStats } from "./threadId/types";
 import { useInvokeAgent } from "./threadId/useInvokeAgent";
 import { usePlotController } from "./threadId/usePlotController";
 import { useTelemetry } from "./threadId/useTelemetry";
+
+let slowPlotToastShown = false;
 
 export const Route = createFileRoute("/thread/$threadId")({
 	params: {
@@ -95,6 +98,82 @@ function RouteComponent() {
 		defaultExamplePrompts,
 	);
 
+	const [slowToast, setSlowToast] = useState<{
+		title: string;
+		body: string;
+	} | null>(null);
+	useEffect(() => {
+		if (!slowToast) return;
+		const t = window.setTimeout(() => setSlowToast(null), 10_000);
+		return () => window.clearTimeout(t);
+	}, [slowToast]);
+
+	const maybeShowSlowToast = useMemo(() => {
+		return (stats: PlotPerfStats | null) => {
+			if (slowPlotToastShown) return;
+			const t = stats?.timingsMs;
+			const total = typeof t?.total === "number" ? t.total : null;
+			if (total === null || total <= 250) return;
+
+			// step bottleneck (best-effort)
+			const parts = [
+				{ label: "get", v: t?.engineGet },
+				{ label: "lod", v: t?.lod },
+				{ label: "plot", v: t?.plot },
+				{ label: "json", v: t?.jsonSerialize },
+			].filter((p) => typeof p.v === "number") as {
+				label: string;
+				v: number;
+			}[];
+			const step = parts.length
+				? parts.reduce((a, b) => (b.v > a.v ? b : a))
+				: null;
+
+			// layer bottleneck (GeoParquet best-effort)
+			const s = asRecord(stats?.engineStats);
+			const gp = asRecord(s?.geoparquet);
+			const layers = gp?.layers;
+			let layerMsg: string | null = null;
+			if (Array.isArray(layers) && layers.length > 0) {
+				const best = (layers as unknown[])
+					.map((x) => asRecord(x))
+					.filter(Boolean)
+					.map((l) => {
+						const duck = typeof l?.duckdbMs === "number" ? l.duckdbMs : 0;
+						const dec = typeof l?.decodeMs === "number" ? l.decodeMs : 0;
+						return {
+							layerId: typeof l?.layerId === "string" ? l.layerId : "?",
+							total: duck + dec,
+							duck,
+							dec,
+						};
+					})
+					.reduce((a, b) => (b.total > a.total ? b : a), {
+						layerId: "?",
+						total: 0,
+						duck: 0,
+						dec: 0,
+					});
+				if (best.total > 0) {
+					layerMsg = `${best.layerId} (duck ${best.duck.toFixed(
+						1,
+					)}ms, decode ${best.dec.toFixed(1)}ms)`;
+				}
+			}
+
+			slowPlotToastShown = true;
+			setSlowToast({
+				title: `Slow refresh: ${total.toFixed(1)}ms`,
+				body: [
+					step ? `step bottleneck: ${step.label} ${step.v.toFixed(1)}ms` : null,
+					layerMsg ? `slowest layer: ${layerMsg}` : null,
+				]
+					.filter(Boolean)
+					.join(" • "),
+			});
+		};
+	}, []);
+
 	const {
 		plotContainerRef,
 		plotData,
@@ -112,6 +191,7 @@ function RouteComponent() {
 		threadMessages: thread.messages,
 		engine,
 		scenarioId,
+		onPlotRefreshStats: maybeShowSlowToast,
 	});
 
 	const [drawerOpen, setDrawerOpen] = useState(false);
@@ -217,6 +297,28 @@ function RouteComponent() {
 				ref={plotContainerRef}
 				className="w-full h-full flex justify-center items-center bg-accent relative"
 			>
+				{slowToast && (
+					<div className="absolute top-2 left-1/2 -translate-x-1/2 z-20 w-[520px] max-w-[92%] rounded-md border border-border bg-background/95 px-3 py-2 text-xs shadow">
+						<div className="flex items-start justify-between gap-3">
+							<div>
+								<div className="font-semibold">{slowToast.title}</div>
+								{slowToast.body && (
+									<div className="text-muted-foreground mt-0.5">
+										{slowToast.body}
+									</div>
+								)}
+							</div>
+							<Button
+								size="sm"
+								variant="ghost"
+								className="h-7 px-2"
+								onClick={() => setSlowToast(null)}
+							>
+								Close
+							</Button>
+						</div>
+					</div>
+				)}
 				{telemetryOpen && (
 					<TelemetryPanel
 						summary={telemetrySummary ?? []}

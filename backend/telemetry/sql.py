@@ -40,7 +40,8 @@ SELECT
   try_cast(json_extract(stats_json, '$.timingsMs.total') AS DOUBLE) AS total_ms,
   try_cast(json_extract(stats_json, '$.payloadBytes') AS BIGINT) AS payload_bytes,
   try_cast(json_extract(stats_json, '$.cache.cacheHit') AS BOOLEAN) AS cache_hit,
-  view_zoom
+  view_zoom,
+  stats_json
 FROM events
 WHERE {where_sql}
 ORDER BY total_ms DESC

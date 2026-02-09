@@ -33,6 +33,7 @@ export type TelemetrySlowestRow = {
 	viewZoom?: number;
 	payloadKB?: number;
 	cacheHit?: boolean;
+	stats?: unknown;
 };
 
 export type PlotPerfStats = {
@@ -53,5 +54,7 @@ export type PlotPerfStats = {
 		engineGet?: number;
 		lod?: number;
 		plot?: number;
+		jsonSerialize?: number;
 	};
+	engineStats?: unknown;
 };

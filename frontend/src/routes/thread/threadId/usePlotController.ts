@@ -25,8 +25,9 @@ export function usePlotController(args: {
 	threadMessages: { data?: unknown }[];
 	engine: string;
 	scenarioId: string;
+	onPlotRefreshStats?: (stats: PlotPerfStats | null) => void;
 }) {
-	const { threadMessages, engine, scenarioId } = args;
+	const { threadMessages, engine, scenarioId, onPlotRefreshStats } = args;
 
 	const plotContainerRef = useRef<HTMLDivElement | null>(null);
 	const plotRefreshTimeoutRef = useRef<number | null>(null);
@@ -199,6 +200,17 @@ export function usePlotController(args: {
 					>;
 					if (lastPlotRefreshKeyRef.current !== requestKey) return;
 					if (ac.signal.aborted) return;
+
+					// Emit backend stats for UX (toast) and debugging.
+					try {
+						const layout = asRecord(payload.layout);
+						const meta = layout ? asRecord(layout.meta) : null;
+						const stats = meta ? (meta.stats as PlotPerfStats) : null;
+						onPlotRefreshStats?.(stats ?? null);
+					} catch {
+						onPlotRefreshStats?.(null);
+					}
+
 					// Apply new traces + meta from the backend, but NEVER override
 					// the current mapbox view (zoom/center). Plotly.react() applies
 					// explicit layout.mapbox.zoom/center values which would "snap
@@ -230,7 +242,7 @@ export function usePlotController(args: {
 				}
 			}, 250);
 		},
-		[engine, getViewportSize, scenarioId],
+		[engine, getViewportSize, onPlotRefreshStats, scenarioId],
 	);
 
 	const readViewFromPlotDom = useCallback((): {

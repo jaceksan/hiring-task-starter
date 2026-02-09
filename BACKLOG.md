@@ -3,9 +3,14 @@
 The order of items below is the priority order (top = highest). Each item has up to three concise sub-bullets; when needed, the last sub-bullet links to a detail file in `backlog/`.
 
 - **P2 — Stabilize Scenario A performance (GeoParquet + Plotly baseline)**
-  - Use telemetry to isolate bottlenecks (`duckdbMs` vs `decodeMs` vs `jsonSerialize`) and tighten budgets/LOD deterministically.
-  - Prefer changes that reduce decoded geometry volume (candidates, simplification, pre-aggregation) rather than only UI tweaks.
+  - Extend telemetry to highlight the bottleneck (step + slowest layer) in a human-friendly way.
+  - Add a one-time (per page load) toast when `/plot` refresh exceeds 250ms.
   - Details: [`backlog/0100-scenario-a-performance.md`](backlog/0100-scenario-a-performance.md)
+
+- **P2 — Explore splitting `/plot` by layer (generic async loading)**
+  - Discovery item: confirm feasibility and UX/telemetry implications before implementing.
+  - Goal is generic per-layer requests (best-effort async), with incremental trace merge and stable map view.
+  - Details: [`backlog/0102-plot-layer-split.md`](backlog/0102-plot-layer-split.md)
 
 - **P2 — Highlighting roadmap (make LOD/budgets understandable and correct)**
   - Fix/clarify incomplete highlight due to LOD/budgets (bigger highlight budget or deterministic subsample + explicit message).
