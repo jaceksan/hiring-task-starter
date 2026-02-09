@@ -1,5 +1,13 @@
 ## Highlighting roadmap
 
+### Outcome (completed)
+
+- Never silently render an incomplete highlight:
+  - chat messages explicitly note when highlight rules are clipped by `maxFeatures`
+  - `/invoke` always emits a note when rendered highlights are fewer than requested (including 0)
+- LOD now preserves highlighted points even when the highlighted layer is an auxiliary points layer capped by budgets.
+- Commit: `d4e5a0e`
+
 ### Key UX invariant
 
 Never silently render an incomplete highlight when LOD/budgets are involved.
