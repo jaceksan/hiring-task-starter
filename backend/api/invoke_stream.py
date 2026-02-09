@@ -208,6 +208,7 @@ async def handle_incoming_message(thread):
         plot = build_map_plot(
             lod_layers,
             highlight=response.highlight,
+            highlight_source_layers=aoi_layers,
             aoi=aoi,
             view_center=ctx.view_center,
             view_zoom=ctx.view_zoom,

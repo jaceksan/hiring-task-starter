@@ -3,8 +3,15 @@ from __future__ import annotations
 from typing import Any
 
 from geo.aoi import BBox
-from lod.points import ClusterMarker
-from layers.types import LayerBundle, LineFeature, PolygonFeature
+from lod.points import ClusterMarker, cap_points
+from lod.simplify import simplify_lines_until_budget, simplify_polygons_until_budget
+from layers.types import (
+    Layer,
+    LayerBundle,
+    LineFeature,
+    PointFeature,
+    PolygonFeature,
+)
 from plotly.traces import (
     selected_points,
     trace_aoi_bbox,
@@ -22,6 +29,7 @@ def build_map_plot(
     layers: LayerBundle,
     *,
     highlight: Highlight | None = None,
+    highlight_source_layers: LayerBundle | None = None,
     aoi: BBox | None = None,
     view_center: dict[str, float] | None = None,
     view_zoom: float | None = None,
@@ -46,8 +54,95 @@ def build_map_plot(
         else:
             traces.append(trace_points(layer))
 
+    # Highlight overlay should not silently disappear due to LOD/caps.
+    # Build it from the raw (pre-LOD) layer bundle when available, but simplify/cap
+    # it separately to keep rendering responsive.
+    highlight_rendered = 0
     if highlight and highlight.feature_ids:
-        traces.append(trace_highlight_layer(layers, highlight))
+        src = highlight_source_layers or layers
+        hl = src.get(highlight.layer_id)
+        zoom_for_budget = float(view_zoom) if view_zoom is not None else 10.0
+        ids = set(highlight.feature_ids)
+
+        def match(fid: str) -> bool:
+            if fid in ids:
+                return True
+            base = (fid or "").split(":", 1)[0]
+            return bool(base) and base in ids
+
+        if hl is not None and hl.kind == "points":
+            feats = [
+                f for f in hl.features if isinstance(f, PointFeature) and match(f.id)
+            ]
+            # Ensure we always keep highlighted IDs; cap deterministically if needed.
+            feats = cap_points(feats, 5_000, keep_ids=set(f.id for f in feats))
+            highlight_rendered = len(feats)
+            traces.append(
+                trace_highlight_layer(
+                    LayerBundle(
+                        layers=[
+                            Layer(
+                                id=hl.id,
+                                kind=hl.kind,
+                                title=hl.title,
+                                features=feats,
+                                style=hl.style,
+                            )
+                        ]
+                    ),
+                    highlight,
+                )
+            )
+        elif hl is not None and hl.kind == "lines":
+            feats = [
+                f for f in hl.features if isinstance(f, LineFeature) and match(f.id)
+            ]
+            feats = simplify_lines_until_budget(
+                feats, zoom_for_budget, max_vertices=60_000, keep_ids=None
+            )
+            highlight_rendered = len(feats)
+            traces.append(
+                trace_highlight_layer(
+                    LayerBundle(
+                        layers=[
+                            Layer(
+                                id=hl.id,
+                                kind=hl.kind,
+                                title=hl.title,
+                                features=feats,
+                                style=hl.style,
+                            )
+                        ]
+                    ),
+                    highlight,
+                )
+            )
+        elif hl is not None and hl.kind == "polygons":
+            feats = [
+                f for f in hl.features if isinstance(f, PolygonFeature) and match(f.id)
+            ]
+            feats = simplify_polygons_until_budget(
+                feats, zoom_for_budget, max_vertices=80_000
+            )
+            highlight_rendered = len(feats)
+            traces.append(
+                trace_highlight_layer(
+                    LayerBundle(
+                        layers=[
+                            Layer(
+                                id=hl.id,
+                                kind=hl.kind,
+                                title=hl.title,
+                                features=feats,
+                                style=hl.style,
+                            )
+                        ]
+                    ),
+                    highlight,
+                )
+            )
+        else:
+            traces.append(trace_highlight_layer(layers, highlight))
 
     center = view_center or {"lat": 0.0, "lon": 0.0}
     zoom = float(view_zoom) if view_zoom is not None else 2.0
@@ -90,27 +185,8 @@ def build_map_plot(
         for r in f.rings
     )
     highlight_requested = 0
-    highlight_rendered = 0
     if highlight and highlight.feature_ids:
         highlight_requested = len(highlight.feature_ids)
-        hl_layer = layers.get(highlight.layer_id)
-        if hl_layer is not None:
-            if hl_layer.kind == "points":
-                highlight_rendered = len(
-                    selected_points(layers, highlight.layer_id, highlight.feature_ids)
-                )
-            elif hl_layer.kind == "lines":
-                highlight_rendered = sum(
-                    1
-                    for f in (hl_layer.features or [])
-                    if isinstance(f, LineFeature) and f.id in highlight.feature_ids
-                )
-            elif hl_layer.kind == "polygons":
-                highlight_rendered = sum(
-                    1
-                    for f in (hl_layer.features or [])
-                    if isinstance(f, PolygonFeature) and f.id in highlight.feature_ids
-                )
 
     meta["stats"] = {
         "clusterMode": clusters is not None,

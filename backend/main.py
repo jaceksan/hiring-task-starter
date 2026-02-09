@@ -253,6 +253,7 @@ def plot(body: ApiPlotRequest):
     payload = build_map_plot(
         lod_layers,
         highlight=highlight,
+        highlight_source_layers=aoi_layers,
         aoi=aoi,
         view_center=ctx.view_center,
         view_zoom=ctx.view_zoom,
