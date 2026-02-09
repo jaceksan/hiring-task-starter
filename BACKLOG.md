@@ -2,6 +2,11 @@
 
 The order of items below is the priority order (top = highest). Each item has up to three concise sub-bullets; when needed, the last sub-bullet links to a detail file in `backlog/`.
 
+- **P2 — Highlighting roadmap (make the CZ “flood” demo fully working)**
+  - Fix highlight persistence under caps (highlighted features must not disappear when zooming out).
+  - Add a “flooded places → escape roads” demo flow, with clear UX around partial results.
+  - Details: [`backlog/0101-highlighting-roadmap.md`](backlog/0101-highlighting-roadmap.md)
+
 - **P2 — Scenario B: implement MVT/vector-tile scenario (massive layers)**
   - Add backend tile endpoint + per-layer tile query policy; render in frontend as a vector tile overlay.
   - Decide/implement geometry preprocessing to avoid problematic WKB variants (e.g. `UNKNOWN M`) and keep tiles deterministic.
