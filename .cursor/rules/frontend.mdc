@@ -1,7 +1,5 @@
 ---
 description: Frontend guardrails (React/Plotly/Playwright)
-globs:
-  - frontend/**/*
 ---
 
 ## Frontend rules
