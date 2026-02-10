@@ -34,7 +34,11 @@ lint-backend:
 	@cd backend && uv run ruff format --check .
 	@cd backend && uv run ruff check .
 
+frontend-deps:
+	@cd frontend && (test -x node_modules/.bin/biome && test -x node_modules/.bin/tsc) || npm ci
+
 lint-frontend:
+	@$(MAKE) frontend-deps
 	@cd frontend && npm run -s check
 
 types-all: types-backend types-frontend
@@ -43,6 +47,7 @@ types-backend:
 	@:
 
 types-frontend:
+	@$(MAKE) frontend-deps
 	@cd frontend && npm run -s typecheck
 
 test-all: test-backend test-frontend
@@ -62,6 +67,7 @@ test-integration-frontend:
 	@$(MAKE) test-e2e-frontend
 
 test-e2e-frontend:
+	@$(MAKE) frontend-deps
 	@cd frontend && E2E_FAST=1 npm run -s e2e
 
 fix-backend:
@@ -69,6 +75,7 @@ fix-backend:
 	@cd backend && uv run ruff check --fix .
 
 fix-frontend:
+	@$(MAKE) frontend-deps
 	@cd frontend && npm run -s check -- --write
 
 fix-all: fix-backend fix-frontend
