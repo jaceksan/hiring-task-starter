@@ -41,9 +41,44 @@ async function getTraceLonCount(page: any, traceName: string): Promise<number> {
 	}, traceName);
 }
 
-async function zoomMapboxBy(page: any, delta: number) {
-	await page.evaluate((d: number) => {
+async function getTraceFeatureCount(page: any, traceName: string): Promise<number> {
+	return await page.evaluate((name: string) => {
 		const el = document.querySelector(".js-plotly-plot") as any;
+		const data = Array.isArray(el?.data) ? el.data : [];
+		const t = data.find((x: any) => String(x?.name ?? "") === String(name));
+		const lon = Array.isArray(t?.lon) ? (t.lon as Array<number | null>) : [];
+		let inSeg = false;
+		let segs = 0;
+		for (const v of lon) {
+			if (v === null) {
+				inSeg = false;
+				continue;
+			}
+			if (!inSeg) {
+				segs += 1;
+				inSeg = true;
+			}
+		}
+		return segs;
+	}, traceName);
+}
+
+async function zoomMapboxBy(page: any, delta: number) {
+	await page.evaluate(async (d: number) => {
+		const el = document.querySelector(".js-plotly-plot") as any;
+		const plotly = (globalThis as any)?.Plotly;
+		const current =
+			typeof el?._fullLayout?.mapbox?.zoom === "number"
+				? (el._fullLayout.mapbox.zoom as number)
+				: null;
+
+		// Deterministic: relayout emits plotly_relayout, which triggers /plot refresh.
+		if (el && plotly?.relayout && typeof current === "number") {
+			await plotly.relayout(el, { "mapbox.zoom": current + d });
+			return;
+		}
+
+		// Fallback: direct map zoom (may not always trigger plot refresh).
 		const map = el?._fullLayout?.mapbox?._subplot?.map;
 		if (!map?.getZoom || !map?.setZoom) return;
 		map.setZoom(map.getZoom() + d);
@@ -111,6 +146,13 @@ test("highlight motorways renders and persists across /plot refresh", async ({
 		})
 		.toBeGreaterThan(2);
 
+	// Stronger guard: we should usually get multiple highlighted features, not just one long line.
+	await expect
+		.poll(async () => await getTraceFeatureCount(page, "Motorways"), {
+			timeout: 20_000,
+		})
+		.toBeGreaterThanOrEqual(2);
+
 	// Trigger a /plot refresh by zooming out a bit.
 	const plotResp = page.waitForResponse(
 		(r: any) => r.url().includes("/plot") && r.status() === 200,
@@ -124,5 +166,11 @@ test("highlight motorways renders and persists across /plot refresh", async ({
 			timeout: 20_000,
 		})
 		.toBeGreaterThan(2);
+
+	await expect
+		.poll(async () => await getTraceFeatureCount(page, "Motorways"), {
+			timeout: 20_000,
+		})
+		.toBeGreaterThanOrEqual(1);
 });
 
