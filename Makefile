@@ -1,4 +1,5 @@
 .PHONY: help \
+	run-all run-backend run-frontend \
 	lint-all lint-backend lint-frontend \
 	types-all types-backend types-frontend \
 	test-all test-backend test-frontend \
@@ -9,6 +10,9 @@
 help:
 	@printf "%s\n" \
 		"Targets:" \
+		"  run-backend              Start backend dev server (FastAPI on :8000)" \
+		"  run-frontend             Start frontend dev server (Vite on :3000)" \
+		"  run-all                  Show commands to run backend+frontend together" \
 		"  lint-all                 Verify backend + frontend (no writes; format + lint)" \
 		"  lint-backend             Verify backend (no writes; syntax + format --check)" \
 		"  lint-frontend            Verify frontend (no writes; biome check)" \
@@ -26,6 +30,19 @@ help:
 		"  fix-frontend     Auto-fix frontend (biome check --write)" \
 		"  fix-all          Auto-fix backend + frontend" \
 		""
+
+run-backend:
+	@cd backend && uv run fastapi dev main.py
+
+run-frontend:
+	@$(MAKE) frontend-deps
+	@cd frontend && npm run -s dev
+
+run-all:
+	@printf "%s\n" \
+		"Run in two terminals:" \
+		"  make run-backend" \
+		"  make run-frontend"
 
 lint-all: lint-backend lint-frontend
 
