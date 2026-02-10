@@ -8,6 +8,13 @@ from layers.types import Layer, LayerBundle, LineFeature, PointFeature, PolygonF
 from plotly.types import Highlight
 
 
+def _id_matches(fid: str, ids: set[str]) -> bool:
+    if fid in ids:
+        return True
+    base = (fid or "").split(":", 1)[0]
+    return bool(base) and base in ids
+
+
 def trace_aoi_bbox(aoi: BBox) -> dict[str, Any]:
     b = aoi.normalized()
     lons = [b.min_lon, b.max_lon, b.max_lon, b.min_lon, b.min_lon]
@@ -145,7 +152,7 @@ def selected_points(
     if layer is None or layer.kind != "points":
         return []
     pts = [f for f in layer.features if isinstance(f, PointFeature)]
-    return [p for p in pts if p.id in ids]
+    return [p for p in pts if _id_matches(p.id, ids)]
 
 
 def trace_highlight_layer(layers: LayerBundle, highlight: Highlight) -> dict[str, Any]:
@@ -176,10 +183,11 @@ def trace_highlight_layer(layers: LayerBundle, highlight: Highlight) -> dict[str
         }
 
     if layer.kind == "lines":
+        ids = highlight.feature_ids
         feats = [
             f
             for f in layer.features
-            if isinstance(f, LineFeature) and f.id in highlight.feature_ids
+            if isinstance(f, LineFeature) and _id_matches(f.id, ids)
         ]
         lons: list[float | None] = []
         lats: list[float | None] = []
@@ -202,10 +210,11 @@ def trace_highlight_layer(layers: LayerBundle, highlight: Highlight) -> dict[str
         }
 
     if layer.kind == "polygons":
+        ids = highlight.feature_ids
         feats = [
             f
             for f in layer.features
-            if isinstance(f, PolygonFeature) and f.id in highlight.feature_ids
+            if isinstance(f, PolygonFeature) and _id_matches(f.id, ids)
         ]
         lons: list[float | None] = []
         lats: list[float | None] = []

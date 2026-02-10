@@ -130,6 +130,7 @@ def _apply_highlight_rule(
         return AgentResponse(message=f"I couldn't find layer '{rule.layerId}'.")
 
     feats = layer.features
+    feats_before_filters = feats
 
     # Optional props filter.
     if rule.props:
@@ -160,7 +161,58 @@ def _apply_highlight_rule(
     max_features = int(rule.maxFeatures or 500)
     ids = ids_all[:max_features]
     if not ids:
-        # Be helpful: in map-first UIs, this often means "zoom/pan to a different area".
+        # Be helpful: distinguish "layer not loaded at this zoom" vs "filter found none".
+        if not feats_before_filters and layer.kind in {"lines", "polygons"}:
+            return AgentResponse(
+                message=(
+                    f"I can’t highlight anything yet because `{layer.title}` has no decoded "
+                    f"features at the current zoom. Zoom in a bit (or pan) and try again."
+                )
+            )
+
+        if rule.props:
+            props_bits: list[str] = []
+            for k, allowed in (rule.props or {}).items():
+                if allowed:
+                    props_bits.append(f"{k} ∈ {list(allowed)}")
+            props_msg = f" ({', '.join(props_bits)})" if props_bits else ""
+
+            # If the layer has features but none match the props filter, say so explicitly.
+            if feats_before_filters:
+                # Show a small hint about what classes are present in the current view.
+                present: list[str] = []
+                try:
+                    seen: set[str] = set()
+                    for f in feats_before_filters:
+                        v = (getattr(f, "props", None) or {}).get("fclass")
+                        if v is None:
+                            continue
+                        s = str(v)
+                        if s and s not in seen:
+                            seen.add(s)
+                            present.append(s)
+                        if len(present) >= 6:
+                            break
+                except Exception:
+                    present = []
+                present_msg = (
+                    f" (present fclass: {', '.join(present)})" if present else ""
+                )
+                return AgentResponse(
+                    message=(
+                        f"I can see {len(feats_before_filters)} `{layer.title}` features in the current view, "
+                        f"but none match your filter{props_msg}.{present_msg} "
+                        "Try panning to a major highway corridor or zooming out slightly and ask again."
+                    )
+                )
+
+            return AgentResponse(
+                message=(
+                    f"I couldn’t find any `{layer.title}` matching your request{props_msg} "
+                    "in the current map view. Try zooming out a bit (or panning) and ask again."
+                )
+            )
+
         return AgentResponse(
             message=(
                 "I couldn’t find anything matching that request in your current map view. "
