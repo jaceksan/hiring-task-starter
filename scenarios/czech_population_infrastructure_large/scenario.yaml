@@ -16,6 +16,7 @@ examplePrompts:
   - "how many places are flooded?"
   - "show flooded places"
   - "highlight motorways"
+  - "highlight trunks"
 
 layers:
   - id: roads
@@ -153,7 +154,14 @@ routing:
       title: "Motorways"
       maxFeatures: 800
       props:
-        fclass: ["motorway", "trunk"]
+        # Include *_link too: in-city segments are frequently stored as link classes.
+        fclass: ["motorway", "motorway_link"]
+    - keywords: ["highlight trunks", "highlight trunk"]
+      layerId: roads
+      title: "Trunks"
+      maxFeatures: 800
+      props:
+        fclass: ["trunk", "trunk_link"]
 
 plot:
   highlightLayerId: places

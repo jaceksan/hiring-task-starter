@@ -17,6 +17,7 @@ examplePrompts:
   - "how many places are flooded?"
   - "show flooded places"
   - "highlight motorways"
+  - "highlight trunks"
 
 layers:
   - id: roads
@@ -30,8 +31,40 @@ layers:
         nameColumn: name
         classColumn: fclass
         geometryColumn: geometry
-        # Keep consistent with the large scenario; decode geometry only when zoomed in enough.
+        # Keep consistent with the large scenario; decode geometry progressively by class.
         minZoomForGeometry: 11.5
+        renderPolicy:
+          # Show a readable “overview” at low zoom by decoding only major road classes,
+          # then progressively allow smaller classes as the user zooms in.
+          minZoomForGeometryByClass:
+            motorway: 6.0
+            motorway_link: 6.0
+            trunk: 6.0
+            trunk_link: 6.0
+            primary: 6.5
+            primary_link: 6.5
+            secondary: 7.0
+            secondary_link: 7.0
+            tertiary: 9.0
+            tertiary_link: 9.0
+            # Minor classes are dense even in Prague; keep them off until high zoom.
+            residential: 13.5
+            unclassified: 13.5
+            service: 14.0
+            living_street: 14.0
+            cycleway: 14.5
+            busway: 14.5
+            footway: 15.0
+            path: 15.0
+            steps: 15.5
+            track: 15.5
+            track_grade1: 15.5
+            track_grade2: 15.5
+            track_grade3: 15.5
+            track_grade4: 15.5
+            track_grade5: 15.5
+            pedestrian: 15.5
+            bridleway: 15.5
     style:
       line:
         color: "rgba(55, 71, 79, 0.55)"
@@ -93,7 +126,14 @@ routing:
       title: "Motorways"
       maxFeatures: 800
       props:
-        fclass: ["motorway", "trunk"]
+        # Include *_link too: in-city segments are frequently stored as link classes.
+        fclass: ["motorway", "motorway_link"]
+    - keywords: ["highlight trunks", "highlight trunk"]
+      layerId: roads
+      title: "Trunks"
+      maxFeatures: 800
+      props:
+        fclass: ["trunk", "trunk_link"]
 
 plot:
   highlightLayerId: places
