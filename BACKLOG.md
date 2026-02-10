@@ -7,6 +7,11 @@ The order of items below is the priority order (top = highest). Each item has up
   - Add a “flooded places → escape roads” demo flow, with clear UX around partial results.
   - Details: [`backlog/0101-highlighting-roadmap.md`](backlog/0101-highlighting-roadmap.md)
 
+- **P2 — Session notes (keep context across restarts)**
+  - Highlights: multipart ID matching + improved “0 matches” UX; new “highlight trunks” prompt.
+  - Dev UX: add “Reload config” button to clear backend in-memory caches (scenario YAML hot-reload).
+  - Details: [`backlog/0103-session-notes-2026-02-09.md`](backlog/0103-session-notes-2026-02-09.md)
+
 - **P2 — Scenario B: implement MVT/vector-tile scenario (massive layers)**
   - Add backend tile endpoint + per-layer tile query policy; render in frontend as a vector tile overlay.
   - Decide/implement geometry preprocessing to avoid problematic WKB variants (e.g. `UNKNOWN M`) and keep tiles deterministic.
