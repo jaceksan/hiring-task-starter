@@ -102,3 +102,47 @@ def test_polygon_simplification_respects_vertex_budget():
         )
         <= 80
     )
+
+
+def test_polygon_lod_keeps_highlighted_ids_when_over_budget():
+    ring_small = [
+        (14.40, 50.07),
+        (14.41, 50.07),
+        (14.41, 50.08),
+        (14.40, 50.08),
+        (14.40, 50.07),
+    ]
+    ring_big: list[tuple[float, float]] = []
+    for i in range(200):
+        ring_big.append((14.0 + i * 0.0001, 50.0 + ((i * 5) % 200) * 0.0001))
+    ring_big.append(ring_big[0])
+    keep = PolygonFeature(id="keep", rings=[ring_small], props={})
+    drop = PolygonFeature(id="drop", rings=[ring_big], props={})
+    layers = LayerBundle(
+        layers=[
+            Layer(
+                id="polys",
+                kind="polygons",
+                title="Polys",
+                features=[drop, keep],
+                style={},
+            )
+        ]
+    )
+
+    lod_layers, _clusters = apply_lod(
+        layers,
+        view_zoom=6.0,
+        highlight_layer_id=None,
+        highlight_feature_ids=None,
+        highlight_feature_ids_by_layer={"polys": {"keep"}},
+        cluster_points_layer_id="points",
+        budgets=LodBudgets(
+            max_points_rendered=10_000, max_line_vertices=10_000, max_poly_vertices=30
+        ),
+    )
+
+    out = lod_layers.get("polys")
+    assert out is not None
+    ids = {p.id for p in out.features if isinstance(p, PolygonFeature)}
+    assert "keep" in ids

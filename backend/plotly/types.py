@@ -12,3 +12,4 @@ class Highlight:
     layer_id: str
     feature_ids: set[str]
     title: str | None = None
+    mode: str = "prompt"

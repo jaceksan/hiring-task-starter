@@ -43,6 +43,7 @@ def simplify_polygons_until_budget(
     zoom: float,
     *,
     max_vertices: int,
+    keep_ids: set[str] | None = None,
 ) -> list[PolygonFeature]:
     base_tol = poly_tol_m(zoom)
     tolerances = [base_tol, base_tol * 2, base_tol * 4, base_tol * 8]
@@ -53,7 +54,7 @@ def simplify_polygons_until_budget(
             break
         out = simplify_polygons(polys, tolerance_m=tol)
     if count_poly_vertices(out) > max_vertices:
-        out = cap_polys_to_vertex_budget(out, max_vertices)
+        out = cap_polys_to_vertex_budget(out, max_vertices, keep_ids=keep_ids)
     return out
 
 
@@ -86,12 +87,13 @@ def cap_lines_to_vertex_budget(
 
 
 def cap_polys_to_vertex_budget(
-    polys: list[PolygonFeature], max_vertices: int
+    polys: list[PolygonFeature], max_vertices: int, *, keep_ids: set[str] | None = None
 ) -> list[PolygonFeature]:
     """
     Hard fallback: drop the heaviest features until under budget.
     Deterministic: sort by vertex count desc, then id.
     """
+    keep = set(keep_ids or set())
     out = list(polys)
 
     def v(p: PolygonFeature) -> int:
@@ -100,7 +102,14 @@ def cap_polys_to_vertex_budget(
     out.sort(key=lambda p: (-v(p), p.id))
     total = count_poly_vertices(out)
     while out and total > max_vertices:
-        removed = out.pop(0)
+        remove_idx = None
+        for i, cand in enumerate(out):
+            if cand.id not in keep:
+                remove_idx = i
+                break
+        if remove_idx is None:
+            remove_idx = 0
+        removed = out.pop(remove_idx)
         total -= v(removed)
     out.sort(key=lambda p: p.id)
     return out

@@ -92,6 +92,7 @@ class ApiThread(BaseModel):
 class ApiPlotRequest(BaseModel):
     map: ApiMapContext
     highlight: dict | None = None
+    highlights: list[dict] | None = None
     engine: str | None = None
     scenarioId: str | None = None
 
@@ -147,48 +148,53 @@ def plot(body: ApiPlotRequest):
     t_engine_get_ms = (time.perf_counter() - t0) * 1000.0
     aoi_layers = result.layers
 
+    payload_highlights = list(body.highlights or [])
+    if body.highlight:
+        payload_highlights = [body.highlight, *payload_highlights]
+    highlight_ids_by_layer: dict[str, set[str]] = {}
+    for raw in payload_highlights:
+        lid = raw.get("layerId") if isinstance(raw, dict) else None
+        ids = (
+            (raw.get("featureIds") or raw.get("pointIds"))
+            if isinstance(raw, dict)
+            else None
+        )
+        if isinstance(lid, str) and lid and isinstance(ids, list):
+            highlight_ids_by_layer.setdefault(lid, set()).update(
+                set(str(x) for x in ids if isinstance(x, str))
+            )
+
     # Pin highlighted features into the layer bundle so they don't disappear across zoom changes
     # when base layer queries are capped. (Best-effort; only for DuckDB+GeoParquet layers.)
-    if engine_name == "duckdb" and body.highlight:
-        hl_layer_id = body.highlight.get("layerId")
-        hl_ids_raw = body.highlight.get("featureIds") or body.highlight.get("pointIds")
-        if (
-            isinstance(hl_layer_id, str)
-            and hl_layer_id
-            and isinstance(hl_ids_raw, list)
-        ):
+    if engine_name == "duckdb" and highlight_ids_by_layer:
+        try:
+            import duckdb as _duckdb  # local import to keep startup light
+
+            base_layers = list(aoi_layers.layers)
+            conn = _duckdb.connect(database=":memory:", read_only=False)
             try:
-                layer_cfg = next(
-                    (cfg for cfg in scenario.layers if cfg.id == hl_layer_id), None
-                )
-                if (
-                    layer_cfg is not None
-                    and layer_cfg.source.type == "geoparquet"
-                    and isinstance(layer_cfg.source.geoparquet, dict)
-                ):
-                    import duckdb as _duckdb  # local import to keep startup light
-
-                    conn = _duckdb.connect(database=":memory:", read_only=False)
-                    try:
-                        pinned = query_geoparquet_layer_pinned_ids(
-                            conn,
-                            layer_id=layer_cfg.id,
-                            kind=layer_cfg.kind,
-                            title=layer_cfg.title,
-                            style=layer_cfg.style or {},
-                            path=resolve_repo_path(layer_cfg.source.path),
-                            aoi=aoi,
-                            view_zoom=ctx.view_zoom,
-                            source_options=layer_cfg.source.geoparquet or None,
-                            ids=set(str(x) for x in hl_ids_raw if isinstance(x, str)),
-                        )
-                    finally:
-                        try:
-                            conn.close()
-                        except Exception:
-                            pass
-
-                    base_layers = list(aoi_layers.layers)
+                for hl_layer_id, ids in highlight_ids_by_layer.items():
+                    layer_cfg = next(
+                        (cfg for cfg in scenario.layers if cfg.id == hl_layer_id), None
+                    )
+                    if (
+                        layer_cfg is None
+                        or layer_cfg.source.type != "geoparquet"
+                        or not isinstance(layer_cfg.source.geoparquet, dict)
+                    ):
+                        continue
+                    pinned = query_geoparquet_layer_pinned_ids(
+                        conn,
+                        layer_id=layer_cfg.id,
+                        kind=layer_cfg.kind,
+                        title=layer_cfg.title,
+                        style=layer_cfg.style or {},
+                        path=resolve_repo_path(layer_cfg.source.path),
+                        aoi=aoi,
+                        view_zoom=ctx.view_zoom,
+                        source_options=layer_cfg.source.geoparquet or None,
+                        ids=ids,
+                    )
                     for i, layer in enumerate(base_layers):
                         if layer.id != layer_cfg.id:
                             continue
@@ -205,9 +211,14 @@ def plot(body: ApiPlotRequest):
                             style=layer.style,
                         )
                         break
-                    aoi_layers = LayerBundle(layers=base_layers)
-            except Exception:
-                pass
+            finally:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+            aoi_layers = LayerBundle(layers=base_layers)
+        except Exception:
+            pass
 
     t1 = time.perf_counter()
     (lod_layers, beer_clusters), cache_stats = _apply_lod_cached(
@@ -217,43 +228,42 @@ def plot(body: ApiPlotRequest):
         view_zoom=ctx.view_zoom,
         scenario_id=ctx.scenario_id,
         cluster_points_layer_id=scenario.plot.highlightLayerId,
-        highlight_layer_id=str(
-            body.highlight.get("layerId") or scenario.plot.highlightLayerId
-        )
-        if body.highlight
-        else None,
-        highlight_feature_ids=(
-            set(
-                body.highlight.get("featureIds") or body.highlight.get("pointIds") or []
-            )
-            if body.highlight
-            else None
-        ),
+        highlight_layer_id=next(iter(highlight_ids_by_layer.keys()), None),
+        highlight_feature_ids=next(iter(highlight_ids_by_layer.values()), None),
+        highlight_feature_ids_by_layer=highlight_ids_by_layer or None,
     )
     t_lod_ms = (time.perf_counter() - t1) * 1000.0
 
     highlight = None
-    if body.highlight and (
-        body.highlight.get("featureIds") or body.highlight.get("pointIds")
-    ):
+    highlights = []
+    for raw in payload_highlights:
+        ids_raw = (
+            raw.get("featureIds") or raw.get("pointIds")
+            if isinstance(raw, dict)
+            else None
+        )
+        if not (isinstance(raw, dict) and isinstance(ids_raw, list) and ids_raw):
+            continue
         from plotly.build_map import Highlight as PlotHighlight
 
-        hl_layer_id = str(
-            body.highlight.get("layerId") or scenario.plot.highlightLayerId
+        hl_layer_id = str(raw.get("layerId") or scenario.plot.highlightLayerId)
+        hl_ids = set(str(x) for x in ids_raw if isinstance(x, str))
+        highlights.append(
+            PlotHighlight(
+                layer_id=hl_layer_id,
+                feature_ids=hl_ids,
+                title=raw.get("title") or "Highlighted",
+                mode=str(raw.get("mode") or "toggle"),
+            )
         )
-        hl_ids = set(
-            body.highlight.get("featureIds") or body.highlight.get("pointIds") or []
-        )
-        highlight = PlotHighlight(
-            layer_id=hl_layer_id,
-            feature_ids=hl_ids,
-            title=body.highlight.get("title") or "Highlighted",
-        )
+    if highlights:
+        highlight = highlights[0]
 
     t2 = time.perf_counter()
     payload = build_map_plot(
         lod_layers,
         highlight=highlight,
+        highlights=highlights or None,
         highlight_source_layers=aoi_layers,
         aoi=aoi,
         view_center=ctx.view_center,

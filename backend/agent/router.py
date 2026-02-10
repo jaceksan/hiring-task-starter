@@ -3,9 +3,11 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from shapely.geometry import LineString, Point
+
 from geo.aoi import BBox
 from geo.index import GeoIndex, is_point_in_union, transformer_4326_to_3857
-from layers.types import LayerBundle, PointFeature
+from layers.types import LayerBundle, LineFeature, PointFeature
 from plotly.build_map import Highlight
 from scenarios.types import ScenarioHighlightRule, ScenarioRouting
 
@@ -21,6 +23,7 @@ class AgentResponse:
 
     message: str
     highlight: Highlight | None = None
+    highlights: list[Highlight] | None = None
     focus_map: bool = False
 
 
@@ -44,6 +47,11 @@ def route_prompt(
             return _apply_highlight_rule(
                 layers, index=index, aoi=aoi, routing=routing, rule=rule
             )
+
+    if any(k in p for k in {"escape road", "escape roads"}):
+        return _escape_roads_for_flooded_places(
+            layers, index=index, aoi=aoi, routing=routing
+        )
 
     point_kw = {routing.pointLabelSingular.lower(), routing.pointLabelPlural.lower()}
     mentions_points = any(k and k in p for k in point_kw)
@@ -78,7 +86,16 @@ def route_prompt(
                 layer_id=routing.primaryPointsLayerId,
                 feature_ids=ids,
                 title=f"Recommended {len(ranked)}",
+                mode="prompt",
             ),
+            highlights=[
+                Highlight(
+                    layer_id=routing.primaryPointsLayerId,
+                    feature_ids=ids,
+                    title=f"Recommended {len(ranked)}",
+                    mode="prompt",
+                )
+            ],
             focus_map=True,
         )
 
@@ -221,29 +238,122 @@ def _apply_highlight_rule(
         )
 
     title = rule.title or f"Highlighted ({layer.title})"
-    # Human-friendly message for the chat drawer (map is primary UI).
+    # Always state matched vs rendered so budget/cap behavior is explicit.
     clipped_note = (
-        f" (matched {len(ids_all)}, showing {len(ids)} due to maxFeatures)"
+        f"matched {len(ids_all)}, rendering {len(ids)} due to budget."
         if len(ids_all) > len(ids)
-        else ""
+        else f"matched {len(ids_all)}, rendering {len(ids)}."
     )
-    msg = (
-        f"Highlighted {len(ids)} {layer.title} in your current map view.{clipped_note}"
-    )
+    msg = f"{layer.title}: {clipped_note}"
     if rule.maskLayerId and rule.maskMode == "IN_MASK":
-        msg = (
-            f"Highlighted {len(ids)} {layer.title} that overlap {routing.maskLabel} "
-            f"in your current map view.{clipped_note}"
-        )
+        msg = f"{layer.title} overlapping {routing.maskLabel}: {clipped_note}"
     if rule.maskLayerId and rule.maskMode == "OUTSIDE_MASK":
-        msg = (
-            f"Highlighted {len(ids)} {layer.title} outside {routing.maskLabel} "
-            f"in your current map view.{clipped_note}"
-        )
+        msg = f"{layer.title} outside {routing.maskLabel}: {clipped_note}"
+    hl = Highlight(layer_id=layer.id, feature_ids=set(ids), title=title, mode="prompt")
     return AgentResponse(
         message=msg,
-        highlight=Highlight(layer_id=layer.id, feature_ids=set(ids), title=title),
+        highlight=hl,
+        highlights=[hl],
         focus_map=(layer.kind == "points"),
+    )
+
+
+def _escape_roads_for_flooded_places(
+    layers: LayerBundle,
+    *,
+    index: GeoIndex,
+    aoi: BBox,
+    routing: ScenarioRouting,
+) -> AgentResponse:
+    pts_layer = layers.get(routing.primaryPointsLayerId)
+    if pts_layer is None or pts_layer.kind != "points":
+        return AgentResponse(message="This scenario has no configured places layer.")
+    roads_layer = next(
+        (
+            layer
+            for layer in layers.layers
+            if layer.kind == "lines" and "road" in layer.id
+        ),
+        None,
+    ) or next((layer for layer in layers.layers if layer.kind == "lines"), None)
+    if roads_layer is None:
+        return AgentResponse(message="This scenario has no road layer to highlight.")
+    if not routing.maskPolygonsLayerId:
+        return AgentResponse(message="This scenario has no flood mask configured.")
+
+    flood_union = index.polygon_union_for_aoi(routing.maskPolygonsLayerId, aoi)
+    flooded_points = [
+        p
+        for p in pts_layer.features
+        if isinstance(p, PointFeature) and is_point_in_union(p, flood_union)
+    ]
+    if not flooded_points:
+        return AgentResponse(
+            message=(
+                "Flooded places: matched 0, rendering 0. "
+                "No flooded places are visible in the current map view."
+            )
+        )
+
+    flooded_ids_all = [p.id for p in flooded_points if p.id]
+    flooded_ids = flooded_ids_all[:500]
+    if not flooded_ids:
+        return AgentResponse(
+            message="I could not resolve flooded place IDs in this view."
+        )
+
+    t = transformer_4326_to_3857()
+    flooded_m = [Point(*t.transform(p.lon, p.lat)) for p in flooded_points]
+    road_candidates = [
+        r
+        for r in roads_layer.features
+        if isinstance(r, LineFeature) and len(r.coords) >= 2 and r.id
+    ]
+    dry_candidates: list[LineFeature] = []
+    for r in road_candidates:
+        try:
+            line = LineString(r.coords)
+            if line.is_empty or line.intersects(flood_union):
+                continue
+            dry_candidates.append(r)
+        except Exception:
+            continue
+    use_candidates = dry_candidates if dry_candidates else road_candidates
+
+    scored: list[tuple[float, LineFeature]] = []
+    for r in use_candidates:
+        try:
+            line_m = LineString([t.transform(lon, lat) for lon, lat in r.coords])
+        except Exception:
+            continue
+        d = min((line_m.distance(p) for p in flooded_m), default=float("inf"))
+        if d != float("inf"):
+            scored.append((float(d), r))
+    scored.sort(key=lambda row: (row[0], row[1].id))
+
+    roads_ids_all = [r.id for _, r in scored]
+    roads_ids = roads_ids_all[:300]
+    flooded_h = Highlight(
+        layer_id=pts_layer.id,
+        feature_ids=set(flooded_ids),
+        title="Flooded places",
+        mode="prompt",
+    )
+    roads_h = Highlight(
+        layer_id=roads_layer.id,
+        feature_ids=set(roads_ids),
+        title="Escape roads",
+        mode="prompt",
+    )
+    msg = (
+        f"Flooded places: matched {len(flooded_ids_all)}, rendering {len(flooded_ids)} due to budget. "
+        f"Escape roads: matched {len(roads_ids_all)}, rendering {len(roads_ids)} due to budget."
+    )
+    return AgentResponse(
+        message=msg,
+        highlight=flooded_h,
+        highlights=[flooded_h, roads_h],
+        focus_map=False,
     )
 
 

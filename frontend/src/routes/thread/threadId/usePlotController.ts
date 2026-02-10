@@ -19,7 +19,8 @@ type HighlightPayload = {
 	layerId: string | null;
 	featureIds: string[];
 	title: string;
-} | null;
+	mode?: string;
+};
 
 export function usePlotController(args: {
 	threadMessages: { data?: unknown }[];
@@ -108,28 +109,56 @@ export function usePlotController(args: {
 		return calcBboxFromCenterZoom(mv.center, mv.zoom, viewport);
 	}, [getViewportSize]);
 
-	const currentHighlight = useCallback<() => HighlightPayload>(() => {
+	const currentHighlights = useCallback<() => HighlightPayload[]>(() => {
 		const meta = asRecord(getLayoutMeta(plotData.layout));
-		const h = meta ? asRecord(meta.highlight) : null;
-		const ids = (h?.featureIds ?? h?.pointIds) as unknown;
-		if (!h || !Array.isArray(ids) || ids.length === 0) return null;
+		const out: HighlightPayload[] = [];
+		const many = meta?.highlights;
+		if (Array.isArray(many)) {
+			for (const item of many) {
+				const h = asRecord(item);
+				const ids = (h?.featureIds ?? h?.pointIds) as unknown;
+				if (!h || !Array.isArray(ids) || ids.length === 0) continue;
+				const layerId =
+					typeof h.layerId === "string" && h.layerId.length > 0
+						? h.layerId
+						: null;
+				const title =
+					typeof h.title === "string" && h.title.length > 0
+						? h.title
+						: "Highlighted";
+				const mode =
+					typeof h.mode === "string" && h.mode.length > 0 ? h.mode : undefined;
+				out.push({ layerId, featureIds: ids as string[], title, mode });
+			}
+			if (out.length > 0) return out;
+		}
+		// Backward-compatible fallback for single overlay payloads.
+		const one = asRecord(meta?.highlight);
+		const ids = (one?.featureIds ?? one?.pointIds) as unknown;
+		if (!one || !Array.isArray(ids) || ids.length === 0) return [];
 		const layerId =
-			typeof h.layerId === "string" && h.layerId.length > 0 ? h.layerId : null;
+			typeof one.layerId === "string" && one.layerId.length > 0
+				? one.layerId
+				: null;
 		const title =
-			typeof h.title === "string" && h.title.length > 0
-				? h.title
+			typeof one.title === "string" && one.title.length > 0
+				? one.title
 				: "Highlighted";
-		return { layerId, featureIds: ids as string[], title };
+		const mode =
+			typeof one.mode === "string" && one.mode.length > 0
+				? one.mode
+				: undefined;
+		return [{ layerId, featureIds: ids as string[], title, mode }];
 	}, [plotData.layout]);
 
 	// Keep a ref so schedulePlotRefresh can read the latest highlight without
 	// having currentHighlight in its dependency array. This prevents a cascade:
 	// zoom → setPlotData → currentHighlight changes → schedulePlotRefresh changes
 	// → scenario-centering useEffect re-fires → snaps map back to default view.
-	const currentHighlightRef = useRef(currentHighlight);
+	const currentHighlightRef = useRef(currentHighlights);
 	useEffect(() => {
-		currentHighlightRef.current = currentHighlight;
-	}, [currentHighlight]);
+		currentHighlightRef.current = currentHighlights;
+	}, [currentHighlights]);
 
 	const getStats = useCallback((): PlotPerfStats | null => {
 		const meta = asRecord(getLayoutMeta(plotData.layout));
@@ -185,7 +214,7 @@ export function usePlotController(args: {
 								view: { center: next.center, zoom: next.zoom },
 								viewport: getViewportSize(),
 							},
-							highlight: currentHighlightRef.current(),
+							highlights: currentHighlightRef.current(),
 							engine,
 							scenarioId,
 						}),

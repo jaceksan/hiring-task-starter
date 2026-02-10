@@ -15,6 +15,7 @@ examplePrompts:
   - "show layers"
   - "how many places are flooded?"
   - "show flooded places"
+  - "show me escape roads for flooded places"
   - "highlight motorways"
   - "highlight trunks"
 

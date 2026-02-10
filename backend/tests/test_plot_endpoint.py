@@ -83,6 +83,42 @@ def test_plot_endpoint_preserves_highlight_when_provided():
     assert "stats" in meta
 
 
+def test_plot_endpoint_preserves_multiple_highlights_when_provided():
+    client = TestClient(app)
+    resp = client.post(
+        "/plot",
+        json={
+            "map": {
+                "bbox": {
+                    "minLon": 14.22,
+                    "minLat": 49.94,
+                    "maxLon": 14.70,
+                    "maxLat": 50.18,
+                },
+                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
+            },
+            "highlights": [
+                {
+                    "layerId": "beer_pois",
+                    "featureIds": ["node/123"],
+                    "title": "Flooded pubs",
+                },
+                {
+                    "layerId": "metro_ways",
+                    "featureIds": ["way/456"],
+                    "title": "Escape roads",
+                },
+            ],
+            "engine": "in_memory",
+        },
+    )
+    assert resp.status_code == 200
+    payload = resp.json()
+    meta = payload.get("layout", {}).get("meta", {})
+    assert isinstance(meta.get("highlights"), list)
+    assert len(meta.get("highlights")) == 2
+
+
 def test_plot_endpoint_supports_duckdb_engine(tmp_path, monkeypatch):
     # Use a per-test DuckDB file to avoid lock conflicts with any running local backend.
     db_path = tmp_path / "plot_endpoint.duckdb"

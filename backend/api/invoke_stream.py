@@ -72,6 +72,7 @@ def _apply_lod_cached(
     cluster_points_layer_id: str,
     highlight_layer_id: str | None,
     highlight_feature_ids: set[str] | None,
+    highlight_feature_ids_by_layer: dict[str, set[str]] | None = None,
 ):
     """
     Cache LOD output by AOI bucket + zoom bucket.
@@ -83,6 +84,16 @@ def _apply_lod_cached(
     aoi_key = aoi.rounded_key(decimals=4)
     zoom_bucket = int(round(float(view_zoom) * 2.0))  # 0.5 zoom buckets
     highlight_key = (
+        tuple(
+            sorted(
+                (
+                    (lid, tuple(sorted(ids)))
+                    for lid, ids in (highlight_feature_ids_by_layer or {}).items()
+                    if lid and ids
+                ),
+                key=lambda row: row[0],
+            )
+        ),
         highlight_layer_id or "",
         tuple(sorted(highlight_feature_ids or ())),
     )
@@ -112,6 +123,7 @@ def _apply_lod_cached(
         view_zoom=view_zoom,
         highlight_layer_id=highlight_layer_id,
         highlight_feature_ids=highlight_feature_ids,
+        highlight_feature_ids_by_layer=highlight_feature_ids_by_layer,
         cluster_points_layer_id=cluster_points_layer_id,
     )
     value = (lod_layers, beer_clusters)
@@ -203,10 +215,17 @@ async def handle_incoming_message(thread):
         )
         t_route_ms = (time.perf_counter() - t1) * 1000.0
 
-        # Stream a short explanation.
-        for word in response.message.replace("\n", " \n ").split():
-            yield format_event(EventType.append, word)
-            await sleep(0.02)
+        active_highlights = (
+            list(response.highlights or [])
+            if response.highlights is not None
+            else ([response.highlight] if response.highlight is not None else [])
+        )
+        highlight_ids_by_layer: dict[str, set[str]] = {}
+        for h in active_highlights:
+            if not h.feature_ids:
+                continue
+            highlight_ids_by_layer.setdefault(h.layer_id, set()).update(h.feature_ids)
+        primary_highlight = active_highlights[0] if active_highlights else None
 
         t2 = time.perf_counter()
         (lod_layers, beer_clusters), cache_stats = _apply_lod_cached(
@@ -216,12 +235,13 @@ async def handle_incoming_message(thread):
             view_zoom=thread.map.view.zoom,
             scenario_id=ctx.scenario_id,
             cluster_points_layer_id=scenario.plot.highlightLayerId,
-            highlight_layer_id=response.highlight.layer_id
-            if response.highlight is not None
+            highlight_layer_id=primary_highlight.layer_id
+            if primary_highlight is not None
             else None,
-            highlight_feature_ids=response.highlight.feature_ids
-            if response.highlight is not None
+            highlight_feature_ids=primary_highlight.feature_ids
+            if primary_highlight is not None
             else None,
+            highlight_feature_ids_by_layer=highlight_ids_by_layer or None,
         )
         t_lod_ms = (time.perf_counter() - t2) * 1000.0
 
@@ -229,7 +249,8 @@ async def handle_incoming_message(thread):
         t3 = time.perf_counter()
         plot = build_map_plot(
             lod_layers,
-            highlight=response.highlight,
+            highlight=primary_highlight,
+            highlights=active_highlights or None,
             highlight_source_layers=aoi_layers,
             aoi=aoi,
             view_center=ctx.view_center,
@@ -262,6 +283,7 @@ async def handle_incoming_message(thread):
         except Exception:
             plot_json = json.dumps(plot)
 
+        stream_message = response.message
         # If highlights were requested but clipped by budgets/policy, make it explicit.
         try:
             stats = (plot.get("layout", {}).get("meta", {}) or {}).get(
@@ -270,11 +292,16 @@ async def handle_incoming_message(thread):
             req = int(stats.get("highlightRequested") or 0)
             rend = int(stats.get("highlightRendered") or 0)
             if req and rend < req:
-                note = f"(Note: matched {req}, rendered {rend} due to LOD/budget/caps.)"
-                for word in note.split():
-                    yield format_event(EventType.append, word)
+                stream_message = (
+                    f"Highlights: matched {req}, rendering {rend} due to budget."
+                )
         except Exception:
             pass
+
+        # Stream a short explanation after we know final highlight stats.
+        for word in stream_message.replace("\n", " \n ").split():
+            yield format_event(EventType.append, word)
+            await sleep(0.02)
 
         # Persist telemetry for later analysis (best-effort).
         try:

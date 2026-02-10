@@ -23,6 +23,7 @@ def apply_lod(
     view_zoom: float,
     highlight_layer_id: str | None,
     highlight_feature_ids: set[str] | None,
+    highlight_feature_ids_by_layer: dict[str, set[str]] | None = None,
     cluster_points_layer_id: str,
     budgets: LodBudgets | None = None,
 ) -> tuple[LayerBundle, list[ClusterMarker] | None]:
@@ -35,6 +36,15 @@ def apply_lod(
 
     b = budgets or LodBudgets()
     zoom = float(view_zoom)
+    keep_by_layer = {
+        str(k): set(v)
+        for k, v in (highlight_feature_ids_by_layer or {}).items()
+        if str(k) and v
+    }
+    if highlight_layer_id is not None and highlight_feature_ids:
+        keep_by_layer.setdefault(str(highlight_layer_id), set()).update(
+            set(highlight_feature_ids)
+        )
 
     poly_layers = [layer for layer in layers.layers if layer.kind == "polygons"]
     line_layers = [layer for layer in layers.layers if layer.kind == "lines"]
@@ -45,8 +55,9 @@ def apply_lod(
     poly_out: dict[str, list[PolygonFeature]] = {}
     for layer in poly_layers:
         feats = [f for f in layer.features if isinstance(f, PolygonFeature)]
+        keep_ids = keep_by_layer.get(layer.id)
         poly_out[layer.id] = simplify_polygons_until_budget(
-            feats, zoom, max_vertices=poly_budget_each
+            feats, zoom, max_vertices=poly_budget_each, keep_ids=keep_ids
         )
 
     # Lines: split budget evenly between line layers.
@@ -54,11 +65,7 @@ def apply_lod(
     line_out: dict[str, list[LineFeature]] = {}
     for layer in line_layers:
         feats = [f for f in layer.features if isinstance(f, LineFeature)]
-        keep_ids = (
-            set(highlight_feature_ids or set())
-            if highlight_layer_id is not None and layer.id == highlight_layer_id
-            else None
-        )
+        keep_ids = keep_by_layer.get(layer.id)
         line_out[layer.id] = simplify_lines_until_budget(
             feats, zoom, max_vertices=line_budget_each, keep_ids=keep_ids
         )
@@ -77,22 +84,14 @@ def apply_lod(
                     feats  # keep raw for highlight lookup; plot chooses clusters
                 )
             elif len(feats) > b.max_points_rendered:
-                keep_ids = (
-                    set(highlight_feature_ids or set())
-                    if highlight_layer_id is not None and layer.id == highlight_layer_id
-                    else None
-                )
+                keep_ids = keep_by_layer.get(layer.id)
                 point_out[layer.id] = cap_points(
                     feats, b.max_points_rendered, keep_ids=keep_ids
                 )
             else:
                 point_out[layer.id] = feats
         else:
-            keep_ids = (
-                set(highlight_feature_ids or set())
-                if highlight_layer_id is not None and layer.id == highlight_layer_id
-                else None
-            )
+            keep_ids = keep_by_layer.get(layer.id)
             point_out[layer.id] = (
                 cap_points(feats, b.max_aux_points_rendered, keep_ids=keep_ids)
                 if len(feats) > b.max_aux_points_rendered
