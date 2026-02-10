@@ -141,6 +141,24 @@ export function TopBar() {
 				</Button>
 				<Button
 					size="sm"
+					variant="ghost"
+					title="Clear backend in-memory caches (scenario YAML, LOD)"
+					onClick={async () => {
+						try {
+							await fetch("http://localhost:8000/dev/clear-caches", {
+								method: "POST",
+							});
+						} catch {
+							// ignore
+						}
+						// Refresh frontend state so scenario list + map reflect reloaded configs.
+						window.location.reload();
+					}}
+				>
+					Reload config
+				</Button>
+				<Button
+					size="sm"
 					variant={telemetryOpen ? "secondary" : "ghost"}
 					title="Open telemetry summary"
 					onClick={() => setTelemetryOpen(!telemetryOpen)}

@@ -22,6 +22,7 @@ from geo.aoi import BBox
 from layers.types import Layer
 from plotly.build_map import build_map_plot
 from scenarios.registry import (
+    clear_registry_cache,
     default_scenario_id,
     get_scenario,
     list_scenarios,
@@ -338,6 +339,26 @@ def scenarios():
             }
         )
     return out
+
+
+@app.post("/dev/clear-caches")
+def dev_clear_caches():
+    """
+    Dev helper: clear in-memory caches (scenario registry, LOD cache, engine singletons).
+
+    Some caches intentionally trade correctness for speed and are not hot-reload aware.
+    This avoids requiring a backend restart after editing scenario YAML.
+    """
+    clear_registry_cache()
+    cache_stats = {}
+    try:
+        # Clears LOD cache + engine singleton caches (DuckDB/InMemory engine objects).
+        from api.invoke_stream import clear_in_memory_caches
+
+        cache_stats = clear_in_memory_caches()
+    except Exception:
+        cache_stats = {}
+    return {"ok": True, **cache_stats}
 
 
 @app.get("/telemetry/summary")

@@ -1,12 +1,18 @@
 ---
 description: Backend guardrails (FastAPI/DuckDB)
-globs:
-  - backend/**/*
 ---
 
 ## Hot reload & when to restart (only if necessary)
 
 Assume hot reload normally works (`npm run dev` + `uv run fastapi dev main.py`).
+
+- When running ad-hoc Python snippets/tools, use the backend environment (don’t use system `python`):
+  - `cd backend && uv run python ...` (ensures deps like `duckdb` are available)
+
+- Scenario YAML/config can be cached in-process (e.g. scenario registry + LOD cache). When changing:
+  - `scenarios/*/scenario.yaml`, or other config that affects layer loading/LOD
+  - tell the user they must **clear caches** to see the change
+  - prefer using the UI button **“Reload config”** (calls `POST /dev/clear-caches`); restart backend only if that’s unavailable
 
 - Mention restarting **frontend** only when:
   - deps/config changed (`frontend/package*.json`, `frontend/vite.config.ts`)

@@ -83,3 +83,16 @@ def resolve_repo_path(repo_relative: str) -> Path:
     # Allow both "data/..." and "/data/..." inputs (normalize to repo-relative).
     rel = (repo_relative or "").lstrip("/")
     return _repo_root() / rel
+
+
+def clear_registry_cache() -> None:
+    """
+    Clear in-memory scenario registry cache.
+
+    Useful during development: scenario YAML changes are otherwise not picked up until
+    the backend process restarts.
+    """
+    try:
+        get_registry.cache_clear()
+    except Exception:
+        pass

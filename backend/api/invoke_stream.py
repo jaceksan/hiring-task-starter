@@ -125,6 +125,28 @@ def _apply_lod_cached(
     }
 
 
+def clear_in_memory_caches() -> dict[str, int]:
+    """
+    Clear in-process caches that can block hot reload of config changes.
+
+    This endpoint is intended for development only.
+    """
+    lod_before = len(_lod_cache)
+    _lod_cache.clear()
+    try:
+        _engine.cache_clear()
+    except Exception:
+        pass
+    try:
+        _default_engine_name.cache_clear()
+    except Exception:
+        pass
+    return {
+        "lodCacheBefore": int(lod_before),
+        "lodCacheAfter": int(len(_lod_cache)),
+    }
+
+
 async def handle_incoming_message(thread):
     prompt = thread.messages[-1].text if thread.messages else ""
 
