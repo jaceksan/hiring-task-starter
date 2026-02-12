@@ -1,70 +1,50 @@
 # Hiring task starter
 
-This is a repo with React frontend and Python backend to get you started on your task.
+React + FastAPI geospatial demo app with chat-driven map analysis, multiple scenarios, and zoom-aware rendering.
 
-## MVP implemented in this repo (Prague Flood & Beer)
+## What is currently implemented
 
-This repo now contains an MVP that fulfills the core requirements from `requirements.pdf`:
+- **Frontend**: React + Plotly/Mapbox thread UI (`frontend/`)
+- **Backend**: FastAPI streaming endpoint (`/invoke`) + map refresh endpoint (`/plot`) (`backend/`)
+- **Scenarios**:
+  - `prague_transport` (small, in-memory-friendly)
+  - `prague_population_infrastructure_small` (GeoParquet/DuckDB)
+  - `czech_population_infrastructure_large` (GeoParquet/DuckDB)
+- **Performance model**: AOI-first querying + LOD/simplification + payload budgets + telemetry
+- **Road highlighting UX** (CZ GeoParquet scenarios): map-side checkbox control for road types (`motorway`, `trunk`, `primary`, `secondary`, `tertiary`) with type-level all-or-none visibility in current viewport
 
-- For the **current** backlog and what’s next (including scenario packs, DuckDB/GeoParquet engine, LOD/budgets, telemetry, and MVT plans), see `BACKLOG.md`.
+## Quick start
 
-- **Region**: Prague
-- **3 datasets, different geometries**:
-  - Flood extent Q100 (**polygons**) from IPR Praha (stored under `data/prague/`)
-  - Metro geometry (**lines**) from OpenStreetMap/Overpass (stored under `data/prague/`)
-  - Beer POIs (**points**) from OpenStreetMap/Overpass (stored under `data/prague/`)
-- **Prompt-based “agent”**: backend performs lightweight spatial reasoning:
-  - **point-in-polygon**: is a pub inside the flood extent?
-  - **distance-to-line (meters)**: how close is a pub to the metro? (computed in a projected CRS)
-
-### Example prompts
-
-Try these in a thread:
-
-- `show layers`
-- `how many pubs are flooded?`
-- `find 20 dry pubs near metro`
-- `recommend 5 safe pubs`
-
-### AOI-first (viewport) performance
-
-This MVP now runs **AOI-first**: the frontend sends the current map viewport as a WGS84 bbox `(minLon, minLat, maxLon, maxLat)` with each prompt, and the backend:
-
-- clips all 3 layers to that bbox before building Plotly traces
-- computes answers (flooded count, “dry near metro”) only over AOI-sliced candidates
-
-How to observe it: zoom in and pan — the number of rendered POIs/lines should drop and responses should stay snappy.
-
-### LOD (zoom-aware) performance
-
-On top of AOI slicing, the backend applies **zoom-aware level-of-detail (LOD)** to keep the map responsive when zoomed out:
-
-- **Beer POIs**: clustered into aggregated markers at low zoom (trace name `Beer POIs (clusters)`)
-- **Lines + polygons**: simplified as zoom decreases to reduce vertex counts
-- **Payload budgets**: hard caps ensure we don't ship huge Plotly traces
-
-### Optional: DuckDB engine (GeoParquet)
-
-The backend supports an optional **DuckDB/GeoParquet** engine. Select via `PANGE_ENGINE=in_memory|duckdb` (some scenarios may require DuckDB).
-
-### Data sources
-
-See `data/prague/README.md` for provenance + download links.
-
-## How to run
-
-### Backend
+From repo root:
 
 ```bash
-cd backend/
+make run-backend
 ```
 
-Then follow [How to run](./backend/README.md#how-to-run) in backend folder
-
-### Frontend
+In another terminal:
 
 ```bash
-cd frontend/
+make run-frontend
 ```
 
-Then follow [How to run](./frontend/README.md#how-to-run) in frontend folder
+Open `http://localhost:3000`.
+
+## Useful commands
+
+- `make fix-all`
+- `make types-all`
+- `make test-backend`
+- `make test-e2e-frontend`
+
+## Notes
+
+- Engine can be selected in UI (`In-memory` / `DuckDB`); large scenario forces DuckDB.
+- After changing scenario YAML/config, use **Reload config** in the UI (or `POST /dev/clear-caches`).
+
+## More docs
+
+- Product requirements: `requirements.pdf`
+- Backend details: `backend/README.md`
+- Frontend details: `frontend/README.md`
+- Data provenance (Prague base layers): `data/prague/README.md`
+- Current priorities: `BACKLOG.md`
