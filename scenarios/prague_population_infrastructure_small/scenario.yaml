@@ -16,9 +16,6 @@ examplePrompts:
   - "show layers"
   - "how many places are flooded?"
   - "show flooded places"
-  - "show me escape roads for flooded places"
-  - "highlight motorways"
-  - "highlight trunks"
 
 layers:
   - id: roads
@@ -29,7 +26,7 @@ layers:
       path: data/derived/czech_population_infrastructure_large/prague_bbox/roads.parquet
       geoparquet:
         idColumn: osm_id
-        nameColumn: name
+        nameColumn: COALESCE(ref, name)
         classColumn: fclass
         geometryColumn: geometry
         # Keep consistent with the large scenario; decode geometry progressively by class.
@@ -122,19 +119,6 @@ routing:
       maxFeatures: 500
       maskLayerId: water_areas
       maskMode: IN_MASK
-    - keywords: ["highlight motorways", "highlight motorway", "highlight highways"]
-      layerId: roads
-      title: "Motorways"
-      maxFeatures: 800
-      props:
-        # Include *_link too: in-city segments are frequently stored as link classes.
-        fclass: ["motorway", "motorway_link"]
-    - keywords: ["highlight trunks", "highlight trunk"]
-      layerId: roads
-      title: "Trunks"
-      maxFeatures: 800
-      props:
-        fclass: ["trunk", "trunk_link"]
 
 plot:
   highlightLayerId: places

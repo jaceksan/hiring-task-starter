@@ -61,7 +61,6 @@ class ScenarioHighlightRule(BaseModel):
 
     Intended for demo-friendly prompts like:
     - "show flooded places" (highlight points in mask)
-    - "highlight motorways" (highlight lines by fclass)
     """
 
     keywords: list[str]

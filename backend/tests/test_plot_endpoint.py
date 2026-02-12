@@ -160,3 +160,28 @@ def test_plot_endpoint_supports_duckdb_engine(tmp_path, monkeypatch):
         meta.get("stats", {}).get("scenarioId")
         == "prague_population_infrastructure_small"
     )
+
+
+def test_plot_endpoint_reports_road_highlight_control_status():
+    client = TestClient(app)
+    resp = client.post(
+        "/plot",
+        json={
+            "map": {
+                "bbox": {
+                    "minLon": 14.22,
+                    "minLat": 49.94,
+                    "maxLon": 14.70,
+                    "maxLat": 50.18,
+                },
+                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
+            },
+            "roadHighlightTypes": ["motorway", "trunks", "secondary"],
+            "engine": "in_memory",
+        },
+    )
+    assert resp.status_code == 200
+    payload = resp.json()
+    stats = payload.get("layout", {}).get("meta", {}).get("stats", {})
+    road = stats.get("roadHighlightControl") or {}
+    assert road.get("selectedTypes") == ["motorway", "trunk", "secondary"]

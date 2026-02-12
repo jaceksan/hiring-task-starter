@@ -18,19 +18,6 @@ async function selectPragueGeoParquetScenario(page: any) {
 	}
 }
 
-async function openChatDrawer(page: any) {
-	// Chat UI lives in the collapsible bottom drawer.
-	const input = page.getByPlaceholder("Ask PangeAI...");
-	if ((await input.count()) > 0) {
-		await expect(input).toBeVisible();
-		return;
-	}
-	const chatButton = page.getByRole("button", { name: /^chat$/i });
-	await expect(chatButton).toBeVisible();
-	await chatButton.click();
-	await expect(input).toBeVisible();
-}
-
 async function getTraceLonCount(page: any, traceName: string): Promise<number> {
 	return await page.evaluate((name: string) => {
 		const el = document.querySelector(".js-plotly-plot") as any;
@@ -85,59 +72,24 @@ async function zoomMapboxBy(page: any, delta: number) {
 	}, delta);
 }
 
-test("highlight motorways renders and persists across /plot refresh", async ({
+test("road control highlights motorways and persists across /plot refresh", async ({
 	page,
 }) => {
 	await page.goto("/");
 	await disableAutoMinimizeChat(page);
 	await selectPragueGeoParquetScenario(page);
 
-	let seenInvokeBody: any = null;
-	await page.route("**/invoke", async (route) => {
-		const raw = route.request().postData();
-		if (raw) {
-			try {
-				seenInvokeBody = JSON.parse(raw);
-			} catch {
-				seenInvokeBody = null;
-			}
-		}
-		await route.continue();
-	});
-
 	await page.getByRole("button", { name: /start new thread/i }).click();
 	await page.waitForURL(/\/thread\/\d+$/);
 
-	await openChatDrawer(page);
-
 	// Zoom in enough so GeoParquet roads geometry is decoded for highlight.
-	await zoomMapboxBy(page, 1.75);
-	const expectedZoom = await page.evaluate(() => {
-		const el = document.querySelector(".js-plotly-plot") as any;
-		const map = el?._fullLayout?.mapbox?._subplot?.map;
-		const z = map?.getZoom?.();
-		return typeof z === "number" ? z : null;
-	});
-	expect(expectedZoom).not.toBeNull();
+	await zoomMapboxBy(page, 2.5);
 
-	const input = page.getByPlaceholder("Ask PangeAI...");
-	await input.fill("highlight motorways");
-
-	const invokeResp = page.waitForResponse(
-		(r: any) => r.url().includes("/invoke") && r.status() === 200,
-	);
-	await input.press("Enter");
-	await invokeResp;
-
-	// Wait for the chat message.
-	const msg = page.getByText(/Highlighted \d+ Roads \(lines\)/i);
-	await expect(msg).toBeVisible();
-
-	// Regression guard: invoke payload should reflect the actual current map zoom.
-	expect(seenInvokeBody?.map?.view?.zoom).toBeDefined();
-	expect(Number(seenInvokeBody.map.view.zoom)).toBeGreaterThanOrEqual(
-		(expectedZoom as number) - 0.1,
-	);
+	const motorway = page.getByLabel("Motorway (+link)");
+	await expect(motorway).toBeVisible();
+	if (!(await motorway.isChecked())) {
+		await motorway.check();
+	}
 
 	// The highlight trace should not be empty.
 	await expect

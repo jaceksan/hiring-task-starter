@@ -21,6 +21,7 @@ from engine.types import LayerBundle, MapContext
 from geo.aoi import BBox
 from layers.types import Layer
 from plotly.build_map import build_map_plot
+from roads.highlight_control import build_road_type_highlights, normalize_road_types
 from scenarios.registry import (
     clear_registry_cache,
     default_scenario_id,
@@ -93,8 +94,35 @@ class ApiPlotRequest(BaseModel):
     map: ApiMapContext
     highlight: dict | None = None
     highlights: list[dict] | None = None
+    roadHighlightTypes: list[str] | None = None
     engine: str | None = None
     scenarioId: str | None = None
+
+
+def _roads_source_cap_reached(
+    engine_stats: dict | None, *, roads_layer_id: str
+) -> bool:
+    try:
+        gp = (engine_stats or {}).get("geoparquet") or {}
+        rows = gp.get("layers") if isinstance(gp, dict) else None
+        if not isinstance(rows, list):
+            return False
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            if str(row.get("layerId") or "") != roads_layer_id:
+                continue
+            n = int(row.get("n") or 0)
+            cap = row.get("cap") if isinstance(row.get("cap"), dict) else {}
+            effective = cap.get("effectiveLimit")
+            if isinstance(effective, int) and effective > 0 and n >= effective:
+                return True
+            if isinstance(effective, float) and effective > 0 and n >= int(effective):
+                return True
+            return False
+    except Exception:
+        return False
+    return False
 
 
 @app.post("/invoke")
@@ -151,6 +179,14 @@ def plot(body: ApiPlotRequest):
     payload_highlights = list(body.highlights or [])
     if body.highlight:
         payload_highlights = [body.highlight, *payload_highlights]
+    payload_highlights = [
+        h
+        for h in payload_highlights
+        if not (
+            isinstance(h, dict)
+            and str(h.get("mode") or "").strip().lower() == "road_filter"
+        )
+    ]
     highlight_ids_by_layer: dict[str, set[str]] = {}
     for raw in payload_highlights:
         lid = raw.get("layerId") if isinstance(raw, dict) else None
@@ -220,6 +256,17 @@ def plot(body: ApiPlotRequest):
         except Exception:
             pass
 
+    selected_road_types = normalize_road_types(body.roadHighlightTypes)
+    roads_layer = aoi_layers.get("roads")
+    road_filter_highlights, road_filter_status = build_road_type_highlights(
+        roads_layer=roads_layer,
+        selected_types=selected_road_types,
+        source_cap_reached=_roads_source_cap_reached(
+            result.stats if isinstance(result.stats, dict) else None,
+            roads_layer_id="roads",
+        ),
+    )
+
     t1 = time.perf_counter()
     (lod_layers, beer_clusters), cache_stats = _apply_lod_cached(
         engine_name=engine_name,
@@ -256,6 +303,8 @@ def plot(body: ApiPlotRequest):
                 mode=str(raw.get("mode") or "toggle"),
             )
         )
+    if road_filter_highlights:
+        highlights.extend(road_filter_highlights)
     if highlights:
         highlight = highlights[0]
 
@@ -285,6 +334,7 @@ def plot(body: ApiPlotRequest):
         payload["layout"]["meta"]["stats"]["scenarioId"] = ctx.scenario_id
         payload["layout"]["meta"]["stats"]["scenarioDataSize"] = scenario.dataSize
         payload["layout"]["meta"]["stats"]["payloadBytes"] = payload_bytes
+        payload["layout"]["meta"]["stats"]["roadHighlightControl"] = road_filter_status
         if getattr(result, "stats", None):
             payload["layout"]["meta"]["stats"]["engineStats"] = result.stats
         payload["layout"]["meta"]["stats"]["timingsMs"] = {

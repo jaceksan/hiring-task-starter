@@ -26,9 +26,16 @@ export function usePlotController(args: {
 	threadMessages: { data?: unknown }[];
 	engine: string;
 	scenarioId: string;
+	roadHighlightTypes: string[];
 	onPlotRefreshStats?: (stats: PlotPerfStats | null) => void;
 }) {
-	const { threadMessages, engine, scenarioId, onPlotRefreshStats } = args;
+	const {
+		threadMessages,
+		engine,
+		scenarioId,
+		roadHighlightTypes,
+		onPlotRefreshStats,
+	} = args;
 
 	const plotContainerRef = useRef<HTMLDivElement | null>(null);
 	const plotRefreshTimeoutRef = useRef<number | null>(null);
@@ -128,6 +135,7 @@ export function usePlotController(args: {
 						: "Highlighted";
 				const mode =
 					typeof h.mode === "string" && h.mode.length > 0 ? h.mode : undefined;
+				if (mode !== "prompt") continue;
 				out.push({ layerId, featureIds: ids as string[], title, mode });
 			}
 			if (out.length > 0) return out;
@@ -148,6 +156,7 @@ export function usePlotController(args: {
 			typeof one.mode === "string" && one.mode.length > 0
 				? one.mode
 				: undefined;
+		if (mode && mode !== "prompt") return [];
 		return [{ layerId, featureIds: ids as string[], title, mode }];
 	}, [plotData.layout]);
 
@@ -182,6 +191,7 @@ export function usePlotController(args: {
 				s: scenarioId,
 				e: engine,
 				z: Math.round(next.zoom * 10) / 10,
+				rt: [...new Set(roadHighlightTypes)].sort(),
 				b: {
 					minLon: Math.round(next.bbox.minLon * 10_000) / 10_000,
 					minLat: Math.round(next.bbox.minLat * 10_000) / 10_000,
@@ -215,6 +225,7 @@ export function usePlotController(args: {
 								viewport: getViewportSize(),
 							},
 							highlights: currentHighlightRef.current(),
+							roadHighlightTypes,
 							engine,
 							scenarioId,
 						}),
@@ -271,7 +282,13 @@ export function usePlotController(args: {
 				}
 			}, 250);
 		},
-		[engine, getViewportSize, onPlotRefreshStats, scenarioId],
+		[
+			engine,
+			getViewportSize,
+			onPlotRefreshStats,
+			roadHighlightTypes,
+			scenarioId,
+		],
 	);
 
 	const readViewFromPlotDom = useCallback((): {
