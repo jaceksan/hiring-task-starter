@@ -9,6 +9,7 @@ import {
 } from "./plotlyMapUtils";
 import type {
 	BBox,
+	FloodRiskLevel,
 	MapCenter,
 	MapViewState,
 	PlotPerfStats,
@@ -26,6 +27,8 @@ export function usePlotController(args: {
 	threadMessages: { data?: unknown }[];
 	engine: string;
 	scenarioId: string;
+	floodRiskLevel: FloodRiskLevel;
+	selectedFloodZoneIds: string[];
 	roadHighlightTypes: string[];
 	onPlotRefreshStats?: (stats: PlotPerfStats | null) => void;
 }) {
@@ -33,6 +36,8 @@ export function usePlotController(args: {
 		threadMessages,
 		engine,
 		scenarioId,
+		floodRiskLevel,
+		selectedFloodZoneIds,
 		roadHighlightTypes,
 		onPlotRefreshStats,
 	} = args;
@@ -184,12 +189,23 @@ export function usePlotController(args: {
 	}, []);
 
 	const schedulePlotRefresh = useCallback(
-		(next: { center: MapCenter; zoom: number; bbox: BBox }) => {
+		(next: {
+			center: MapCenter;
+			zoom: number;
+			bbox: BBox;
+			floodRiskLevel?: FloodRiskLevel;
+			selectedFloodZoneIds?: string[];
+		}) => {
 			if (invokeBusyRef.current) return;
+			const effectiveFloodRiskLevel = next.floodRiskLevel ?? floodRiskLevel;
+			const effectiveSelectedFloodZoneIds =
+				next.selectedFloodZoneIds ?? selectedFloodZoneIds;
 
 			const key = JSON.stringify({
 				s: scenarioId,
 				e: engine,
+				r: effectiveFloodRiskLevel,
+				zones: [...new Set(effectiveSelectedFloodZoneIds)].sort(),
 				z: Math.round(next.zoom * 10) / 10,
 				rt: [...new Set(roadHighlightTypes)].sort(),
 				b: {
@@ -223,6 +239,10 @@ export function usePlotController(args: {
 								bbox: next.bbox,
 								view: { center: next.center, zoom: next.zoom },
 								viewport: getViewportSize(),
+								context: {
+									floodRiskLevel: effectiveFloodRiskLevel,
+									selectedFloodZoneIds: effectiveSelectedFloodZoneIds,
+								},
 							},
 							highlights: currentHighlightRef.current(),
 							roadHighlightTypes,
@@ -284,10 +304,12 @@ export function usePlotController(args: {
 		},
 		[
 			engine,
+			floodRiskLevel,
 			getViewportSize,
 			onPlotRefreshStats,
 			roadHighlightTypes,
 			scenarioId,
+			selectedFloodZoneIds,
 		],
 	);
 

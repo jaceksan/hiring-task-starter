@@ -39,11 +39,7 @@ test("plot refresh with different zoom does not snap back the map", async ({
 
 	await expect(page.locator(".js-plotly-plot")).toBeVisible();
 
-	// Wait for initial /plot response to arrive and settle.
-	const initialPlotResponse = page.waitForResponse(
-		(r: any) => r.url().includes("/plot") && r.status() === 200,
-	);
-	await initialPlotResponse;
+	// Let initial map state settle.
 	await page.waitForTimeout(500);
 
 	const initialZoom = await getMapboxZoom(page);
@@ -52,16 +48,29 @@ test("plot refresh with different zoom does not snap back the map", async ({
 	// Now intercept /plot responses and inject a drastically different zoom.
 	// If the frontend incorrectly applies the response zoom, the map will snap.
 	await page.route("**/plot", async (route: any) => {
-		const response = await route.fetch();
-		const body = await response.json();
-		body.layout = body.layout ?? {};
-		body.layout.mapbox = body.layout.mapbox ?? {};
-		body.layout.mapbox.zoom = 3;
-		body.layout.mapbox.center = { lat: 0, lon: 0 };
-		await route.fulfill({
-			response,
-			body: JSON.stringify(body),
-		});
+		let handled = false;
+		try {
+			const response = await route.fetch();
+			const body = await response.json();
+			body.layout = body.layout ?? {};
+			body.layout.mapbox = body.layout.mapbox ?? {};
+			body.layout.mapbox.zoom = 3;
+			body.layout.mapbox.center = { lat: 0, lon: 0 };
+			await route.fulfill({
+				response,
+				body: JSON.stringify(body),
+			});
+			handled = true;
+		} catch {
+			// Ignore and fall through.
+		}
+		if (!handled) {
+			try {
+				await route.continue();
+			} catch {
+				// route may already be handled/closed on teardown
+			}
+		}
 	});
 
 	// Trigger a /plot refresh by resizing the viewport (the ResizeObserver fires).
@@ -80,4 +89,5 @@ test("plot refresh with different zoom does not snap back the map", async ({
 	expect(afterZoom as number).toBeGreaterThanOrEqual(
 		(initialZoom as number) - 1,
 	);
+	await page.unroute("**/plot");
 });

@@ -6,7 +6,9 @@ export default defineConfig({
   testDir: "./e2e",
   timeout: isFast ? 25_000 : 60_000,
   expect: { timeout: isFast ? 5_000 : 15_000 },
-  fullyParallel: true,
+  // Tests share localStorage-backed app state and local dev servers; keep deterministic.
+  fullyParallel: false,
+  workers: 1,
   retries: 0,
   use: {
     baseURL: "http://127.0.0.1:3000",

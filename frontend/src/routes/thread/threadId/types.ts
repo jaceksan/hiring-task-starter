@@ -2,6 +2,15 @@ export type MapCenter = { lat: number; lon: number };
 
 export type ViewportSize = { width: number; height: number };
 
+export type FloodRiskLevel = "high" | "medium" | "any";
+
+export type FloodSelectionStats = {
+	mode?: "aoi" | "selected";
+	riskLevel?: FloodRiskLevel;
+	selectedCount?: number;
+	activeZoneCount?: number;
+};
+
 export type BBox = {
 	minLon: number;
 	minLat: number;
@@ -57,4 +66,5 @@ export type PlotPerfStats = {
 		jsonSerialize?: number;
 	};
 	engineStats?: unknown;
+	floodSelection?: FloodSelectionStats;
 };

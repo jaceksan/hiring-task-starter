@@ -18,7 +18,7 @@ import { ChatDrawer } from "./threadId/ChatDrawer";
 import { PerfPanel } from "./threadId/PerfPanel";
 import { asRecord, calcBboxFromCenterZoom } from "./threadId/plotlyMapUtils";
 import { TelemetryPanel } from "./threadId/TelemetryPanel";
-import type { PlotPerfStats } from "./threadId/types";
+import type { FloodRiskLevel, PlotPerfStats } from "./threadId/types";
 import { useInvokeAgent } from "./threadId/useInvokeAgent";
 import { usePlotController } from "./threadId/usePlotController";
 import { useTelemetry } from "./threadId/useTelemetry";
@@ -31,6 +31,12 @@ const ROAD_TYPES = [
 	{ id: "tertiary", label: "Tertiary" },
 ] as const;
 
+const FLOOD_RISK_LEVELS: { id: FloodRiskLevel; label: string }[] = [
+	{ id: "high", label: "High (100y)" },
+	{ id: "medium", label: "Medium (50y+)" },
+	{ id: "any", label: "Any risk" },
+];
+
 export const Route = createFileRoute("/thread/$threadId")({
 	params: {
 		parse: (params) =>
@@ -39,7 +45,7 @@ export const Route = createFileRoute("/thread/$threadId")({
 	loader: async ({ params, context }) => {
 		const scenarioId =
 			window.localStorage.getItem("pange_scenario")?.trim() ||
-			"prague_transport";
+			"prague_population_infrastructure_small";
 		try {
 			await context.queryClient.ensureQueryData(
 				QUERIES.threads.detail(scenarioId, params.threadId),
@@ -94,9 +100,9 @@ function RouteComponent() {
 	const defaultExamplePrompts = useMemo(
 		() => [
 			"show layers",
-			"how many pubs are flooded?",
-			"find 20 dry pubs near metro",
-			"recommend 5 safe pubs",
+			"how many places are flooded?",
+			"show me escape roads for places in flood zone",
+			"show safest nearby places outside selected flood risk with reachable roads",
 		],
 		[],
 	);
@@ -115,6 +121,10 @@ function RouteComponent() {
 		"motorway",
 		"trunk",
 	]);
+	const [floodRiskLevel, setFloodRiskLevel] = useState<FloodRiskLevel>("any");
+	const [selectedFloodZoneIds, setSelectedFloodZoneIds] = useState<string[]>(
+		[],
+	);
 	const slowToastLastShownAtRef = useRef<number>(0);
 	useEffect(() => {
 		if (!slowToast) return;
@@ -279,6 +289,8 @@ function RouteComponent() {
 		threadMessages: thread.messages,
 		engine,
 		scenarioId,
+		floodRiskLevel,
+		selectedFloodZoneIds,
 		roadHighlightTypes: selectedRoadTypes,
 		onPlotRefreshStats,
 	});
@@ -290,6 +302,8 @@ function RouteComponent() {
 			threadId,
 			engine,
 			scenarioId,
+			floodRiskLevel,
+			selectedFloodZoneIds,
 			autoMinimizeChat,
 			mapView,
 			getCurrentBbox,
@@ -309,6 +323,7 @@ function RouteComponent() {
 	// When scenario changes, re-center to its default view (map-first mental model).
 	useEffect(() => {
 		let cancelled = false;
+		setSelectedFloodZoneIds((prev) => (prev.length === 0 ? prev : []));
 		(async () => {
 			try {
 				const resp = await fetch("http://localhost:8000/scenarios");
@@ -380,6 +395,15 @@ function RouteComponent() {
 	]);
 
 	const stats = getStats();
+	const floodSelection = stats?.floodSelection;
+	const floodMode =
+		floodSelection?.mode ?? (selectedFloodZoneIds.length ? "selected" : "aoi");
+	const floodModeCount =
+		typeof floodSelection?.activeZoneCount === "number"
+			? floodSelection.activeZoneCount
+			: floodMode === "selected"
+				? selectedFloodZoneIds.length
+				: 0;
 
 	return (
 		<div className="w-full h-full">
@@ -465,6 +489,66 @@ function RouteComponent() {
 							</label>
 						))}
 					</div>
+					<div className="mt-3 pt-2 border-t border-border">
+						<div className="font-semibold">Flood risk</div>
+						<div className="text-muted-foreground mt-0.5 mb-2">
+							Used for flood-zone filtering in requests.
+						</div>
+						<div className="text-[11px] text-muted-foreground mb-2">
+							Mode: {floodMode === "selected" ? "Selected" : "AOI"} (
+							{floodModeCount})
+						</div>
+						<div className="space-y-1.5">
+							{FLOOD_RISK_LEVELS.map((item) => (
+								<label
+									key={item.id}
+									className="flex items-center justify-between gap-2 cursor-pointer"
+								>
+									<span>{item.label}</span>
+									<input
+										type="radio"
+										name="flood-risk-level"
+										checked={floodRiskLevel === item.id}
+										onChange={() => {
+											setFloodRiskLevel(item.id);
+											const bbox = mapView.bbox;
+											if (bbox) {
+												schedulePlotRefresh({
+													center: mapView.center,
+													zoom: mapView.zoom,
+													bbox,
+													floodRiskLevel: item.id,
+													selectedFloodZoneIds,
+												});
+											}
+										}}
+									/>
+								</label>
+							))}
+						</div>
+						{selectedFloodZoneIds.length > 0 && (
+							<Button
+								size="sm"
+								variant="ghost"
+								className="h-7 px-2 mt-2"
+								onClick={() => {
+									setSelectedFloodZoneIds([]);
+									const bbox = mapView.bbox;
+									if (bbox) {
+										schedulePlotRefresh({
+											center: mapView.center,
+											zoom: mapView.zoom,
+											bbox,
+											floodRiskLevel,
+											selectedFloodZoneIds: [],
+										});
+									}
+								}}
+							>
+								Clear selected zones ({selectedFloodZoneIds.length})
+							</Button>
+						)}
+					</div>
 				</div>
 				{telemetryOpen && (
 					<TelemetryPanel
@@ -490,6 +574,41 @@ function RouteComponent() {
 					style={{ width: "100%", height: "100%" }}
 					className="w-full h-full overflow-hidden"
 					onRelayout={onRelayout}
+					onClick={(event) => {
+						const pt = event.points?.[0];
+						const curveNumber =
+							typeof pt?.curveNumber === "number" ? pt.curveNumber : -1;
+						const trace =
+							curveNumber >= 0
+								? ((plotData.data?.[curveNumber] as Record<string, unknown>) ??
+									null)
+								: null;
+						const traceName = typeof trace?.name === "string" ? trace.name : "";
+						if (!traceName.startsWith("Flood zones (polygons)")) return;
+						const customData = pt?.customdata;
+						const zoneId =
+							customData && typeof customData === "object"
+								? (customData as { featureId?: unknown }).featureId
+								: null;
+						if (typeof zoneId !== "string" || zoneId.length === 0) return;
+						setSelectedFloodZoneIds((prev) => {
+							const next = new Set(prev);
+							if (next.has(zoneId)) next.delete(zoneId);
+							else next.add(zoneId);
+							const out = [...next].sort();
+							const bbox = mapView.bbox;
+							if (bbox) {
+								schedulePlotRefresh({
+									center: mapView.center,
+									zoom: mapView.zoom,
+									bbox,
+									floodRiskLevel,
+									selectedFloodZoneIds: out,
+								});
+							}
+							return out;
+						});
+					}}
 				/>
 			</div>
 

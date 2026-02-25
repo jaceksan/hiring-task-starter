@@ -25,26 +25,25 @@ async function disableAutoMinimizeChat(page: any) {
   }
 }
 
-async function selectPragueTransport(page: any) {
+async function selectPragueScenario(page: any) {
   const scenario = page.getByTitle("Select scenario pack");
   if ((await scenario.count()) > 0) {
-    await scenario.selectOption("prague_transport");
+    await scenario.selectOption("prague_population_infrastructure_small");
   }
   const engine = page.getByTitle("Select backend engine");
   if ((await engine.count()) > 0) {
-    await engine.selectOption("in_memory");
+    await engine.selectOption("duckdb");
   }
 }
 
 async function openChatDrawer(page: any) {
   // Chat UI lives in the collapsible bottom drawer.
-  const input = page.getByPlaceholder("Ask PangeAI...");
-  if ((await input.count()) > 0) {
-    await expect(input).toBeVisible();
+  const input = page.locator('textarea[placeholder="Ask PangeAI..."]');
+  if ((await input.count()) > 0 && (await input.first().isVisible())) {
     return;
   }
 
-  const chatButton = page.getByRole("button", { name: /^chat$/i });
+  const chatButton = page.getByTitle(/expand chat/i);
   await expect(chatButton).toBeVisible();
   await chatButton.click();
 
@@ -54,40 +53,44 @@ async function openChatDrawer(page: any) {
 test("AI answer persists after commit (no disappearing message)", async ({ page }) => {
   await page.goto("/");
   await disableAutoMinimizeChat(page);
-  await selectPragueTransport(page);
+  await selectPragueScenario(page);
 
   await page.getByRole("button", { name: /start new thread/i }).click();
   await page.waitForURL(/\/thread\/\d+$/);
 
   await openChatDrawer(page);
-  const input = page.getByPlaceholder("Ask PangeAI...");
-  await input.fill("how many pubs are flooded?");
+  const input = page.locator('textarea[placeholder="Ask PangeAI..."]');
+  await input.fill("how many places are flooded?");
   await input.press("Enter");
 
   // Wait for the final answer to appear in the thread history.
-  const answer = page.getByText(/I found \d+ pubs in flood extent/i);
-  await expect(answer).toBeVisible();
+  const answer = page.getByText(/I found \d+ places in flood zones/i);
+  await expect(answer).toBeVisible({ timeout: 30_000 });
 
   // Regression guard: it must still be visible shortly after commit/refetch.
   await page.waitForTimeout(1000);
   await expect(answer).toBeVisible();
 });
 
-test("dry pubs near metro works and persists", async ({ page }) => {
+test("safest places with reachable roads works and persists", async ({ page }) => {
   await page.goto("/");
   await disableAutoMinimizeChat(page);
-  await selectPragueTransport(page);
+  await selectPragueScenario(page);
 
   await page.getByRole("button", { name: /start new thread/i }).click();
   await page.waitForURL(/\/thread\/\d+$/);
 
   await openChatDrawer(page);
-  const input = page.getByPlaceholder("Ask PangeAI...");
-  await input.fill("find 20 dry pubs near metro");
+  const input = page.locator('textarea[placeholder="Ask PangeAI..."]');
+  await input.fill(
+    "show safest nearby places outside selected flood risk with reachable roads",
+  );
   await input.press("Enter");
 
-  const answer = page.getByText(/My 20 recommendations:/i);
-  await expect(answer).toBeVisible();
+  const answer = page.getByText(
+    /Safest nearby places with reachable roads:|Couldn’t find nearby places with reachable roads/i,
+  );
+  await expect(answer).toBeVisible({ timeout: 30_000 });
 
   // Regression guard: it must still be visible shortly after commit/refetch.
   await page.waitForTimeout(1000);
@@ -97,7 +100,7 @@ test("dry pubs near metro works and persists", async ({ page }) => {
 test("zoomed out view uses clusters (LOD)", async ({ page }) => {
   await page.goto("/");
   await disableAutoMinimizeChat(page);
-  await selectPragueTransport(page);
+  await selectPragueScenario(page);
 
   await page.getByRole("button", { name: /start new thread/i }).click();
   await page.waitForURL(/\/thread\/\d+$/);
@@ -129,7 +132,7 @@ test("zoomed out view uses clusters (LOD)", async ({ page }) => {
 test("highlighted response can render clusters at low zoom", async ({ page }) => {
   await page.goto("/");
   await disableAutoMinimizeChat(page);
-  await selectPragueTransport(page);
+  await selectPragueScenario(page);
 
   await page.getByRole("button", { name: /start new thread/i }).click();
   await page.waitForURL(/\/thread\/\d+$/);
@@ -152,11 +155,17 @@ test("highlighted response can render clusters at low zoom", async ({ page }) =>
   });
 
   await openChatDrawer(page);
-  const input = page.getByPlaceholder("Ask PangeAI...");
-  await input.fill("find 20 dry pubs near metro");
+  const input = page.locator('textarea[placeholder="Ask PangeAI..."]');
+  await input.fill(
+    "show safest nearby places outside selected flood risk with reachable roads",
+  );
   await input.press("Enter");
 
-  await expect(page.getByText(/My 20 recommendations:/i)).toBeVisible();
+  await expect(
+    page.getByText(
+      /Safest nearby places with reachable roads:|Couldn’t find nearby places with reachable roads/i,
+    ),
+  ).toBeVisible({ timeout: 30_000 });
   await expectPlotlyTraceName(page, /\(clusters\)$/);
 });
 

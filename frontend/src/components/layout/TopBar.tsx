@@ -53,11 +53,11 @@ export function TopBar() {
 		if (scenarios.length > 0) return scenarios;
 		return [
 			{
-				id: "prague_transport",
-				title: "Prague Flood & Transport",
+				id: "prague_population_infrastructure_small",
+				title: "Prague: Population & Infrastructure (GeoParquet)",
 				defaultView: null,
 				dataSize: "small",
-				hasGeoParquet: false,
+				hasGeoParquet: true,
 				enabled: true,
 			},
 		];

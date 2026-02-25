@@ -18,7 +18,7 @@ const Ctx = createContext<AppUiState | null>(null);
 export function AppUiProvider(props: { children: React.ReactNode }) {
 	const [scenarioId, setScenarioId] = useState<string>(() => {
 		const v = window.localStorage.getItem("pange_scenario");
-		return v?.trim() ? v : "prague_transport";
+		return v?.trim() ? v : "prague_population_infrastructure_small";
 	});
 
 	useEffect(() => {
