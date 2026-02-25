@@ -36,8 +36,10 @@ def _append_polygon_ring(
     lons: list[float | None],
     lats: list[float | None],
     texts: list[str | None],
+    customdata: list[dict[str, Any] | None],
     ring: list[tuple[float, float]],
     hover_text: str,
+    feature_id: str,
 ) -> None:
     if not ring:
         return
@@ -46,9 +48,11 @@ def _append_polygon_ring(
         lons.append(lon)
         lats.append(lat)
         texts.append(hover_text)
+        customdata.append({"featureId": feature_id})
     lons.append(None)
     lats.append(None)
     texts.append(None)
+    customdata.append(None)
 
 
 def _trace_polygons(
@@ -65,6 +69,7 @@ def _trace_polygons(
     lons: list[float | None] = []
     lats: list[float | None] = []
     texts: list[str | None] = []
+    customdata: list[dict[str, Any] | None] = []
     for f in features:
         if not f.rings:
             continue
@@ -82,7 +87,13 @@ def _trace_polygons(
         else:
             hover_text = ""
         _append_polygon_ring(
-            lons=lons, lats=lats, texts=texts, ring=f.rings[0], hover_text=hover_text
+            lons=lons,
+            lats=lats,
+            texts=texts,
+            customdata=customdata,
+            ring=f.rings[0],
+            hover_text=hover_text,
+            feature_id=f.id,
         )
 
     return {
@@ -91,6 +102,7 @@ def _trace_polygons(
         "lon": lons,
         "lat": lats,
         "text": texts,
+        "customdata": customdata,
         "mode": "lines",
         "fill": "toself",
         "fillcolor": fill_color,
@@ -267,15 +279,25 @@ def trace_polygons(layer: Layer) -> list[dict[str, Any]]:
 def trace_lines(layer: Layer) -> dict[str, Any]:
     lons: list[float | None] = []
     lats: list[float | None] = []
+    texts: list[str | None] = []
     feats = [f for f in layer.features if isinstance(f, LineFeature)]
     for f in feats:
         if len(f.coords) < 2:
             continue
+        props = f.props or {}
+        label = str(
+            props.get("label") or props.get("name") or props.get("ref") or ""
+        ).strip()
+        road_class = str(props.get("fclass") or "").strip()
+        hover_parts = [x for x in [label, road_class and f"class: {road_class}"] if x]
+        hover_text = "<br>".join(hover_parts)
         for lon, lat in f.coords:
             lons.append(lon)
             lats.append(lat)
+            texts.append(hover_text)
         lons.append(None)
         lats.append(None)
+        texts.append(None)
 
     style = layer.style or {}
     line = style.get("line") or {}
@@ -290,7 +312,8 @@ def trace_lines(layer: Layer) -> dict[str, Any]:
             or "rgba(67, 160, 71, 0.9)",
             "width": int((line.get("width") if isinstance(line, dict) else 2) or 2),
         },
-        "hoverinfo": "skip",
+        "text": texts,
+        "hovertemplate": "%{text}<extra></extra>",
     }
 
 
@@ -305,7 +328,24 @@ def trace_points(layer: Layer) -> dict[str, Any]:
         "lat": [p.lat for p in feats],
         "mode": "markers",
         "text": [
-            str((p.props or {}).get("label") or (p.props or {}).get("name") or "")
+            "<br>".join(
+                [
+                    x
+                    for x in [
+                        str(
+                            (p.props or {}).get("label")
+                            or (p.props or {}).get("name")
+                            or ""
+                        ).strip(),
+                        (
+                            f"class: {str((p.props or {}).get('fclass') or '').strip()}"
+                            if str((p.props or {}).get("fclass") or "").strip()
+                            else ""
+                        ),
+                    ]
+                    if x
+                ]
+            )
             for p in feats
         ],
         "marker": {

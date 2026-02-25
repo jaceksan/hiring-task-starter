@@ -1,12 +1,50 @@
-from layers.types import Layer, LayerBundle, PolygonFeature
-from layers.load_scenario import load_scenario_layers
+from layers.types import Layer, LayerBundle, LineFeature, PointFeature, PolygonFeature
 from plotly.build_map import build_map_plot
 from plotly.types import Highlight
-from scenarios.registry import get_scenario
 
 
 def test_build_map_plot_shape():
-    bundle = load_scenario_layers("prague_transport")
+    bundle = LayerBundle(
+        layers=[
+            Layer(
+                id="places",
+                kind="points",
+                title="Places (points)",
+                features=[
+                    PointFeature(id="p1", lon=14.4, lat=50.08, props={"name": "A"})
+                ],
+                style={},
+            ),
+            Layer(
+                id="roads",
+                kind="lines",
+                title="Roads (lines)",
+                features=[
+                    LineFeature(
+                        id="r1",
+                        coords=[(14.39, 50.07), (14.42, 50.09)],
+                        props={"name": "Road 1", "fclass": "primary"},
+                    )
+                ],
+                style={},
+            ),
+            Layer(
+                id="flood_zones",
+                kind="polygons",
+                title="Flood zones (polygons)",
+                features=[
+                    PolygonFeature(
+                        id="f1",
+                        rings=[
+                            [(14.3, 50.0), (14.35, 50.0), (14.35, 50.05), (14.3, 50.05)]
+                        ],
+                        props={"flood_risk_level": "high"},
+                    )
+                ],
+                style={},
+            ),
+        ]
+    )
     plot = build_map_plot(bundle)
 
     assert set(plot.keys()) == {"data", "layout"}
@@ -19,21 +57,51 @@ def test_build_map_plot_shape():
     assert any(trace.get("type") == "scattermapbox" for trace in plot["data"])
 
     names = {t.get("name") for t in plot["data"]}
-    cfg = get_scenario("prague_transport").config
-    for layer_cfg in cfg.layers:
-        assert layer_cfg.title in names
+    assert "Places (points)" in names
+    assert "Roads (lines)" in names
+    assert any(
+        isinstance(n, str) and n.startswith("Flood zones (polygons)") for n in names
+    )
 
 
 def test_build_map_plot_supports_multiple_highlight_overlays():
-    bundle = load_scenario_layers("prague_transport")
+    bundle = LayerBundle(
+        layers=[
+            Layer(
+                id="places",
+                kind="points",
+                title="Places (points)",
+                features=[
+                    PointFeature(id="node/1", lon=14.4, lat=50.08, props={"name": "A"}),
+                    PointFeature(
+                        id="node/2", lon=14.42, lat=50.09, props={"name": "B"}
+                    ),
+                ],
+                style={},
+            ),
+            Layer(
+                id="roads",
+                kind="lines",
+                title="Roads (lines)",
+                features=[
+                    LineFeature(
+                        id="way/1",
+                        coords=[(14.39, 50.07), (14.42, 50.09)],
+                        props={"name": "Road 1", "fclass": "primary"},
+                    )
+                ],
+                style={},
+            ),
+        ]
+    )
     flooded = Highlight(
-        layer_id="beer_pois",
+        layer_id="places",
         feature_ids={"node/1", "node/2"},
-        title="Flooded pubs",
+        title="Flooded places",
         mode="prompt",
     )
     transit = Highlight(
-        layer_id="metro_ways",
+        layer_id="roads",
         feature_ids={"way/1"},
         title="Escape roads",
         mode="prompt",

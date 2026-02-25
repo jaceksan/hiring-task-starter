@@ -7,9 +7,8 @@ React + FastAPI geospatial demo app with chat-driven map analysis, multiple scen
 - **Frontend**: React + Plotly/Mapbox thread UI (`frontend/`)
 - **Backend**: FastAPI streaming endpoint (`/invoke`) + map refresh endpoint (`/plot`) (`backend/`)
 - **Scenarios**:
-  - `prague_transport` (small, in-memory-friendly)
-  - `prague_population_infrastructure_small` (GeoParquet/DuckDB)
-  - `czech_population_infrastructure_large` (GeoParquet/DuckDB)
+  - `prague_population_infrastructure_small` (small Prague, GeoParquet/DuckDB)
+  - `czech_population_infrastructure_large` (large CZ, GeoParquet/DuckDB)
 - **Performance model**: AOI-first querying + LOD/simplification + payload budgets + telemetry
 - **Road highlighting UX** (CZ GeoParquet scenarios): map-side checkbox control for road types (`motorway`, `trunk`, `primary`, `secondary`, `tertiary`) with type-level all-or-none visibility in current viewport
 

@@ -99,12 +99,12 @@ def test_plot_endpoint_preserves_multiple_highlights_when_provided():
             },
             "highlights": [
                 {
-                    "layerId": "beer_pois",
+                    "layerId": "places",
                     "featureIds": ["node/123"],
-                    "title": "Flooded pubs",
+                    "title": "Flooded places",
                 },
                 {
-                    "layerId": "metro_ways",
+                    "layerId": "roads",
                     "featureIds": ["way/456"],
                     "title": "Escape roads",
                 },
@@ -185,3 +185,51 @@ def test_plot_endpoint_reports_road_highlight_control_status():
     stats = payload.get("layout", {}).get("meta", {}).get("stats", {})
     road = stats.get("roadHighlightControl") or {}
     assert road.get("selectedTypes") == ["motorway", "trunk", "secondary"]
+
+
+def test_plot_endpoint_accepts_request_context():
+    client = TestClient(app)
+    resp = client.post(
+        "/plot",
+        json={
+            "map": {
+                "bbox": {
+                    "minLon": 14.22,
+                    "minLat": 49.94,
+                    "maxLon": 14.70,
+                    "maxLat": 50.18,
+                },
+                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
+                "context": {"floodRiskLevel": "high"},
+            },
+            "engine": "in_memory",
+        },
+    )
+    assert resp.status_code == 200
+
+
+def test_plot_endpoint_reports_flood_selection_stats():
+    client = TestClient(app)
+    resp = client.post(
+        "/plot",
+        json={
+            "map": {
+                "bbox": {
+                    "minLon": 14.22,
+                    "minLat": 49.94,
+                    "maxLon": 14.70,
+                    "maxLat": 50.18,
+                },
+                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
+                "context": {"floodRiskLevel": "medium", "selectedFloodZoneIds": []},
+            },
+            "engine": "in_memory",
+        },
+    )
+    assert resp.status_code == 200
+    payload = resp.json()
+    stats = payload.get("layout", {}).get("meta", {}).get("stats", {})
+    flood = stats.get("floodSelection") or {}
+    assert flood.get("mode") == "aoi"
+    assert flood.get("riskLevel") == "medium"
+    assert isinstance(flood.get("activeZoneCount"), int)

@@ -14,6 +14,41 @@ from main import (
 from plotly.types import Highlight
 
 
+def test_invoke_stream_passes_request_context_to_router(monkeypatch):
+    seen_context: dict | None = None
+
+    def fake_route_prompt(*args, **kwargs):
+        nonlocal seen_context
+        seen_context = kwargs.get("request_context")
+        return AgentResponse(message="ok")
+
+    monkeypatch.setattr("api.invoke_stream.route_prompt", fake_route_prompt)
+
+    thread = ApiThread(
+        id=1,
+        title="t",
+        messages=[
+            ApiMessage(
+                id=1,
+                author=ApiMessageSenderEnum.human,
+                text="show layers",
+            )
+        ],
+        map=ApiMapContext(
+            bbox=ApiBbox(minLon=14.22, minLat=49.94, maxLon=14.70, maxLat=50.18),
+            view=ApiMapView(center=ApiCenter(lat=50.0755, lon=14.4378), zoom=12.0),
+            context={"floodRiskLevel": "medium"},
+        ),
+    )
+
+    async def consume():
+        async for _ in handle_incoming_message(thread):
+            pass
+
+    asyncio.run(consume())
+    assert seen_context == {"floodRiskLevel": "medium"}
+
+
 def test_invoke_stream_emits_required_event_types():
     thread = ApiThread(
         id=1,
@@ -22,7 +57,7 @@ def test_invoke_stream_emits_required_event_types():
             ApiMessage(
                 id=1,
                 author=ApiMessageSenderEnum.human,
-                text="how many pubs are flooded?",
+                text="how many places are flooded?",
             )
         ],
         map=ApiMapContext(
@@ -75,7 +110,7 @@ def test_invoke_stream_flooded_count_includes_answer_text():
     assert "I found" in text
 
 
-def test_invoke_stream_dry_near_metro_does_not_error():
+def test_invoke_stream_safest_with_reachable_roads_does_not_error():
     thread = ApiThread(
         id=1,
         title="t",
@@ -83,7 +118,7 @@ def test_invoke_stream_dry_near_metro_does_not_error():
             ApiMessage(
                 id=1,
                 author=ApiMessageSenderEnum.human,
-                text="find 20 dry pubs near metro",
+                text="show safest nearby places outside selected flood risk with reachable roads",
             )
         ],
         map=ApiMapContext(
@@ -109,10 +144,10 @@ def test_invoke_stream_reports_matched_vs_rendered_when_clipped(monkeypatch):
     def fake_route_prompt(*args, **kwargs):
         return AgentResponse(
             message="placeholder",
-            highlight=Highlight(layer_id="beer_pois", feature_ids={"x1"}, title="H"),
+            highlight=Highlight(layer_id="places", feature_ids={"x1"}, title="H"),
             highlights=[
                 Highlight(
-                    layer_id="beer_pois", feature_ids={"x1"}, title="H", mode="prompt"
+                    layer_id="places", feature_ids={"x1"}, title="H", mode="prompt"
                 )
             ],
         )

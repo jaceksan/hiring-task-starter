@@ -11,6 +11,7 @@ from agent.router import route_prompt
 from engine.duckdb import DuckDBEngine
 from engine.in_memory import InMemoryEngine
 from engine.types import LayerEngine, MapContext
+from flood.selection import active_flood_zone_features, parse_request_flood_context
 from geo.aoi import BBox
 from geo.tiles import tile_zoom_for_view_zoom, tiles_for_bbox
 from lod.policy import apply_lod
@@ -213,6 +214,11 @@ async def handle_incoming_message(thread):
                 if thread.map.viewport is not None
                 else None
             ),
+            request_context=(
+                thread.map.context.model_dump(exclude_none=True)
+                if getattr(thread.map, "context", None) is not None
+                else None
+            ),
         )
 
         engine_name = _resolve_engine_name_for_scenario(
@@ -232,6 +238,7 @@ async def handle_incoming_message(thread):
             aoi=aoi,
             view_center=ctx.view_center,
             routing=scenario.routing,
+            request_context=ctx.request_context,
         )
         t_route_ms = (time.perf_counter() - t1) * 1000.0
 
@@ -282,10 +289,29 @@ async def handle_incoming_message(thread):
         )
         t_plot_ms = (time.perf_counter() - t3) * 1000.0
         try:
+            flood_risk_level, selected_zone_ids = parse_request_flood_context(
+                ctx.request_context
+            )
+            mask_layer = (
+                aoi_layers.get(scenario.routing.maskPolygonsLayerId)
+                if scenario.routing.maskPolygonsLayerId
+                else None
+            )
+            active_flood_zones = active_flood_zone_features(
+                mask_layer,
+                flood_risk_level=flood_risk_level,
+                selected_zone_ids=selected_zone_ids,
+            )
             plot["layout"]["meta"]["stats"]["cache"] = cache_stats
             plot["layout"]["meta"]["stats"]["engine"] = engine_name
             plot["layout"]["meta"]["stats"]["scenarioId"] = ctx.scenario_id
             plot["layout"]["meta"]["stats"]["scenarioDataSize"] = scenario.dataSize
+            plot["layout"]["meta"]["stats"]["floodSelection"] = {
+                "mode": "selected" if selected_zone_ids else "aoi",
+                "riskLevel": flood_risk_level,
+                "selectedCount": len(selected_zone_ids),
+                "activeZoneCount": len(active_flood_zones),
+            }
             if getattr(result, "stats", None):
                 plot["layout"]["meta"]["stats"]["engineStats"] = result.stats
             t_json0 = time.perf_counter()

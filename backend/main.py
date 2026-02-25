@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import time
 from enum import Enum
+from typing import Literal
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +18,7 @@ from api.invoke_stream import (
 )
 from engine.duckdb_impl.geoparquet.pins import query_geoparquet_layer_pinned_ids
 from engine.types import LayerBundle, MapContext
+from flood.selection import active_flood_zone_features, parse_request_flood_context
 from geo.aoi import BBox
 from layers.types import Layer
 from plotly.build_map import build_map_plot
@@ -74,10 +76,16 @@ class ApiViewport(BaseModel):
     height: int
 
 
+class ApiRequestContext(BaseModel):
+    floodRiskLevel: Literal["high", "medium", "any"] | None = None
+    selectedFloodZoneIds: list[str] | None = None
+
+
 class ApiMapContext(BaseModel):
     bbox: ApiBbox
     view: ApiMapView
     viewport: ApiViewport | None = None
+    context: ApiRequestContext | None = None
 
 
 class ApiThread(BaseModel):
@@ -159,6 +167,11 @@ def plot(body: ApiPlotRequest):
                 "height": int(body.map.viewport.height),
             }
             if body.map.viewport is not None
+            else None
+        ),
+        request_context=(
+            body.map.context.model_dump(exclude_none=True)
+            if body.map.context is not None
             else None
         ),
     )
@@ -330,12 +343,31 @@ def plot(body: ApiPlotRequest):
     t_json_ms = (time.perf_counter() - t_json0) * 1000.0
     payload_bytes = len(payload_json)
     try:
+        flood_risk_level, selected_zone_ids = parse_request_flood_context(
+            ctx.request_context
+        )
+        mask_layer = (
+            aoi_layers.get(scenario.routing.maskPolygonsLayerId)
+            if scenario.routing.maskPolygonsLayerId
+            else None
+        )
+        active_flood_zones = active_flood_zone_features(
+            mask_layer,
+            flood_risk_level=flood_risk_level,
+            selected_zone_ids=selected_zone_ids,
+        )
         payload["layout"]["meta"]["stats"]["cache"] = cache_stats
         payload["layout"]["meta"]["stats"]["engine"] = engine_name
         payload["layout"]["meta"]["stats"]["scenarioId"] = ctx.scenario_id
         payload["layout"]["meta"]["stats"]["scenarioDataSize"] = scenario.dataSize
         payload["layout"]["meta"]["stats"]["payloadBytes"] = payload_bytes
         payload["layout"]["meta"]["stats"]["roadHighlightControl"] = road_filter_status
+        payload["layout"]["meta"]["stats"]["floodSelection"] = {
+            "mode": "selected" if selected_zone_ids else "aoi",
+            "riskLevel": flood_risk_level,
+            "selectedCount": len(selected_zone_ids),
+            "activeZoneCount": len(active_flood_zones),
+        }
         if getattr(result, "stats", None):
             payload["layout"]["meta"]["stats"]["engineStats"] = result.stats
         payload["layout"]["meta"]["stats"]["timingsMs"] = {

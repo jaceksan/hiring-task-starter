@@ -3,10 +3,17 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from shapely.geometry import LineString, Point
 
+from flood.selection import (
+    FloodRiskLevel,
+    active_flood_zone_features,
+    parse_request_flood_context,
+    union_from_polygons,
+)
 from geo.aoi import BBox
 from geo.index import GeoIndex, is_point_in_union, transformer_4326_to_3857
-from layers.types import LayerBundle, PointFeature
+from layers.types import Layer, LayerBundle, LineFeature, PointFeature
 from plotly.build_map import Highlight
 from scenarios.types import ScenarioHighlightRule, ScenarioRouting
 
@@ -34,12 +41,39 @@ def route_prompt(
     aoi: BBox,
     routing: ScenarioRouting,
     view_center: dict[str, float] | None = None,
+    request_context: dict | None = None,
 ) -> AgentResponse:
     p = (prompt or "").strip().lower()
+    flood_risk_level, selected_zone_ids = parse_request_flood_context(request_context)
 
     if not p or any(k in p for k in routing.showLayersKeywords):
         titles = [f"- {layer.title} ({layer.kind})" for layer in layers.layers]
         return AgentResponse(message="Loaded layers:\n" + "\n".join(titles))
+
+    if _is_escape_roads_prompt(p):
+        return _escape_roads_for_flooded_places(
+            layers,
+            aoi=aoi,
+            routing=routing,
+            flood_risk_level=flood_risk_level,
+            selected_zone_ids=selected_zone_ids,
+        )
+
+    if _is_safest_prompt(p):
+        n = _extract_number(p, default=5, clamp=(1, 20))
+        b = aoi.normalized()
+        prefer_center = view_center or {
+            "lat": (b.min_lat + b.max_lat) / 2.0,
+            "lon": (b.min_lon + b.max_lon) / 2.0,
+        }
+        return _safest_places_with_reachable_roads(
+            layers,
+            routing=routing,
+            top_n=n,
+            prefer_center=prefer_center,
+            flood_risk_level=flood_risk_level,
+            selected_zone_ids=selected_zone_ids,
+        )
 
     for rule in routing.highlightRules:
         if rule.keywords and any(k.lower() in p for k in rule.keywords):
@@ -55,7 +89,14 @@ def route_prompt(
         and any(k in p for k in routing.maskKeywords)
         and mentions_points
     ):
-        return _count_points_in_mask(layers, index=index, aoi=aoi, routing=routing)
+        return _count_points_in_mask(
+            layers,
+            index=index,
+            aoi=aoi,
+            routing=routing,
+            flood_risk_level=flood_risk_level,
+            selected_zone_ids=selected_zone_ids,
+        )
 
     if any(k in p for k in routing.recommendKeywords) and mentions_points:
         n = _extract_number(p, default=5, clamp=(1, 50))
@@ -71,6 +112,8 @@ def route_prompt(
             routing=routing,
             top_n=n,
             prefer_center=prefer_center,
+            flood_risk_level=flood_risk_level,
+            selected_zone_ids=selected_zone_ids,
         )
         ids = {pt.id for pt, _ in ranked}
         bullets = "\n".join([f"- {(_label(pt) or pt.id)}" for pt, _ in ranked])
@@ -99,13 +142,20 @@ def route_prompt(
             "I didn't recognize that prompt yet. Try:\n"
             f"- show layers\n"
             f"- how many {routing.pointLabelPlural} are flooded?\n"
-            f"- recommend 5 {routing.pointLabelPlural}\n"
+            "- show me escape roads for places in flood zone\n"
+            "- show safest nearby places outside selected flood risk with reachable roads\n"
         )
     )
 
 
 def _count_points_in_mask(
-    layers: LayerBundle, *, index: GeoIndex, aoi: BBox, routing: ScenarioRouting
+    layers: LayerBundle,
+    *,
+    index: GeoIndex,
+    aoi: BBox,
+    routing: ScenarioRouting,
+    flood_risk_level: FloodRiskLevel,
+    selected_zone_ids: set[str],
 ) -> AgentResponse:
     pts_layer = layers.get(routing.primaryPointsLayerId)
     if pts_layer is None or pts_layer.kind != "points":
@@ -117,7 +167,13 @@ def _count_points_in_mask(
     if not routing.maskPolygonsLayerId:
         return AgentResponse(message=f"I found {len(pts)} {routing.pointLabelPlural}.")
 
-    u = index.polygon_union_for_aoi(routing.maskPolygonsLayerId, aoi)
+    mask_layer = layers.get(routing.maskPolygonsLayerId)
+    active_zones = active_flood_zone_features(
+        mask_layer,
+        flood_risk_level=flood_risk_level,
+        selected_zone_ids=selected_zone_ids,
+    )
+    u = union_from_polygons(active_zones)
     in_mask = [pt for pt in pts if is_point_in_union(pt, u)]
     out_mask = [pt for pt in pts if not is_point_in_union(pt, u)]
     return AgentResponse(
@@ -260,6 +316,8 @@ def _recommend_points(
     routing: ScenarioRouting,
     top_n: int,
     prefer_center: dict[str, float],
+    flood_risk_level: FloodRiskLevel,
+    selected_zone_ids: set[str],
 ) -> list[tuple[PointFeature, float]]:
     pts_layer = layers.get(routing.primaryPointsLayerId)
     if pts_layer is None or pts_layer.kind != "points":
@@ -271,7 +329,13 @@ def _recommend_points(
     # Apply mask if configured.
     candidates = pts
     if routing.maskPolygonsLayerId:
-        u = index.polygon_union_for_aoi(routing.maskPolygonsLayerId, aoi)
+        mask_layer = layers.get(routing.maskPolygonsLayerId)
+        active_zones = active_flood_zone_features(
+            mask_layer,
+            flood_risk_level=flood_risk_level,
+            selected_zone_ids=selected_zone_ids,
+        )
+        u = union_from_polygons(active_zones)
         candidates = [pt for pt in pts if not is_point_in_union(pt, u)]
 
     if not candidates:
@@ -308,6 +372,263 @@ def _recommend_points(
 
     scored.sort(key=lambda x: (x[1], local_key(x[0])))
     return scored[:top_n]
+
+
+def _is_escape_roads_prompt(prompt: str) -> bool:
+    return (
+        "escape" in prompt
+        and "road" in prompt
+        and ("flood" in prompt or "flood zone" in prompt)
+    )
+
+
+def _is_safest_prompt(prompt: str) -> bool:
+    has_safest = "safest" in prompt or ("safe" in prompt and "nearby" in prompt)
+    has_roads = "road" in prompt and "reachable" in prompt
+    return bool(has_safest and has_roads)
+
+
+def _roads_layer(layers: LayerBundle) -> Layer | None:
+    roads = layers.get("roads")
+    if roads is not None and roads.kind == "lines":
+        return roads
+    return next(
+        (layer_item for layer_item in layers.layers if layer_item.kind == "lines"), None
+    )
+
+
+def _projected_road_lines(roads: list[LineFeature]) -> list[tuple[str, LineString]]:
+    out: list[tuple[str, LineString]] = []
+    for road in roads:
+        if len(road.coords) < 2:
+            continue
+        try:
+            out.append(
+                (
+                    road.id,
+                    LineString(
+                        [
+                            transformer_4326_to_3857().transform(lon, lat)
+                            for lon, lat in road.coords
+                        ]
+                    ),
+                )
+            )
+        except Exception:
+            continue
+    return out
+
+
+def _nearest_road(
+    point: PointFeature, road_lines: list[tuple[str, LineString]]
+) -> tuple[str, float] | None:
+    px, py = transformer_4326_to_3857().transform(point.lon, point.lat)
+    pt = Point(float(px), float(py))
+    best: tuple[str, float] | None = None
+    for road_id, line in road_lines:
+        d = float(pt.distance(line))
+        if best is None or d < best[1]:
+            best = (road_id, d)
+    return best
+
+
+def _escape_roads_for_flooded_places(
+    layers: LayerBundle,
+    *,
+    aoi: BBox,
+    routing: ScenarioRouting,
+    flood_risk_level: FloodRiskLevel,
+    selected_zone_ids: set[str],
+) -> AgentResponse:
+    pts_layer = layers.get(routing.primaryPointsLayerId)
+    roads_layer = _roads_layer(layers)
+    mask_layer = (
+        layers.get(routing.maskPolygonsLayerId) if routing.maskPolygonsLayerId else None
+    )
+    if pts_layer is None or pts_layer.kind != "points" or roads_layer is None:
+        return AgentResponse(
+            message="Missing points/roads layers for escape-road analysis."
+        )
+
+    active_zones = active_flood_zone_features(
+        mask_layer,
+        flood_risk_level=flood_risk_level,
+        selected_zone_ids=selected_zone_ids,
+    )
+    if not active_zones:
+        return AgentResponse(
+            message="No active flood zones match the current filter in this view."
+        )
+    union = union_from_polygons(active_zones)
+
+    flooded_places = [
+        p
+        for p in pts_layer.features
+        if isinstance(p, PointFeature) and is_point_in_union(p, union)
+    ]
+    flooded_places = flooded_places[:300]
+    roads = [r for r in roads_layer.features if isinstance(r, LineFeature)]
+    road_lines = _projected_road_lines(roads)
+
+    escape_road_ids: set[str] = set()
+    connected_place_ids: set[str] = set()
+    for place in flooded_places:
+        nearest = _nearest_road(place, road_lines)
+        if nearest is None:
+            continue
+        road_id, d_m = nearest
+        if d_m > 350.0:
+            continue
+        road = next((r for r in roads if r.id == road_id), None)
+        if road is None:
+            continue
+        if len(road.coords) < 2:
+            continue
+        try:
+            road_line = LineString(road.coords)
+            if union.contains(road_line):
+                continue
+        except Exception:
+            pass
+        escape_road_ids.add(road_id)
+        connected_place_ids.add(place.id)
+
+    if not escape_road_ids:
+        return AgentResponse(
+            message=(
+                f"Found {len(flooded_places)} flooded {routing.pointLabelPlural}, "
+                "but no reachable escape roads in the current view."
+            )
+        )
+
+    place_title = f"Flooded {routing.pointLabelPlural} with escape roads"
+    road_title = "Escape roads"
+    return AgentResponse(
+        message=(
+            f"Found {len(connected_place_ids)} flooded {routing.pointLabelPlural} with "
+            f"{len(escape_road_ids)} reachable escape roads."
+        ),
+        highlight=Highlight(
+            layer_id=roads_layer.id,
+            feature_ids=escape_road_ids,
+            title=road_title,
+            mode="prompt",
+        ),
+        highlights=[
+            Highlight(
+                layer_id=pts_layer.id,
+                feature_ids=connected_place_ids,
+                title=place_title,
+                mode="prompt",
+            ),
+            Highlight(
+                layer_id=roads_layer.id,
+                feature_ids=escape_road_ids,
+                title=road_title,
+                mode="prompt",
+            ),
+        ],
+    )
+
+
+def _safest_places_with_reachable_roads(
+    layers: LayerBundle,
+    *,
+    routing: ScenarioRouting,
+    top_n: int,
+    prefer_center: dict[str, float],
+    flood_risk_level: FloodRiskLevel,
+    selected_zone_ids: set[str],
+) -> AgentResponse:
+    pts_layer = layers.get(routing.primaryPointsLayerId)
+    roads_layer = _roads_layer(layers)
+    mask_layer = (
+        layers.get(routing.maskPolygonsLayerId) if routing.maskPolygonsLayerId else None
+    )
+    if pts_layer is None or pts_layer.kind != "points" or roads_layer is None:
+        return AgentResponse(
+            message="Missing points/roads layers for safety recommendations."
+        )
+
+    active_zones = active_flood_zone_features(
+        mask_layer,
+        flood_risk_level=flood_risk_level,
+        selected_zone_ids=selected_zone_ids,
+    )
+    union = union_from_polygons(active_zones)
+
+    places = [p for p in pts_layer.features if isinstance(p, PointFeature)]
+    dry_places = [p for p in places if not is_point_in_union(p, union)]
+    if not dry_places:
+        return AgentResponse(
+            message=f"No {routing.pointLabelPlural} outside active flood zones in this view."
+        )
+
+    cx, cy = transformer_4326_to_3857().transform(
+        float(prefer_center["lon"]), float(prefer_center["lat"])
+    )
+
+    def local_score(pt: PointFeature) -> float:
+        x, y = transformer_4326_to_3857().transform(pt.lon, pt.lat)
+        dx = float(x) - float(cx)
+        dy = float(y) - float(cy)
+        return dx * dx + dy * dy
+
+    dry_places.sort(key=local_score)
+    candidates = dry_places[:1500]
+    roads = [r for r in roads_layer.features if isinstance(r, LineFeature)]
+    road_lines = _projected_road_lines(roads)
+
+    scored: list[tuple[PointFeature, float, str]] = []
+    for pt in candidates:
+        nearest = _nearest_road(pt, road_lines)
+        if nearest is None:
+            continue
+        road_id, d_m = nearest
+        if d_m > 350.0:
+            continue
+        score = local_score(pt) + (d_m * d_m)
+        scored.append((pt, score, road_id))
+
+    if not scored:
+        return AgentResponse(
+            message=(
+                f"Couldn’t find nearby {routing.pointLabelPlural} with reachable roads "
+                "outside active flood zones."
+            )
+        )
+
+    scored.sort(key=lambda x: (x[1], x[0].id))
+    picked = scored[:top_n]
+    place_ids = {pt.id for pt, _, _ in picked}
+    road_ids = {rid for _, _, rid in picked}
+    bullets = "\n".join([f"- {(_label(pt) or pt.id)}" for pt, _, _ in picked])
+    return AgentResponse(
+        message=(
+            f"Safest nearby {routing.pointLabelPlural} with reachable roads:\n{bullets}"
+        ),
+        highlight=Highlight(
+            layer_id=pts_layer.id,
+            feature_ids=place_ids,
+            title=f"Safest {len(place_ids)}",
+            mode="prompt",
+        ),
+        highlights=[
+            Highlight(
+                layer_id=pts_layer.id,
+                feature_ids=place_ids,
+                title=f"Safest {len(place_ids)}",
+                mode="prompt",
+            ),
+            Highlight(
+                layer_id=roads_layer.id,
+                feature_ids=road_ids,
+                title="Reachable roads",
+                mode="prompt",
+            ),
+        ],
+        focus_map=True,
+    )
 
 
 def _label(pt: PointFeature) -> str | None:

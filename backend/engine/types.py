@@ -20,6 +20,8 @@ class MapContext:
     view_zoom: float
     # Optional: real pixel size of the map viewport. Used for server-side "fit view" heuristics.
     viewport: dict[str, int] | None = None
+    # Optional request-scoped UI context passed by frontend controls.
+    request_context: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
