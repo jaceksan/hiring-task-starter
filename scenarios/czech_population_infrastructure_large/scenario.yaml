@@ -79,8 +79,8 @@ layers:
         color: "rgba(55, 71, 79, 0.55)"
         width: 1
 
-  - id: water_areas
-    title: "Water areas (polygons)"
+  - id: flood_zones
+    title: "Flood zones (polygons)"
     kind: polygons
     source:
       type: geoparquet
@@ -135,10 +135,10 @@ layers:
 
 routing:
   primaryPointsLayerId: places
-  maskPolygonsLayerId: water_areas
+  maskPolygonsLayerId: flood_zones
   pointLabelSingular: place
   pointLabelPlural: places
-  maskLabel: water areas
+  maskLabel: flood zones
   showLayersKeywords: ["show layers", "help", "reset", "start over"]
   countKeywords: ["how many"]
   maskKeywords: ["flood", "flooded", "water"]
@@ -148,7 +148,7 @@ routing:
       layerId: places
       title: "Flooded places"
       maxFeatures: 500
-      maskLayerId: water_areas
+      maskLayerId: flood_zones
       maskMode: IN_MASK
 
 plot:

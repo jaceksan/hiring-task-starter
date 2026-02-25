@@ -17,7 +17,7 @@ def test_duckdb_geoparquet_prague_small_decodes_some_geometries():
 
     res = DuckDBEngine(path=":memory:").get(ctx)
     roads = res.layers.get("roads")
-    water = res.layers.get("water_areas")
+    water = res.layers.get("flood_zones")
     assert roads is not None and roads.kind == "lines"
     assert water is not None and water.kind == "polygons"
     # At zoom 12.0 we are above minZoomForGeometry → expect at least some decoded geometry.

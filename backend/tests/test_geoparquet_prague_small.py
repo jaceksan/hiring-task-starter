@@ -51,4 +51,4 @@ def test_plot_endpoint_duckdb_geoparquet_prague_small_returns_layers():
     # Scenario titles should appear as trace names.
     assert "Places (points)" in names
     assert "Roads (lines)" in names
-    assert "Water areas (polygons)" in names
+    assert "Flood zones (polygons)" in names
