@@ -117,6 +117,7 @@ class _SeededBase:
                         title=layer.title,
                         features=[],
                         style=layer.style,
+                        metadata=layer.metadata,
                     )
                     for layer in self.layers.layers
                 ]
@@ -157,6 +158,7 @@ class _SeededBase:
                     title=base.title,
                     features=ordered,
                     style=base.style,
+                    metadata=base.metadata,
                 )
             )
         return LayerBundle(layers=out_layers)

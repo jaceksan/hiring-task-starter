@@ -1,3 +1,4 @@
+from layers.types import Layer, LayerBundle, PolygonFeature
 from layers.load_scenario import load_scenario_layers
 from plotly.build_map import build_map_plot
 from plotly.types import Highlight
@@ -47,3 +48,65 @@ def test_build_map_plot_supports_multiple_highlight_overlays():
     stats = meta.get("stats") or {}
     assert stats.get("highlightRequested") == 3
     assert isinstance(stats.get("highlightOverlays"), list)
+
+
+def test_build_map_plot_uses_flood_risk_bands_and_hover_metadata():
+    flood_layer = Layer(
+        id="flood_zones",
+        kind="polygons",
+        title="Flood zones (polygons)",
+        features=[
+            PolygonFeature(
+                id="f1",
+                rings=[[(14.0, 50.0), (14.1, 50.0), (14.1, 50.1), (14.0, 50.1)]],
+                props={"flood_risk_level": "high", "water_name": "Vltava"},
+            ),
+            PolygonFeature(
+                id="f2",
+                rings=[[(14.2, 50.0), (14.3, 50.0), (14.3, 50.1), (14.2, 50.1)]],
+                props={"flood_risk_level": "medium", "water_name": "Berounka"},
+            ),
+        ],
+        style={
+            "fillcolor": "rgba(30, 136, 229, 0.15)",
+            "line": {"color": "rgba(30, 136, 229, 0.45)", "width": 1},
+        },
+        metadata={
+            "floodRisk": {
+                "property": "flood_risk_level",
+                "waterEntityProperty": "water_name",
+                "bands": [
+                    {
+                        "id": "high",
+                        "label": "High (100y)",
+                        "value": "high",
+                        "fillColor": "rgba(229, 57, 53, 0.35)",
+                        "lineColor": "rgba(229, 57, 53, 0.75)",
+                    },
+                    {
+                        "id": "medium",
+                        "label": "Medium (50y+)",
+                        "value": "medium",
+                        "fillColor": "rgba(251, 140, 0, 0.28)",
+                        "lineColor": "rgba(251, 140, 0, 0.70)",
+                    },
+                ],
+                "defaultFillColor": "rgba(30, 136, 229, 0.15)",
+            }
+        },
+    )
+    bundle = LayerBundle(layers=[flood_layer])
+    plot = build_map_plot(bundle)
+    traces = plot.get("data") or []
+    names = {t.get("name") for t in traces}
+    assert "Flood zones (polygons) - High (100y)" in names
+    assert "Flood zones (polygons) - Medium (50y+)" in names
+
+    high = next(
+        t for t in traces if t.get("name") == "Flood zones (polygons) - High (100y)"
+    )
+    assert high.get("fillcolor") == "rgba(229, 57, 53, 0.35)"
+    assert high.get("line", {}).get("color") == "rgba(229, 57, 53, 0.75)"
+    text = [x for x in (high.get("text") or []) if isinstance(x, str)]
+    assert any("Risk: High (100y)" in x for x in text)
+    assert any("Water: Vltava" in x for x in text)

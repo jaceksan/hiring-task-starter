@@ -31,41 +31,237 @@ def trace_aoi_bbox(aoi: BBox) -> dict[str, Any]:
     }
 
 
-def trace_polygons(layer: Layer) -> dict[str, Any]:
+def _append_polygon_ring(
+    *,
+    lons: list[float | None],
+    lats: list[float | None],
+    texts: list[str | None],
+    ring: list[tuple[float, float]],
+    hover_text: str,
+) -> None:
+    if not ring:
+        return
+    closed = ring if ring[0] == ring[-1] else [*ring, ring[0]]
+    for lon, lat in closed:
+        lons.append(lon)
+        lats.append(lat)
+        texts.append(hover_text)
+    lons.append(None)
+    lats.append(None)
+    texts.append(None)
+
+
+def _trace_polygons(
+    *,
+    layer_name: str,
+    features: list[PolygonFeature],
+    fill_color: str,
+    line_color: str,
+    line_width: int,
+    hover_label: str | None = None,
+    water_entity_property: str | None = None,
+    show_legend: bool = True,
+) -> dict[str, Any]:
     lons: list[float | None] = []
     lats: list[float | None] = []
-    feats = [f for f in layer.features if isinstance(f, PolygonFeature)]
-    for f in feats:
+    texts: list[str | None] = []
+    for f in features:
         if not f.rings:
             continue
-        ring = f.rings[0]
-        if not ring:
-            continue
-        if ring[0] != ring[-1]:
-            ring = [*ring, ring[0]]
-        for lon, lat in ring:
-            lons.append(lon)
-            lats.append(lat)
-        lons.append(None)
-        lats.append(None)
+        entity = None
+        if water_entity_property:
+            raw = (f.props or {}).get(water_entity_property)
+            if isinstance(raw, str) and raw.strip():
+                entity = raw.strip()
+        if hover_label and entity:
+            hover_text = f"{hover_label}<br>Water: {entity}"
+        elif hover_label:
+            hover_text = hover_label
+        elif entity:
+            hover_text = f"Water: {entity}"
+        else:
+            hover_text = ""
+        _append_polygon_ring(
+            lons=lons, lats=lats, texts=texts, ring=f.rings[0], hover_text=hover_text
+        )
 
-    style = layer.style or {}
-    line = style.get("line") or {}
     return {
         "type": "scattermapbox",
-        "name": layer.title,
+        "name": layer_name,
         "lon": lons,
         "lat": lats,
+        "text": texts,
         "mode": "lines",
         "fill": "toself",
-        "fillcolor": style.get("fillcolor") or "rgba(30, 136, 229, 0.20)",
+        "fillcolor": fill_color,
         "line": {
-            "color": (line.get("color") if isinstance(line, dict) else None)
-            or "rgba(30, 136, 229, 0.65)",
-            "width": int((line.get("width") if isinstance(line, dict) else 1) or 1),
+            "color": line_color,
+            "width": int(line_width),
         },
-        "hoverinfo": "skip",
+        "showlegend": show_legend,
+        "hovertemplate": "%{text}<extra></extra>",
     }
+
+
+def trace_polygons(layer: Layer) -> list[dict[str, Any]]:
+    feats = [f for f in layer.features if isinstance(f, PolygonFeature)]
+    style = layer.style or {}
+    line = style.get("line") or {}
+    default_fill = style.get("fillcolor") or "rgba(30, 136, 229, 0.20)"
+    default_line = (
+        line.get("color") if isinstance(line, dict) else None
+    ) or "rgba(30, 136, 229, 0.65)"
+    default_width = int((line.get("width") if isinstance(line, dict) else 1) or 1)
+
+    flood = (
+        (layer.metadata or {}).get("floodRisk")
+        if isinstance(layer.metadata, dict)
+        else None
+    )
+    if not isinstance(flood, dict):
+        return [
+            _trace_polygons(
+                layer_name=layer.title,
+                features=feats,
+                fill_color=default_fill,
+                line_color=default_line,
+                line_width=default_width,
+            )
+        ]
+
+    risk_prop = flood.get("property")
+    if not isinstance(risk_prop, str) or not risk_prop.strip():
+        return [
+            _trace_polygons(
+                layer_name=layer.title,
+                features=feats,
+                fill_color=default_fill,
+                line_color=default_line,
+                line_width=default_width,
+            )
+        ]
+    risk_prop = risk_prop.strip()
+    water_prop = flood.get("waterEntityProperty")
+    water_prop = (
+        water_prop.strip()
+        if isinstance(water_prop, str) and water_prop.strip()
+        else None
+    )
+    default_risk_fill = (
+        flood.get("defaultFillColor")
+        if isinstance(flood.get("defaultFillColor"), str)
+        else default_fill
+    )
+    bands_raw = flood.get("bands")
+    bands = bands_raw if isinstance(bands_raw, list) else []
+    if not bands:
+        return [
+            _trace_polygons(
+                layer_name=layer.title,
+                features=feats,
+                fill_color=default_fill,
+                line_color=default_line,
+                line_width=default_width,
+                water_entity_property=water_prop,
+            )
+        ]
+
+    band_buckets: list[dict[str, Any]] = []
+    for band in bands:
+        if not isinstance(band, dict):
+            continue
+        band_buckets.append(
+            {
+                "id": str(band.get("id") or ""),
+                "label": str(band.get("label") or band.get("id") or ""),
+                "value": band.get("value"),
+                "min": band.get("min"),
+                "max": band.get("max"),
+                "fillColor": str(band.get("fillColor") or default_risk_fill),
+                "lineColor": str(band.get("lineColor") or default_line),
+                "features": [],
+            }
+        )
+    if not band_buckets:
+        return [
+            _trace_polygons(
+                layer_name=layer.title,
+                features=feats,
+                fill_color=default_fill,
+                line_color=default_line,
+                line_width=default_width,
+                water_entity_property=water_prop,
+            )
+        ]
+
+    unmatched: list[PolygonFeature] = []
+    for feat in feats:
+        raw = (feat.props or {}).get(risk_prop)
+        matched = False
+        for bucket in band_buckets:
+            # Categorical match.
+            if bucket["value"] is not None and raw is not None:
+                if str(raw).strip().lower() == str(bucket["value"]).strip().lower():
+                    bucket["features"].append(feat)
+                    matched = True
+                    break
+            # Numeric range match.
+            if bucket["min"] is not None or bucket["max"] is not None:
+                try:
+                    numeric = float(raw)
+                except (TypeError, ValueError):
+                    continue
+                min_ok = bucket["min"] is None or numeric >= float(bucket["min"])
+                max_ok = bucket["max"] is None or numeric <= float(bucket["max"])
+                if min_ok and max_ok:
+                    bucket["features"].append(feat)
+                    matched = True
+                    break
+        if not matched:
+            unmatched.append(feat)
+
+    out: list[dict[str, Any]] = []
+    for bucket in band_buckets:
+        if not bucket["features"]:
+            continue
+        label = bucket["label"] or bucket["id"] or "Risk"
+        out.append(
+            _trace_polygons(
+                layer_name=f"{layer.title} - {label}",
+                features=bucket["features"],
+                fill_color=bucket["fillColor"],
+                line_color=bucket["lineColor"],
+                line_width=default_width,
+                hover_label=f"Risk: {label}",
+                water_entity_property=water_prop,
+                show_legend=True,
+            )
+        )
+
+    if unmatched and out:
+        out.append(
+            _trace_polygons(
+                layer_name=f"{layer.title} - Other",
+                features=unmatched,
+                fill_color=default_risk_fill,
+                line_color=default_line,
+                line_width=default_width,
+                hover_label="Risk: Other",
+                water_entity_property=water_prop,
+                show_legend=True,
+            )
+        )
+
+    return out or [
+        _trace_polygons(
+            layer_name=layer.title,
+            features=feats,
+            fill_color=default_risk_fill,
+            line_color=default_line,
+            line_width=default_width,
+            water_entity_property=water_prop,
+        )
+    ]
 
 
 def trace_lines(layer: Layer) -> dict[str, Any]:

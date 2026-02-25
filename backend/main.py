@@ -220,6 +220,11 @@ def plot(body: ApiPlotRequest):
                         kind=layer_cfg.kind,
                         title=layer_cfg.title,
                         style=layer_cfg.style or {},
+                        metadata=(
+                            layer_cfg.metadata.model_dump(exclude_none=True)
+                            if layer_cfg.metadata is not None
+                            else {}
+                        ),
                         path=resolve_repo_path(layer_cfg.source.path),
                         aoi=aoi,
                         view_zoom=ctx.view_zoom,
@@ -240,6 +245,7 @@ def plot(body: ApiPlotRequest):
                             title=layer.title,
                             features=[merged[k] for k in sorted(merged.keys()) if k],
                             style=layer.style,
+                            metadata=layer.metadata,
                         )
                         break
             finally:

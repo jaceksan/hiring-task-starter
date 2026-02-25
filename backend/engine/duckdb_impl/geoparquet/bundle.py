@@ -52,6 +52,11 @@ def _geoparquet_bundle_cached(
             title=layer_cfg.title,
             features=[],
             style=layer_cfg.style or {},
+            metadata=(
+                layer_cfg.metadata.model_dump(exclude_none=True)
+                if layer_cfg.metadata is not None
+                else {}
+            ),
         )
         for layer_cfg in scenario.layers
     ]
@@ -80,6 +85,11 @@ def _geoparquet_bundle_cached(
                 kind=layer_cfg.kind,
                 title=layer_cfg.title,
                 style=layer_cfg.style or {},
+                metadata=(
+                    layer_cfg.metadata.model_dump(exclude_none=True)
+                    if layer_cfg.metadata is not None
+                    else {}
+                ),
                 path=p,
                 aoi=aoi,
                 view_zoom=view_zoom,

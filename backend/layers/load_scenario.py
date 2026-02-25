@@ -49,6 +49,11 @@ def load_scenario_layers(scenario_id: str | None) -> LayerBundle:
                 title=layer_cfg.title,
                 features=feats,
                 style=layer_cfg.style or {},
+                metadata=(
+                    layer_cfg.metadata.model_dump(exclude_none=True)
+                    if layer_cfg.metadata is not None
+                    else {}
+                ),
             )
         )
 

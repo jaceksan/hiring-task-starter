@@ -30,6 +30,7 @@ def query_geoparquet_points_layer_bbox(
     layer_id: str,
     title: str,
     style: dict[str, Any],
+    metadata: dict[str, Any],
     path: Path,
     aoi: BBox,
     view_zoom: float,
@@ -115,7 +116,12 @@ def query_geoparquet_points_layer_bbox(
     t_decode_ms = (time.perf_counter() - t_dec0) * 1000.0
 
     layer = Layer(
-        id=layer_id, kind="points", title=title, features=feats, style=style or {}
+        id=layer_id,
+        kind="points",
+        title=title,
+        features=feats,
+        style=style or {},
+        metadata=metadata or {},
     )
     return layer, base_stats(
         layer_id=layer_id,

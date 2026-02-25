@@ -46,7 +46,7 @@ def build_map_plot(
 
     # Render layers in a stable order: polygons -> lines -> points.
     for layer in layers.of_kind("polygons"):
-        traces.append(trace_polygons(layer))
+        traces.extend(trace_polygons(layer))
     for layer in layers.of_kind("lines"):
         traces.append(trace_lines(layer))
     for layer in layers.of_kind("points"):
@@ -93,6 +93,7 @@ def build_map_plot(
                                 title=hl.title,
                                 features=feats,
                                 style=hl.style,
+                                metadata=hl.metadata,
                             )
                         ]
                     ),
@@ -117,6 +118,7 @@ def build_map_plot(
                                 title=hl.title,
                                 features=feats,
                                 style=hl.style,
+                                metadata=hl.metadata,
                             )
                         ]
                     ),
@@ -141,6 +143,7 @@ def build_map_plot(
                                 title=hl.title,
                                 features=feats,
                                 style=hl.style,
+                                metadata=hl.metadata,
                             )
                         ]
                     ),

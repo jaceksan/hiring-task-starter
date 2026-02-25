@@ -241,6 +241,11 @@ def query_seeded_layers_bbox(
                 title=lcfg.title,
                 features=sorted(feats, key=lambda f: f.id),
                 style=lcfg.style or {},
+                metadata=(
+                    lcfg.metadata.model_dump(exclude_none=True)
+                    if lcfg.metadata is not None
+                    else {}
+                ),
             )
         )
 

@@ -31,6 +31,7 @@ def query_geoparquet_layer_pinned_ids(
     kind: str,
     title: str,
     style: dict[str, Any],
+    metadata: dict[str, Any],
     path: Path,
     aoi: BBox,
     view_zoom: float,  # reserved for future policy adjustments
@@ -46,14 +47,24 @@ def query_geoparquet_layer_pinned_ids(
     _ = float(view_zoom)  # keep signature stable; unused for now
     if not ids:
         return Layer(
-            id=layer_id, kind=kind, title=title, features=[], style=style or {}
+            id=layer_id,
+            kind=kind,
+            title=title,
+            features=[],
+            style=style or {},
+            metadata=metadata or {},
         )
 
     # Highlight IDs may include multipart suffixes (e.g. "osm_id:0"); query by base ID.
     base_ids = {str(x).split(":", 1)[0] for x in ids if x}
     if not base_ids:
         return Layer(
-            id=layer_id, kind=kind, title=title, features=[], style=style or {}
+            id=layer_id,
+            kind=kind,
+            title=title,
+            features=[],
+            style=style or {},
+            metadata=metadata or {},
         )
 
     b = aoi.normalized()
@@ -85,7 +96,12 @@ def query_geoparquet_layer_pinned_ids(
         )
         feats = decode_point_rows(rows)
         return Layer(
-            id=layer_id, kind="points", title=title, features=feats, style=style or {}
+            id=layer_id,
+            kind="points",
+            title=title,
+            features=feats,
+            style=style or {},
+            metadata=metadata or {},
         )
 
     rows = query_geometry_rows_for_ids(
@@ -103,9 +119,19 @@ def query_geoparquet_layer_pinned_ids(
     if kind == "lines":
         feats2 = decode_line_rows(rows)
         return Layer(
-            id=layer_id, kind="lines", title=title, features=feats2, style=style or {}
+            id=layer_id,
+            kind="lines",
+            title=title,
+            features=feats2,
+            style=style or {},
+            metadata=metadata or {},
         )
     feats3 = decode_polygon_rows(rows)
     return Layer(
-        id=layer_id, kind="polygons", title=title, features=feats3, style=style or {}
+        id=layer_id,
+        kind="polygons",
+        title=title,
+        features=feats3,
+        style=style or {},
+        metadata=metadata or {},
     )

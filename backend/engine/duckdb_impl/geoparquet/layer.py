@@ -41,6 +41,7 @@ def query_geoparquet_layer_bbox(
     kind: str,
     title: str,
     style: dict[str, Any],
+    metadata: dict[str, Any],
     path: Path,
     aoi: BBox,
     view_zoom: float,
@@ -84,6 +85,7 @@ def query_geoparquet_layer_bbox(
             layer_id=layer_id,
             title=title,
             style=style or {},
+            metadata=metadata or {},
             path=path,
             aoi=aoi,
             view_zoom=view_zoom,
@@ -94,7 +96,12 @@ def query_geoparquet_layer_bbox(
     # Default behavior (no renderPolicy): no decoding below minZoomForGeometry.
     if float(view_zoom) < geom_min_zoom and not allow:
         layer = Layer(
-            id=layer_id, kind=kind, title=title, features=[], style=style or {}
+            id=layer_id,
+            kind=kind,
+            title=title,
+            features=[],
+            style=style or {},
+            metadata=metadata or {},
         )
         return layer, base_stats(
             layer_id=layer_id,
@@ -176,7 +183,12 @@ def query_geoparquet_layer_bbox(
         )
         if not ids:
             layer = Layer(
-                id=layer_id, kind=kind, title=title, features=[], style=style or {}
+                id=layer_id,
+                kind=kind,
+                title=title,
+                features=[],
+                style=style or {},
+                metadata=metadata or {},
             )
             return layer, base_stats(
                 layer_id=layer_id,
@@ -217,7 +229,12 @@ def query_geoparquet_layer_bbox(
         feats = decode_line_rows(rows)
         t_decode_ms = (time.perf_counter() - t_dec0) * 1000.0
         layer = Layer(
-            id=layer_id, kind="lines", title=title, features=feats, style=style or {}
+            id=layer_id,
+            kind="lines",
+            title=title,
+            features=feats,
+            style=style or {},
+            metadata=metadata or {},
         )
         return layer, base_stats(
             layer_id=layer_id,
@@ -234,7 +251,12 @@ def query_geoparquet_layer_bbox(
     feats2 = decode_polygon_rows(rows)
     t_decode_ms = (time.perf_counter() - t_dec0) * 1000.0
     layer = Layer(
-        id=layer_id, kind="polygons", title=title, features=feats2, style=style or {}
+        id=layer_id,
+        kind="polygons",
+        title=title,
+        features=feats2,
+        style=style or {},
+        metadata=metadata or {},
     )
     return layer, base_stats(
         layer_id=layer_id,

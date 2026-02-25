@@ -49,6 +49,8 @@ class Layer:
     features: list[LayerFeature]
     # Free-form style hints (e.g. colors/widths) consumed by the Plotly builder.
     style: dict[str, Any] = field(default_factory=dict)
+    # Optional semantic layer metadata from scenario YAML (e.g. flood-risk config).
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
