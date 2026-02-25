@@ -2,6 +2,11 @@
 
 The order of items below is the priority order (top = highest). Each item has up to three concise sub-bullets; when needed, the last sub-bullet links to a detail file in `backlog/`.
 
+- **P1 — Demo simplification reset: make one cohesive flood demo fully working**
+  - Keep one layer set only (`places`, `flood_zones`, `roads`) and two scenarios only (small Prague + big CZ), both backed by complete data.
+  - Improve visualization/UX: flood risk polygon shading, many more places, and metadata display for all layers (incl. roads and flood-zone water entity naming where available).
+  - Details: [`backlog/0050-demo-simplification-reset.md`](backlog/0050-demo-simplification-reset.md)
+
 - **P2 — Highlighting roadmap (make the CZ “flood” demo fully working)**
   - Fix highlight persistence under caps (highlighted features must not disappear when zooming out).
   - Add a “flooded places → escape roads” demo flow, with clear UX around partial results.
