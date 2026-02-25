@@ -3,6 +3,7 @@ export type MapCenter = { lat: number; lon: number };
 export type ViewportSize = { width: number; height: number };
 
 export type FloodRiskLevel = "high" | "medium" | "any";
+export type PlaceSourceType = "settlement" | "poi";
 
 export type FloodSelectionStats = {
 	mode?: "aoi" | "selected";
@@ -67,4 +68,11 @@ export type PlotPerfStats = {
 	};
 	engineStats?: unknown;
 	floodSelection?: FloodSelectionStats;
+	placeControl?: {
+		selectedSources?: string[];
+		availableSources?: string[];
+		activeSources?: string[];
+		beforeCount?: number;
+		afterCount?: number;
+	};
 };

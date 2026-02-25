@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -30,6 +31,7 @@ class LayerColumns:
     name_col: str | None
     class_col: str | None
     geom_col: str
+    property_cols: list[str]
 
 
 @dataclass(frozen=True)
@@ -41,11 +43,18 @@ class LayerPolicy:
 
 
 def parse_columns(opts: dict[str, Any]) -> LayerColumns:
+    raw_props = opts.get("propertyColumns")
+    prop_cols = (
+        [str(x).strip() for x in raw_props if isinstance(x, str) and str(x).strip()]
+        if isinstance(raw_props, list)
+        else []
+    )
     return LayerColumns(
         id_col=str(opts.get("idColumn") or "osm_id"),
         name_col=opts.get("nameColumn"),
         class_col=opts.get("classColumn"),
         geom_col=str(opts.get("geometryColumn") or "geometry"),
+        property_cols=prop_cols,
     )
 
 
@@ -55,3 +64,15 @@ def name_expr(name_col: str | None) -> str:
 
 def class_expr(class_col: str | None) -> str:
     return f"CAST({class_col} AS VARCHAR) AS fclass" if class_col else "NULL AS fclass"
+
+
+_IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def extra_props_expr(property_cols: list[str]) -> str:
+    cols = [c for c in property_cols if _IDENT_RE.match(c)]
+    if not cols:
+        return "NULL AS extra_props_json"
+    keys = ", ".join([f"'{c}'" for c in cols])
+    values = ", ".join([f"CAST({c} AS VARCHAR)" for c in cols])
+    return f"to_json(map([{keys}], [{values}])) AS extra_props_json"

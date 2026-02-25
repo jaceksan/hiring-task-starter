@@ -21,6 +21,7 @@ from engine.types import LayerBundle, MapContext
 from flood.selection import active_flood_zone_features, parse_request_flood_context
 from geo.aoi import BBox
 from layers.types import Layer
+from place.selection import filter_points_layer_by_source, parse_request_place_sources
 from plotly.build_map import build_map_plot
 from roads.highlight_control import build_road_type_highlights, normalize_road_types
 from scenarios.registry import (
@@ -79,6 +80,7 @@ class ApiViewport(BaseModel):
 class ApiRequestContext(BaseModel):
     floodRiskLevel: Literal["high", "medium", "any"] | None = None
     selectedFloodZoneIds: list[str] | None = None
+    placeSourceTypes: list[str] | None = None
 
 
 class ApiMapContext(BaseModel):
@@ -270,6 +272,15 @@ def plot(body: ApiPlotRequest):
         except Exception:
             pass
 
+    place_sources = parse_request_place_sources(ctx.request_context)
+    place_filter_stats: dict[str, object] | None = None
+    if scenario.routing.primaryPointsLayerId:
+        aoi_layers, place_filter_stats = filter_points_layer_by_source(
+            aoi_layers,
+            layer_id=scenario.routing.primaryPointsLayerId,
+            selected_sources=place_sources,
+        )
+
     selected_road_types = normalize_road_types(body.roadHighlightTypes)
     roads_layer = aoi_layers.get("roads")
     road_filter_highlights, road_filter_status = build_road_type_highlights(
@@ -362,6 +373,7 @@ def plot(body: ApiPlotRequest):
         payload["layout"]["meta"]["stats"]["scenarioDataSize"] = scenario.dataSize
         payload["layout"]["meta"]["stats"]["payloadBytes"] = payload_bytes
         payload["layout"]["meta"]["stats"]["roadHighlightControl"] = road_filter_status
+        payload["layout"]["meta"]["stats"]["placeControl"] = place_filter_stats
         payload["layout"]["meta"]["stats"]["floodSelection"] = {
             "mode": "selected" if selected_zone_ids else "aoi",
             "riskLevel": flood_risk_level,

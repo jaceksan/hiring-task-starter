@@ -8,6 +8,7 @@ import duckdb
 from engine.duckdb_impl.geoparquet.bbox import geoparquet_bbox_exprs
 from engine.duckdb_impl.geoparquet.config import (
     class_expr,
+    extra_props_expr,
     name_expr,
     parse_columns,
 )
@@ -76,6 +77,7 @@ def query_geoparquet_layer_pinned_ids(
     cols = parse_columns(opts)
     n_expr = name_expr(cols.name_col)
     c_expr = class_expr(cols.class_col)
+    p_expr = extra_props_expr(cols.property_cols)
 
     base_list = sorted(base_ids)
     limit = max(1, len(base_list))
@@ -91,6 +93,7 @@ def query_geoparquet_layer_pinned_ids(
             ymin_expr=bbox["ymin"],
             name_expr=n_expr,
             class_expr=c_expr,
+            extra_props_expr=p_expr,
             ids=base_list,
             limit=limit,
         )
@@ -113,6 +116,7 @@ def query_geoparquet_layer_pinned_ids(
         geom_col=cols.geom_col,
         name_expr=n_expr,
         class_expr=c_expr,
+        extra_props_expr=p_expr,
         ids=base_list,
         limit=limit,
     )

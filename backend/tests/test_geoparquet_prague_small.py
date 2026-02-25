@@ -11,7 +11,7 @@ def test_prague_geoparquet_fixture_files_exist_and_non_empty():
     repo = Path(__file__).resolve().parents[2]
     base = repo / "data/derived/czech_population_infrastructure_large/prague_bbox"
     assert base.exists(), f"Missing fixture directory: {base}"
-    for name in ["places.parquet", "roads.parquet", "water_areas.parquet"]:
+    for name in ["places.parquet", "roads.parquet", "flood_zones.parquet"]:
         p = base / name
         assert p.exists(), f"Missing GeoParquet fixture: {p}"
         assert p.stat().st_size > 0, f"Empty GeoParquet fixture: {p}"
@@ -49,6 +49,6 @@ def test_plot_endpoint_duckdb_geoparquet_prague_small_returns_layers():
 
     names = {t.get("name") for t in payload.get("data", [])}
     # Scenario titles should appear as trace names.
-    assert "Places (points)" in names
+    assert "Places (points)" in names or "Places (points) (clusters)" in names
     assert "Roads (lines)" in names
     assert "Flood zones (polygons)" in names

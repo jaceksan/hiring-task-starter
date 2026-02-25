@@ -10,7 +10,13 @@ import {
 	getMapboxCenter,
 	getMapboxZoom,
 } from "./plotlyMapUtils";
-import type { BBox, FloodRiskLevel, MapViewState, ViewportSize } from "./types";
+import type {
+	BBox,
+	FloodRiskLevel,
+	MapViewState,
+	PlaceSourceType,
+	ViewportSize,
+} from "./types";
 
 export function useInvokeAgent(args: {
 	threadId: number;
@@ -18,6 +24,7 @@ export function useInvokeAgent(args: {
 	scenarioId: string;
 	floodRiskLevel: FloodRiskLevel;
 	selectedFloodZoneIds: string[];
+	selectedPlaceSourceTypes: PlaceSourceType[];
 	autoMinimizeChat: boolean;
 	mapView: MapViewState;
 	getCurrentBbox: () => BBox;
@@ -40,6 +47,7 @@ export function useInvokeAgent(args: {
 		scenarioId,
 		floodRiskLevel,
 		selectedFloodZoneIds,
+		selectedPlaceSourceTypes,
 		autoMinimizeChat,
 		mapView,
 		getCurrentBbox,
@@ -101,6 +109,7 @@ export function useInvokeAgent(args: {
 						context: {
 							floodRiskLevel,
 							selectedFloodZoneIds,
+							placeSourceTypes: selectedPlaceSourceTypes,
 						},
 					},
 					engine,

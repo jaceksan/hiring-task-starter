@@ -233,3 +233,32 @@ def test_plot_endpoint_reports_flood_selection_stats():
     assert flood.get("mode") == "aoi"
     assert flood.get("riskLevel") == "medium"
     assert isinstance(flood.get("activeZoneCount"), int)
+
+
+def test_plot_endpoint_reports_place_source_filter_stats():
+    client = TestClient(app)
+    resp = client.post(
+        "/plot",
+        json={
+            "map": {
+                "bbox": {
+                    "minLon": 14.22,
+                    "minLat": 49.94,
+                    "maxLon": 14.70,
+                    "maxLat": 50.18,
+                },
+                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
+                "context": {"placeSourceTypes": ["settlement"]},
+            },
+            "engine": "duckdb",
+            "scenarioId": "prague_population_infrastructure_small",
+        },
+    )
+    assert resp.status_code == 200
+    payload = resp.json()
+    stats = payload.get("layout", {}).get("meta", {}).get("stats", {})
+    place = stats.get("placeControl") or {}
+    assert "settlement" in (place.get("activeSources") or [])
+    assert isinstance(place.get("beforeCount"), int)
+    assert isinstance(place.get("afterCount"), int)
+    assert int(place.get("afterCount") or 0) <= int(place.get("beforeCount") or 0)

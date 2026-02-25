@@ -33,6 +33,7 @@ layers:
         nameColumn: COALESCE(ref, name)
         classColumn: fclass
         geometryColumn: geometry
+        propertyColumns: [ref, oneway, maxspeed, bridge, tunnel, code]
         # Keep consistent with the large scenario; decode geometry progressively by class.
         minZoomForGeometry: 11.5
         renderPolicy:
@@ -77,12 +78,13 @@ layers:
     kind: polygons
     source:
       type: geoparquet
-      path: data/derived/czech_population_infrastructure_large/prague_bbox/water_areas.parquet
+      path: data/derived/czech_population_infrastructure_large/prague_bbox/flood_zones.parquet
       geoparquet:
         idColumn: osm_id
-        nameColumn: name
-        classColumn: fclass
+        nameColumn: water_name
+        classColumn: flood_risk_level
         geometryColumn: geometry
+        propertyColumns: [water_name, source_fclass, code]
         minZoomForGeometry: 11.5
     style:
       fillcolor: "rgba(30, 136, 229, 0.15)"
@@ -91,8 +93,8 @@ layers:
         width: 1
     metadata:
       floodRisk:
-        property: flood_risk_level
-        waterEntityProperty: water_name
+        property: fclass
+        waterEntityProperty: name
         defaultFillColor: "rgba(30, 136, 229, 0.15)"
         bands:
           - id: high
@@ -122,6 +124,7 @@ layers:
         nameColumn: name
         classColumn: fclass
         geometryColumn: geometry
+        propertyColumns: [population, place_source, code]
     style:
       marker:
         size: 6

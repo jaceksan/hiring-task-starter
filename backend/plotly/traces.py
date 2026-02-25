@@ -15,6 +15,22 @@ def _id_matches(fid: str, ids: set[str]) -> bool:
     return bool(base) and base in ids
 
 
+def _format_extra_props(
+    props: dict[str, Any], *, keys: list[str], exclude_values: set[str] | None = None
+) -> list[str]:
+    out: list[str] = []
+    excluded = exclude_values or set()
+    for key in keys:
+        raw = props.get(key)
+        if raw is None:
+            continue
+        text = str(raw).strip()
+        if not text or text in excluded:
+            continue
+        out.append(f"{key}: {text}")
+    return out
+
+
 def trace_aoi_bbox(aoi: BBox) -> dict[str, Any]:
     b = aoi.normalized()
     lons = [b.min_lon, b.max_lon, b.max_lon, b.min_lon, b.min_lon]
@@ -86,6 +102,13 @@ def _trace_polygons(
             hover_text = f"Water: {entity}"
         else:
             hover_text = ""
+        extra = _format_extra_props(
+            f.props or {},
+            keys=["source_fclass", "code"],
+            exclude_values={entity or ""},
+        )
+        if extra:
+            hover_text = "<br>".join([x for x in [hover_text, *extra] if x])
         _append_polygon_ring(
             lons=lons,
             lats=lats,
@@ -290,6 +313,12 @@ def trace_lines(layer: Layer) -> dict[str, Any]:
         ).strip()
         road_class = str(props.get("fclass") or "").strip()
         hover_parts = [x for x in [label, road_class and f"class: {road_class}"] if x]
+        hover_parts.extend(
+            _format_extra_props(
+                props,
+                keys=["maxspeed", "oneway", "bridge", "tunnel", "code"],
+            )
+        )
         hover_text = "<br>".join(hover_parts)
         for lon, lat in f.coords:
             lons.append(lon)
@@ -330,20 +359,26 @@ def trace_points(layer: Layer) -> dict[str, Any]:
         "text": [
             "<br>".join(
                 [
-                    x
-                    for x in [
-                        str(
-                            (p.props or {}).get("label")
-                            or (p.props or {}).get("name")
-                            or ""
-                        ).strip(),
-                        (
-                            f"class: {str((p.props or {}).get('fclass') or '').strip()}"
-                            if str((p.props or {}).get("fclass") or "").strip()
-                            else ""
-                        ),
-                    ]
-                    if x
+                    *[
+                        x
+                        for x in [
+                            str(
+                                (p.props or {}).get("label")
+                                or (p.props or {}).get("name")
+                                or ""
+                            ).strip(),
+                            (
+                                f"class: {str((p.props or {}).get('fclass') or '').strip()}"
+                                if str((p.props or {}).get("fclass") or "").strip()
+                                else ""
+                            ),
+                        ]
+                        if x
+                    ],
+                    *_format_extra_props(
+                        p.props or {},
+                        keys=["place_source", "population", "code"],
+                    ),
                 ]
             )
             for p in feats

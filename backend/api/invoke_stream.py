@@ -15,6 +15,7 @@ from flood.selection import active_flood_zone_features, parse_request_flood_cont
 from geo.aoi import BBox
 from geo.tiles import tile_zoom_for_view_zoom, tiles_for_bbox
 from lod.policy import apply_lod
+from place.selection import filter_points_layer_by_source, parse_request_place_sources
 from plotly.build_map import build_map_plot
 from scenarios.registry import default_scenario_id, get_scenario
 from telemetry.singleton import get_store
@@ -229,6 +230,14 @@ async def handle_incoming_message(thread):
         t_engine_get_ms = (time.perf_counter() - t0) * 1000.0
         aoi_layers = result.layers
         index = result.index
+        place_sources = parse_request_place_sources(ctx.request_context)
+        place_filter_stats: dict[str, object] | None = None
+        if scenario.routing.primaryPointsLayerId:
+            aoi_layers, place_filter_stats = filter_points_layer_by_source(
+                aoi_layers,
+                layer_id=scenario.routing.primaryPointsLayerId,
+                selected_sources=place_sources,
+            )
 
         t1 = time.perf_counter()
         response = route_prompt(
@@ -306,6 +315,7 @@ async def handle_incoming_message(thread):
             plot["layout"]["meta"]["stats"]["engine"] = engine_name
             plot["layout"]["meta"]["stats"]["scenarioId"] = ctx.scenario_id
             plot["layout"]["meta"]["stats"]["scenarioDataSize"] = scenario.dataSize
+            plot["layout"]["meta"]["stats"]["placeControl"] = place_filter_stats
             plot["layout"]["meta"]["stats"]["floodSelection"] = {
                 "mode": "selected" if selected_zone_ids else "aoi",
                 "riskLevel": flood_risk_level,

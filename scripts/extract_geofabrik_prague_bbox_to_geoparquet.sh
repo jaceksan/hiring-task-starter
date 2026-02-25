@@ -2,12 +2,14 @@
 set -euo pipefail
 
 #
-# Extract a demo-sized AOI slice from Geofabrik "free shapefile" bundle into GeoParquet.
+# Extract AOI slices from Geofabrik "free shapefile" bundle into GeoParquet.
 #
 # Why this script exists:
 # - Avoid slow, row-by-row ingestion (no INSERT-many).
 # - Use GDAL/ogr2ogr as the bulk converter (fast path).
 # - Produce GeoParquet optimized for AOI slicing (covering bbox + optional spatial clustering).
+# - Build a richer "places" layer by merging OSM settlements + POIs.
+# - Build explicit flood-risk polygons from water areas for demo routing/rendering.
 #
 
 usage() {
@@ -54,8 +56,7 @@ Options:
       Default: 0 (disabled)
 
 Notes:
-  - This script expects an ogr2ogr build with Parquet support:
-      ogrinfo --formats | grep -i parquet
+  - This script uses DuckDB Spatial (`ST_Read`) + `COPY ... TO parquet`.
   - Every executed command is prefixed with 'time' to show elapsed time.
 
 EOF
@@ -149,9 +150,6 @@ echo "SORT_BY_BBOX=${SORT_BY_BBOX}"
 echo "ROW_GROUP_SIZE=${ROW_GROUP_SIZE}"
 echo "LIST_TOP=${LIST_TOP}"
 
-step "Check GDAL Parquet driver is available"
-run bash -lc "ogrinfo --formats | grep -i parquet"
-
 step "Create output directory"
 run mkdir -p "$OUT_DIR"
 
@@ -174,6 +172,7 @@ fi
 ROADS_SHP="${SHP_DIR}/gis_osm_roads_free_1.shp"
 WATER_A_SHP="${SHP_DIR}/gis_osm_water_a_free_1.shp"
 PLACES_SHP="${SHP_DIR}/gis_osm_places_free_1.shp"
+POIS_SHP="${SHP_DIR}/gis_osm_pois_free_1.shp"
 
 if [[ ! -f "$ROADS_SHP" ]]; then
   echo "Missing expected shapefile: $ROADS_SHP" >&2
@@ -187,29 +186,228 @@ if [[ ! -f "$PLACES_SHP" ]]; then
   echo "Missing expected shapefile: $PLACES_SHP" >&2
   exit 1
 fi
-
-COMMON_LCO=(
-  -lco "COMPRESSION=${COMPRESSION}"
-  -lco "GEOMETRY_ENCODING=WKB"
-  -lco "WRITE_COVERING_BBOX=YES"
-  -lco "ROW_GROUP_SIZE=${ROW_GROUP_SIZE}"
-)
-
-if [[ "$SORT_BY_BBOX" == "1" ]]; then
-  COMMON_LCO+=( -lco "SORT_BY_BBOX=YES" )
+if [[ ! -f "$POIS_SHP" ]]; then
+  echo "Missing expected shapefile: $POIS_SHP" >&2
+  exit 1
 fi
 
-step "Convert AOI-filtered roads (lines) -> GeoParquet"
-run ogr2ogr -f Parquet "${OUT_DIR}/roads.parquet" "$ROADS_SHP" -spat $BBOX "${COMMON_LCO[@]}"
+read -r MIN_LON MIN_LAT MAX_LON MAX_LAT <<<"$BBOX"
 
-step "Convert AOI-filtered water areas (polygons) -> GeoParquet"
-run ogr2ogr -f Parquet "${OUT_DIR}/water_areas.parquet" "$WATER_A_SHP" -spat $BBOX "${COMMON_LCO[@]}"
+step "Convert AOI-filtered source shapefiles to raw GeoParquet via DuckDB Spatial"
+run rm -f \
+  "${OUT_DIR}/roads_raw.parquet" \
+  "${OUT_DIR}/roads.parquet" \
+  "${OUT_DIR}/water_areas_raw.parquet" \
+  "${OUT_DIR}/places_raw.parquet" \
+  "${OUT_DIR}/pois_raw.parquet" \
+  "${OUT_DIR}/flood_zones.parquet" \
+  "${OUT_DIR}/places.parquet"
+run duckdb :memory: <<SQL
+INSTALL spatial;
+LOAD spatial;
 
-step "Convert AOI-filtered places (points) -> GeoParquet"
-run ogr2ogr -f Parquet "${OUT_DIR}/places.parquet" "$PLACES_SHP" -spat $BBOX "${COMMON_LCO[@]}"
+COPY (
+  SELECT
+    osm_id,
+    code,
+    fclass,
+    name,
+    ref,
+    oneway,
+    maxspeed,
+    layer,
+    bridge,
+    tunnel,
+    CAST(geom AS GEOMETRY) AS geometry
+  FROM ST_Read(
+    '${ROADS_SHP}',
+    spatial_filter_box := {min_x: ${MIN_LON}, min_y: ${MIN_LAT}, max_x: ${MAX_LON}, max_y: ${MAX_LAT}}
+  )
+) TO '${OUT_DIR}/roads_raw.parquet'
+(FORMAT PARQUET, COMPRESSION '${COMPRESSION}', ROW_GROUP_SIZE ${ROW_GROUP_SIZE});
+
+COPY (
+  SELECT
+    osm_id,
+    code,
+    fclass,
+    name,
+    CAST(geom AS GEOMETRY) AS geom
+  FROM ST_Read(
+    '${WATER_A_SHP}',
+    spatial_filter_box := {min_x: ${MIN_LON}, min_y: ${MIN_LAT}, max_x: ${MAX_LON}, max_y: ${MAX_LAT}}
+  )
+) TO '${OUT_DIR}/water_areas_raw.parquet'
+(FORMAT PARQUET, COMPRESSION '${COMPRESSION}', ROW_GROUP_SIZE ${ROW_GROUP_SIZE});
+
+COPY (
+  SELECT
+    osm_id,
+    code,
+    fclass,
+    population,
+    name,
+    CAST(geom AS GEOMETRY) AS geom
+  FROM ST_Read(
+    '${PLACES_SHP}',
+    spatial_filter_box := {min_x: ${MIN_LON}, min_y: ${MIN_LAT}, max_x: ${MAX_LON}, max_y: ${MAX_LAT}}
+  )
+) TO '${OUT_DIR}/places_raw.parquet'
+(FORMAT PARQUET, COMPRESSION '${COMPRESSION}', ROW_GROUP_SIZE ${ROW_GROUP_SIZE});
+
+COPY (
+  SELECT
+    osm_id,
+    code,
+    fclass,
+    name,
+    CAST(geom AS GEOMETRY) AS geom
+  FROM ST_Read(
+    '${POIS_SHP}',
+    spatial_filter_box := {min_x: ${MIN_LON}, min_y: ${MIN_LAT}, max_x: ${MAX_LON}, max_y: ${MAX_LAT}}
+  )
+) TO '${OUT_DIR}/pois_raw.parquet'
+(FORMAT PARQUET, COMPRESSION '${COMPRESSION}', ROW_GROUP_SIZE ${ROW_GROUP_SIZE});
+SQL
+
+step "Build enriched flood_zones + places from raw extracts"
+run duckdb :memory: <<SQL
+INSTALL spatial;
+LOAD spatial;
+
+COPY (
+SELECT
+  osm_id,
+  code,
+  fclass,
+  name,
+  ref,
+  oneway,
+  maxspeed,
+  layer,
+  bridge,
+  tunnel,
+  CAST(geometry AS GEOMETRY) AS geometry,
+  STRUCT_PACK(
+    xmin := CAST(ST_XMin(geometry) AS FLOAT),
+    ymin := CAST(ST_YMin(geometry) AS FLOAT),
+    xmax := CAST(ST_XMax(geometry) AS FLOAT),
+    ymax := CAST(ST_YMax(geometry) AS FLOAT)
+  ) AS geometry_bbox
+FROM read_parquet('${OUT_DIR}/roads_raw.parquet')
+WHERE geometry IS NOT NULL
+) TO '${OUT_DIR}/roads.parquet'
+(FORMAT PARQUET, COMPRESSION '${COMPRESSION}');
+
+COPY (
+WITH water AS (
+  SELECT
+    CAST(osm_id AS VARCHAR) AS osm_id,
+    CAST(code AS INTEGER) AS code,
+    CAST(fclass AS VARCHAR) AS source_fclass,
+    CAST(name AS VARCHAR) AS water_name,
+    CAST(geom AS GEOMETRY) AS geometry
+  FROM read_parquet('${OUT_DIR}/water_areas_raw.parquet')
+  WHERE geometry IS NOT NULL
+),
+risk_bands AS (
+  SELECT
+    osm_id,
+    code,
+    source_fclass,
+    water_name,
+    CASE
+      WHEN source_fclass IN ('water', 'reservoir') THEN 'high'
+      WHEN source_fclass IN ('riverbank', 'wetland') THEN 'medium'
+      ELSE 'low'
+    END AS flood_risk_level,
+    geometry
+  FROM water
+)
+SELECT
+  osm_id,
+  code,
+  source_fclass,
+  water_name,
+  flood_risk_level,
+  COALESCE(NULLIF(TRIM(water_name), ''), 'Unnamed water area') AS name,
+  geometry,
+  STRUCT_PACK(
+    xmin := CAST(ST_XMin(geometry) AS FLOAT),
+    ymin := CAST(ST_YMin(geometry) AS FLOAT),
+    xmax := CAST(ST_XMax(geometry) AS FLOAT),
+    ymax := CAST(ST_YMax(geometry) AS FLOAT)
+  ) AS geometry_bbox
+FROM risk_bands
+WHERE geometry IS NOT NULL
+) TO '${OUT_DIR}/flood_zones.parquet'
+(FORMAT PARQUET, COMPRESSION '${COMPRESSION}');
+
+COPY (
+WITH settlements AS (
+  SELECT
+    CAST(osm_id AS VARCHAR) AS osm_id,
+    CAST(code AS INTEGER) AS code,
+    CAST(fclass AS VARCHAR) AS fclass,
+    CAST(population AS BIGINT) AS population,
+    CAST(name AS VARCHAR) AS name,
+    CAST(geom AS GEOMETRY) AS geometry,
+    'settlement' AS place_source,
+    0 AS src_priority
+  FROM read_parquet('${OUT_DIR}/places_raw.parquet')
+  WHERE geometry IS NOT NULL
+),
+pois AS (
+  SELECT
+    CAST(osm_id AS VARCHAR) AS osm_id,
+    CAST(code AS INTEGER) AS code,
+    CAST(fclass AS VARCHAR) AS fclass,
+    NULL::BIGINT AS population,
+    CAST(name AS VARCHAR) AS name,
+    CAST(geom AS GEOMETRY) AS geometry,
+    'poi' AS place_source,
+    1 AS src_priority
+  FROM read_parquet('${OUT_DIR}/pois_raw.parquet')
+  WHERE geometry IS NOT NULL
+),
+unioned AS (
+  SELECT * FROM settlements
+  UNION ALL
+  SELECT * FROM pois
+),
+ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY osm_id
+      ORDER BY
+        CASE WHEN name IS NOT NULL AND TRIM(name) <> '' THEN 0 ELSE 1 END,
+        src_priority
+    ) AS rn
+  FROM unioned
+)
+SELECT
+  osm_id,
+  code,
+  fclass,
+  population,
+  name,
+  place_source,
+  geometry,
+  STRUCT_PACK(
+    xmin := CAST(ST_XMin(geometry) AS FLOAT),
+    ymin := CAST(ST_YMin(geometry) AS FLOAT),
+    xmax := CAST(ST_XMax(geometry) AS FLOAT),
+    ymax := CAST(ST_YMax(geometry) AS FLOAT)
+  ) AS geometry_bbox
+FROM ranked
+WHERE rn = 1
+) TO '${OUT_DIR}/places.parquet'
+(FORMAT PARQUET, COMPRESSION '${COMPRESSION}');
+SQL
 
 step "Verify outputs exist and look non-empty"
-run bash -lc "for f in \"${OUT_DIR}/roads.parquet\" \"${OUT_DIR}/water_areas.parquet\" \"${OUT_DIR}/places.parquet\"; do if [[ -s \"\$f\" ]]; then echo \"OK: \$f\"; else echo \"MISSING/EMPTY: \$f\"; exit 1; fi; done"
+run bash -lc "for f in \"${OUT_DIR}/roads.parquet\" \"${OUT_DIR}/flood_zones.parquet\" \"${OUT_DIR}/places.parquet\"; do if [[ -s \"\$f\" ]]; then echo \"OK: \$f\"; else echo \"MISSING/EMPTY: \$f\"; exit 1; fi; done"
 
 step "Report number of created GeoParquet files"
 echo "+ created file count:"
@@ -219,9 +417,16 @@ step "Quick DuckDB counts (non-empty check)"
 run duckdb :memory: <<SQL
 SELECT 'roads' AS layer, COUNT(*) AS n FROM read_parquet('${OUT_DIR}/roads.parquet')
 UNION ALL
-SELECT 'water_areas' AS layer, COUNT(*) AS n FROM read_parquet('${OUT_DIR}/water_areas.parquet')
+SELECT 'flood_zones' AS layer, COUNT(*) AS n FROM read_parquet('${OUT_DIR}/flood_zones.parquet')
 UNION ALL
 SELECT 'places' AS layer, COUNT(*) AS n FROM read_parquet('${OUT_DIR}/places.parquet');
 SQL
+
+step "Cleanup intermediate raw parquet files"
+run rm -f \
+  "${OUT_DIR}/roads_raw.parquet" \
+  "${OUT_DIR}/water_areas_raw.parquet" \
+  "${OUT_DIR}/places_raw.parquet" \
+  "${OUT_DIR}/pois_raw.parquet"
 
 step "Done"

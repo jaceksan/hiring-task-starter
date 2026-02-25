@@ -16,6 +16,7 @@ def query_points_rows(
     ymin_expr: str,
     name_expr: str,
     class_expr: str,
+    extra_props_expr: str,
     limit: int,
 ) -> list[tuple]:
     return conn.execute(
@@ -24,7 +25,8 @@ def query_points_rows(
                CAST({xmin_expr} AS DOUBLE) AS lon,
                CAST({ymin_expr} AS DOUBLE) AS lat,
                {name_expr},
-               {class_expr}
+               {class_expr},
+               {extra_props_expr}
           FROM read_parquet(?)
          WHERE {where_sql}
          LIMIT {int(limit)}
@@ -67,7 +69,8 @@ def query_points_rows_sampled(
                CAST(lon_raw AS DOUBLE) AS lon,
                CAST(lat_raw AS DOUBLE) AS lat,
                {name_expr},
-               {class_expr}
+               {class_expr},
+               NULL AS extra_props_json
           FROM (
                 SELECT {id_col} AS id_raw,
                        {xmin_expr} AS lon_raw,
@@ -94,6 +97,7 @@ def query_points_rows_for_ids(
     ymin_expr: str,
     name_expr: str,
     class_expr: str,
+    extra_props_expr: str,
     ids: list[str],
     limit: int,
 ) -> list[tuple]:
@@ -103,7 +107,8 @@ def query_points_rows_for_ids(
                CAST({xmin_expr} AS DOUBLE) AS lon,
                CAST({ymin_expr} AS DOUBLE) AS lat,
                {name_expr},
-               {class_expr}
+               {class_expr},
+               {extra_props_expr}
           FROM read_parquet(?)
          WHERE {where_sql}
            AND CAST({id_col} AS VARCHAR) = ANY(?)
@@ -123,6 +128,7 @@ def query_geometry_rows_no_policy(
     geom_col: str,
     name_expr: str,
     class_expr: str,
+    extra_props_expr: str,
     limit: int,
 ) -> list[tuple]:
     return conn.execute(
@@ -130,7 +136,8 @@ def query_geometry_rows_no_policy(
         SELECT CAST({id_col} AS VARCHAR) AS id,
                CAST({geom_col} AS BLOB) AS geom_wkb,
                {name_expr},
-               {class_expr}
+               {class_expr},
+               {extra_props_expr}
           FROM read_parquet(?)
          WHERE {where_sql}
          LIMIT {int(limit)}
@@ -188,6 +195,7 @@ def query_geometry_rows_for_ids(
     geom_col: str,
     name_expr: str,
     class_expr: str,
+    extra_props_expr: str,
     ids: list[str],
     limit: int,
 ) -> list[tuple]:
@@ -196,7 +204,8 @@ def query_geometry_rows_for_ids(
         SELECT CAST({id_col} AS VARCHAR) AS id,
                CAST({geom_col} AS BLOB) AS geom_wkb,
                {name_expr},
-               {class_expr}
+               {class_expr},
+               {extra_props_expr}
           FROM read_parquet(?)
          WHERE {where_sql}
            AND CAST({id_col} AS VARCHAR) = ANY(?)

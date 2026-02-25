@@ -18,7 +18,11 @@ import { ChatDrawer } from "./threadId/ChatDrawer";
 import { PerfPanel } from "./threadId/PerfPanel";
 import { asRecord, calcBboxFromCenterZoom } from "./threadId/plotlyMapUtils";
 import { TelemetryPanel } from "./threadId/TelemetryPanel";
-import type { FloodRiskLevel, PlotPerfStats } from "./threadId/types";
+import type {
+	FloodRiskLevel,
+	PlaceSourceType,
+	PlotPerfStats,
+} from "./threadId/types";
 import { useInvokeAgent } from "./threadId/useInvokeAgent";
 import { usePlotController } from "./threadId/usePlotController";
 import { useTelemetry } from "./threadId/useTelemetry";
@@ -35,6 +39,11 @@ const FLOOD_RISK_LEVELS: { id: FloodRiskLevel; label: string }[] = [
 	{ id: "high", label: "High (100y)" },
 	{ id: "medium", label: "Medium (50y+)" },
 	{ id: "any", label: "Any risk" },
+];
+
+const PLACE_SOURCE_TYPES: { id: PlaceSourceType; label: string }[] = [
+	{ id: "settlement", label: "Settlements" },
+	{ id: "poi", label: "POIs" },
 ];
 
 export const Route = createFileRoute("/thread/$threadId")({
@@ -125,6 +134,9 @@ function RouteComponent() {
 	const [selectedFloodZoneIds, setSelectedFloodZoneIds] = useState<string[]>(
 		[],
 	);
+	const [selectedPlaceSourceTypes, setSelectedPlaceSourceTypes] = useState<
+		PlaceSourceType[]
+	>(["settlement", "poi"]);
 	const slowToastLastShownAtRef = useRef<number>(0);
 	useEffect(() => {
 		if (!slowToast) return;
@@ -291,6 +303,7 @@ function RouteComponent() {
 		scenarioId,
 		floodRiskLevel,
 		selectedFloodZoneIds,
+		selectedPlaceSourceTypes,
 		roadHighlightTypes: selectedRoadTypes,
 		onPlotRefreshStats,
 	});
@@ -304,6 +317,7 @@ function RouteComponent() {
 			scenarioId,
 			floodRiskLevel,
 			selectedFloodZoneIds,
+			selectedPlaceSourceTypes,
 			autoMinimizeChat,
 			mapView,
 			getCurrentBbox,
@@ -548,6 +562,47 @@ function RouteComponent() {
 								Clear selected zones ({selectedFloodZoneIds.length})
 							</Button>
 						)}
+					</div>
+					<div className="mt-3 pt-2 border-t border-border">
+						<div className="font-semibold">Places</div>
+						<div className="text-muted-foreground mt-0.5 mb-2">
+							Show/hide place source categories.
+						</div>
+						<div className="space-y-1.5">
+							{PLACE_SOURCE_TYPES.map((item) => (
+								<label
+									key={item.id}
+									className="flex items-center justify-between gap-2 cursor-pointer"
+								>
+									<span>{item.label}</span>
+									<input
+										type="checkbox"
+										checked={selectedPlaceSourceTypes.includes(item.id)}
+										onChange={(e) => {
+											const checked = e.currentTarget.checked;
+											setSelectedPlaceSourceTypes((prev) => {
+												const next = new Set(prev);
+												if (checked) next.add(item.id);
+												else next.delete(item.id);
+												const out = PLACE_SOURCE_TYPES.map((t) => t.id).filter(
+													(id) => next.has(id),
+												);
+												const bbox = mapView.bbox;
+												if (bbox) {
+													schedulePlotRefresh({
+														center: mapView.center,
+														zoom: mapView.zoom,
+														bbox,
+														selectedPlaceSourceTypes: out,
+													});
+												}
+												return out;
+											});
+										}}
+									/>
+								</label>
+							))}
+						</div>
 					</div>
 				</div>
 				{telemetryOpen && (

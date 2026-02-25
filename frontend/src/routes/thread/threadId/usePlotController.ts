@@ -12,6 +12,7 @@ import type {
 	FloodRiskLevel,
 	MapCenter,
 	MapViewState,
+	PlaceSourceType,
 	PlotPerfStats,
 	ViewportSize,
 } from "./types";
@@ -29,6 +30,7 @@ export function usePlotController(args: {
 	scenarioId: string;
 	floodRiskLevel: FloodRiskLevel;
 	selectedFloodZoneIds: string[];
+	selectedPlaceSourceTypes: PlaceSourceType[];
 	roadHighlightTypes: string[];
 	onPlotRefreshStats?: (stats: PlotPerfStats | null) => void;
 }) {
@@ -38,6 +40,7 @@ export function usePlotController(args: {
 		scenarioId,
 		floodRiskLevel,
 		selectedFloodZoneIds,
+		selectedPlaceSourceTypes,
 		roadHighlightTypes,
 		onPlotRefreshStats,
 	} = args;
@@ -195,17 +198,21 @@ export function usePlotController(args: {
 			bbox: BBox;
 			floodRiskLevel?: FloodRiskLevel;
 			selectedFloodZoneIds?: string[];
+			selectedPlaceSourceTypes?: PlaceSourceType[];
 		}) => {
 			if (invokeBusyRef.current) return;
 			const effectiveFloodRiskLevel = next.floodRiskLevel ?? floodRiskLevel;
 			const effectiveSelectedFloodZoneIds =
 				next.selectedFloodZoneIds ?? selectedFloodZoneIds;
+			const effectiveSelectedPlaceSourceTypes =
+				next.selectedPlaceSourceTypes ?? selectedPlaceSourceTypes;
 
 			const key = JSON.stringify({
 				s: scenarioId,
 				e: engine,
 				r: effectiveFloodRiskLevel,
 				zones: [...new Set(effectiveSelectedFloodZoneIds)].sort(),
+				ps: [...new Set(effectiveSelectedPlaceSourceTypes)].sort(),
 				z: Math.round(next.zoom * 10) / 10,
 				rt: [...new Set(roadHighlightTypes)].sort(),
 				b: {
@@ -242,6 +249,7 @@ export function usePlotController(args: {
 								context: {
 									floodRiskLevel: effectiveFloodRiskLevel,
 									selectedFloodZoneIds: effectiveSelectedFloodZoneIds,
+									placeSourceTypes: effectiveSelectedPlaceSourceTypes,
 								},
 							},
 							highlights: currentHighlightRef.current(),
@@ -310,6 +318,7 @@ export function usePlotController(args: {
 			roadHighlightTypes,
 			scenarioId,
 			selectedFloodZoneIds,
+			selectedPlaceSourceTypes,
 		],
 	);
 

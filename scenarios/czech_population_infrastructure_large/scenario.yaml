@@ -32,6 +32,7 @@ layers:
         nameColumn: COALESCE(ref, name)
         classColumn: fclass
         geometryColumn: geometry
+        propertyColumns: [ref, oneway, maxspeed, bridge, tunnel, code]
         minZoomForGeometry: 11.5
         renderPolicy:
           # Show a readable “overview” at low zoom by decoding only major road classes,
@@ -85,20 +86,20 @@ layers:
     kind: polygons
     source:
       type: geoparquet
-      path: data/derived/czech_population_infrastructure_large/cz_bbox/water_areas.parquet
+      path: data/derived/czech_population_infrastructure_large/cz_bbox/flood_zones.parquet
       geoparquet:
         idColumn: osm_id
-        nameColumn: name
-        classColumn: fclass
+        nameColumn: water_name
+        classColumn: flood_risk_level
         geometryColumn: geometry
+        propertyColumns: [water_name, source_fclass, code]
         minZoomForGeometry: 11.5
         renderPolicy:
           # Same idea as roads: show only the most significant water polygons when zoomed out.
           minZoomForGeometryByClass:
-            water: 6.0
-            reservoir: 6.0
-            wetland: 9.5
-            riverbank: 11.5
+            high: 6.0
+            medium: 7.0
+            low: 9.5
           maxCandidatesByZoom:
             7.5: 600
             9.0: 1200
@@ -111,8 +112,8 @@ layers:
         width: 1
     metadata:
       floodRisk:
-        property: flood_risk_level
-        waterEntityProperty: water_name
+        property: fclass
+        waterEntityProperty: name
         defaultFillColor: "rgba(30, 136, 229, 0.15)"
         bands:
           - id: high
@@ -142,6 +143,7 @@ layers:
         nameColumn: name
         classColumn: fclass
         geometryColumn: geometry
+        propertyColumns: [population, place_source, code]
         renderPolicy:
           # Keep the low-zoom overview interactive: this dataset contains *a lot* of place points.
           # Capping early dramatically reduces backend time spent scanning/reading candidates.

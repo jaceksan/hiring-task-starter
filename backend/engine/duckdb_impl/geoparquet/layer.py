@@ -10,6 +10,7 @@ from engine.duckdb_impl.geoparquet.bbox import geoparquet_bbox_exprs
 from engine.duckdb_impl.geoparquet.config import (
     class_expr,
     default_geom_min_zoom,
+    extra_props_expr,
     name_expr,
     parse_columns,
     safety_limit,
@@ -78,6 +79,7 @@ def query_geoparquet_layer_bbox(
 
     n_expr = name_expr(cols.name_col)
     c_expr = class_expr(cols.class_col)
+    p_expr = extra_props_expr(cols.property_cols)
 
     if kind == "points":
         return query_geoparquet_points_layer_bbox(
@@ -160,6 +162,7 @@ def query_geoparquet_layer_bbox(
             geom_col=cols.geom_col,
             name_expr=n_expr,
             class_expr=c_expr,
+            extra_props_expr=p_expr,
             limit=cand_limit,
         )
         policy_meta = {
@@ -214,6 +217,7 @@ def query_geoparquet_layer_bbox(
             geom_col=cols.geom_col,
             name_expr=n_expr,
             class_expr=c_expr,
+            extra_props_expr=p_expr,
             ids=ids,
             limit=cand_limit,
         )

@@ -9,6 +9,7 @@ import duckdb
 from engine.duckdb_impl.geoparquet.bbox import geoparquet_bbox_exprs
 from engine.duckdb_impl.geoparquet.config import (
     class_expr,
+    extra_props_expr,
     name_expr,
     parse_columns,
     safety_limit,
@@ -66,6 +67,7 @@ def query_geoparquet_points_layer_bbox(
         max_candidates_int is not None
         and max_candidates_int < safety
         and max(span_lon, span_lat) > 1.0
+        and not cols.property_cols
     )
     cap_meta: dict[str, Any] = {
         "safetyLimit": int(safety),
@@ -80,6 +82,7 @@ def query_geoparquet_points_layer_bbox(
 
     n_expr = name_expr(cols.name_col)
     c_expr = class_expr(cols.class_col)
+    p_expr = extra_props_expr(cols.property_cols)
 
     t_db0 = time.perf_counter()
     rows = (
@@ -106,6 +109,7 @@ def query_geoparquet_points_layer_bbox(
             ymin_expr=bbox["ymin"],
             name_expr=n_expr,
             class_expr=c_expr,
+            extra_props_expr=p_expr,
             limit=cand_limit,
         )
     )

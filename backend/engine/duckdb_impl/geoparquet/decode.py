@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from shapely.wkb import loads as wkb_loads
@@ -7,10 +8,33 @@ from shapely.wkb import loads as wkb_loads
 from layers.types import LineFeature, PointFeature, PolygonFeature
 
 
+def _load_extra_props(raw: Any) -> dict[str, Any]:
+    if raw is None:
+        return {}
+    if isinstance(raw, dict):
+        return {str(k): v for k, v in raw.items()}
+    if isinstance(raw, str):
+        s = raw.strip()
+        if not s:
+            return {}
+        try:
+            parsed = json.loads(s)
+        except Exception:
+            return {}
+        return (
+            {str(k): v for k, v in parsed.items()} if isinstance(parsed, dict) else {}
+        )
+    return {}
+
+
 def decode_point_rows(rows: list[tuple]) -> list[PointFeature]:
     feats: list[PointFeature] = []
-    for fid, lon, lat, name, fclass in rows:
-        props: dict[str, Any] = {}
+    for row in rows:
+        if len(row) < 5:
+            continue
+        fid, lon, lat, name, fclass = row[:5]
+        extra_props = _load_extra_props(row[5] if len(row) > 5 else None)
+        props: dict[str, Any] = dict(extra_props)
         if name:
             props["name"] = str(name)
             props["label"] = str(name)
@@ -22,8 +46,8 @@ def decode_point_rows(rows: list[tuple]) -> list[PointFeature]:
     return feats
 
 
-def _props(name, fclass) -> dict[str, Any]:
-    props: dict[str, Any] = {}
+def _props(name: Any, fclass: Any, extra_props: Any | None = None) -> dict[str, Any]:
+    props: dict[str, Any] = _load_extra_props(extra_props)
     if name:
         props["name"] = str(name)
     if fclass:
@@ -33,7 +57,11 @@ def _props(name, fclass) -> dict[str, Any]:
 
 def decode_line_rows(rows: list[tuple]) -> list[LineFeature]:
     feats: list[LineFeature] = []
-    for fid, geom_wkb, name, fclass in rows:
+    for row in rows:
+        if len(row) < 4:
+            continue
+        fid, geom_wkb, name, fclass = row[:4]
+        extra_props = row[4] if len(row) > 4 else None
         try:
             geom = wkb_loads(bytes(geom_wkb)) if geom_wkb is not None else None
         except Exception:
@@ -41,7 +69,7 @@ def decode_line_rows(rows: list[tuple]) -> list[LineFeature]:
         if geom is None:
             continue
 
-        props = _props(name, fclass)
+        props = _props(name, fclass, extra_props)
         if geom.geom_type == "LineString":
             coords = [(float(x), float(y)) for x, y in geom.coords]
             if len(coords) >= 2:
@@ -68,7 +96,11 @@ def decode_polygon_rows(rows: list[tuple]) -> list[PolygonFeature]:
             return
         feats2.append(PolygonFeature(id=pid, rings=[ext], props=props))
 
-    for fid, geom_wkb, name, fclass in rows:
+    for row in rows:
+        if len(row) < 4:
+            continue
+        fid, geom_wkb, name, fclass = row[:4]
+        extra_props = row[4] if len(row) > 4 else None
         try:
             geom = wkb_loads(bytes(geom_wkb)) if geom_wkb is not None else None
         except Exception:
@@ -76,7 +108,7 @@ def decode_polygon_rows(rows: list[tuple]) -> list[PolygonFeature]:
         if geom is None:
             continue
 
-        props = _props(name, fclass)
+        props = _props(name, fclass, extra_props)
         if geom.geom_type == "Polygon":
             _poly_to_feature(str(fid), geom, props)
         elif geom.geom_type == "MultiPolygon":
