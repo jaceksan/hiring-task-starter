@@ -169,7 +169,10 @@ def plot(body: ApiPlotRequest):
         if body.engine is None
         else _normalize_engine(body.engine)
     )
-    if (scenario.dataSize or "small").lower() == "large":
+    has_geoparquet_layers = any(
+        layer_cfg.source.type == "geoparquet" for layer_cfg in (scenario.layers or [])
+    )
+    if (scenario.dataSize or "small").lower() == "large" or has_geoparquet_layers:
         engine_name = "duckdb"
     t0 = time.perf_counter()
     result = _engine(engine_name).get(ctx)

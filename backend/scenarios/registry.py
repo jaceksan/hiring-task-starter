@@ -9,6 +9,8 @@ import yaml
 
 from scenarios.types import ScenarioConfig
 
+DEFAULT_SCENARIO_ID = "prague_population_infrastructure_small"
+
 
 def _repo_root() -> Path:
     # .../hiring-task-starter/backend/scenarios/registry.py -> repo root is 2 levels up
@@ -53,30 +55,40 @@ def get_registry() -> dict[str, ScenarioEntry]:
     return out
 
 
+def _enabled_registry() -> dict[str, ScenarioEntry]:
+    reg = get_registry()
+    return {sid: entry for sid, entry in reg.items() if bool(entry.config.enabled)}
+
+
 def default_scenario_id() -> str:
-    reg = get_registry()
+    reg = _enabled_registry()
     if not reg:
-        return "prague_transport"
-    if "prague_transport" in reg:
-        return "prague_transport"
+        return DEFAULT_SCENARIO_ID
+    if DEFAULT_SCENARIO_ID in reg:
+        return DEFAULT_SCENARIO_ID
     # Fall back to stable ordering.
-    return next(iter(reg.keys()), "prague_transport")
+    return next(iter(reg.keys()), DEFAULT_SCENARIO_ID)
 
 
-def list_scenarios() -> list[ScenarioConfig]:
-    reg = get_registry()
+def list_scenarios(*, enabled_only: bool = True) -> list[ScenarioConfig]:
+    reg = _enabled_registry() if enabled_only else get_registry()
     return [e.config for e in reg.values()]
 
 
 def get_scenario(scenario_id: str | None) -> ScenarioEntry:
-    reg = get_registry()
-    if not reg:
+    reg_enabled = _enabled_registry()
+    reg_all = get_registry()
+    if not reg_enabled:
         raise RuntimeError("No scenarios discovered under `scenarios/*/scenario.yaml`")
-    sid = (scenario_id or "").strip() or default_scenario_id()
-    if sid not in reg:
+    sid = (scenario_id or "").strip()
+    # Allow explicitly requesting a disabled scenario by ID for local/dev compatibility.
+    if sid and sid in reg_all:
+        return reg_all[sid]
+    sid = sid or default_scenario_id()
+    if sid not in reg_enabled:
         # MVP behavior: unknown scenario falls back to default.
         sid = default_scenario_id()
-    return reg[sid]
+    return reg_enabled[sid]
 
 
 def resolve_repo_path(repo_relative: str) -> Path:

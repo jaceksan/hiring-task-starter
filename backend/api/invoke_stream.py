@@ -196,7 +196,11 @@ async def handle_incoming_message(thread):
             if thread.engine is None
             else _normalize_engine(thread.engine)
         )
-        if (scenario.dataSize or "small").lower() == "large":
+        has_geoparquet_layers = any(
+            layer_cfg.source.type == "geoparquet"
+            for layer_cfg in (scenario.layers or [])
+        )
+        if (scenario.dataSize or "small").lower() == "large" or has_geoparquet_layers:
             engine_name = "duckdb"
         t0 = time.perf_counter()
         result = _engine(engine_name).get(ctx)

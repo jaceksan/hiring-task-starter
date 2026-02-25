@@ -29,8 +29,8 @@ def test_plot_endpoint_returns_plot_payload():
     assert "mapbox" in data["layout"]
     meta = data["layout"].get("meta") or {}
     assert "stats" in meta
-    assert meta["stats"].get("engine") == "in_memory"
-    assert meta["stats"].get("scenarioId") == "prague_transport"
+    assert meta["stats"].get("engine") == "duckdb"
+    assert meta["stats"].get("scenarioId") == "prague_population_infrastructure_small"
 
 
 def test_plot_endpoint_can_return_clusters_at_low_zoom():

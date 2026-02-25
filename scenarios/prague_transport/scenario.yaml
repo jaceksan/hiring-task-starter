@@ -2,7 +2,8 @@ id: prague_transport
 title: Prague Flood & Transport
 
 dataSize: small
-enabled: true
+# Legacy scenario kept on disk temporarily while the simplified demo backend is migrated.
+enabled: false
 
 defaultView:
   center:

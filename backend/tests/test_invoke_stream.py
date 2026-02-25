@@ -52,7 +52,7 @@ def test_invoke_stream_flooded_count_includes_answer_text():
             ApiMessage(
                 id=1,
                 author=ApiMessageSenderEnum.human,
-                text="how many pubs are flooded?",
+                text="how many places are flooded?",
             )
         ],
         map=ApiMapContext(
