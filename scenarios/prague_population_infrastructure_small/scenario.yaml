@@ -88,6 +88,27 @@ layers:
       line:
         color: "rgba(30, 136, 229, 0.45)"
         width: 1
+    metadata:
+      floodRisk:
+        property: flood_risk_level
+        waterEntityProperty: water_name
+        defaultFillColor: "rgba(30, 136, 229, 0.15)"
+        bands:
+          - id: high
+            label: "High (100y)"
+            value: high
+            fillColor: "rgba(229, 57, 53, 0.35)"
+            lineColor: "rgba(229, 57, 53, 0.75)"
+          - id: medium
+            label: "Medium (50y+)"
+            value: medium
+            fillColor: "rgba(251, 140, 0, 0.28)"
+            lineColor: "rgba(251, 140, 0, 0.70)"
+          - id: low
+            label: "Any risk"
+            value: low
+            fillColor: "rgba(30, 136, 229, 0.20)"
+            lineColor: "rgba(30, 136, 229, 0.60)"
 
   - id: places
     title: "Places (points)"

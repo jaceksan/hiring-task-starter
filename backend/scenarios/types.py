@@ -34,6 +34,33 @@ class ScenarioLayerSource(BaseModel):
     geoparquet: dict[str, Any] | None = None
 
 
+class ScenarioFloodRiskBand(BaseModel):
+    # Band identifier used by UI and backend logic.
+    id: str
+    label: str | None = None
+    # Exact match for categorical source values (e.g. "high", "Q100").
+    value: str | int | float | None = None
+    # Optional numeric range for continuous source values.
+    min: float | None = None
+    max: float | None = None
+    fillColor: str
+    lineColor: str | None = None
+
+
+class ScenarioFloodRiskStyle(BaseModel):
+    # Property in feature props carrying risk signal.
+    property: str
+    bands: list[ScenarioFloodRiskBand] = Field(default_factory=list)
+    defaultFillColor: str | None = None
+    # Optional property containing related river/lake/water entity naming.
+    waterEntityProperty: str | None = None
+
+
+class ScenarioLayerMetadata(BaseModel):
+    # Optional metadata schema used to drive flood-zone rendering and hover labels.
+    floodRisk: ScenarioFloodRiskStyle | None = None
+
+
 class ScenarioLayer(BaseModel):
     """
     A generic layer definition.
@@ -48,6 +75,8 @@ class ScenarioLayer(BaseModel):
     source: ScenarioLayerSource
     # Plot styling hints (free-form, interpreted by plot builder).
     style: dict[str, Any] = Field(default_factory=dict)
+    # Optional semantic metadata used by higher-level rendering/routing.
+    metadata: ScenarioLayerMetadata | None = None
 
 
 class ScenarioProximityRule(BaseModel):
