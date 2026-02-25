@@ -11,9 +11,8 @@ from pydantic import BaseModel
 
 from api.invoke_stream import (
     _apply_lod_cached,
-    _default_engine_name,
     _engine,
-    _normalize_engine,
+    _resolve_engine_name_for_scenario,
     handle_incoming_message,
 )
 from engine.duckdb_impl.geoparquet.pins import query_geoparquet_layer_pinned_ids
@@ -164,16 +163,9 @@ def plot(body: ApiPlotRequest):
         ),
     )
 
-    engine_name = (
-        _default_engine_name()
-        if body.engine is None
-        else _normalize_engine(body.engine)
+    engine_name = _resolve_engine_name_for_scenario(
+        scenario=scenario, requested_engine=body.engine
     )
-    has_geoparquet_layers = any(
-        layer_cfg.source.type == "geoparquet" for layer_cfg in (scenario.layers or [])
-    )
-    if (scenario.dataSize or "small").lower() == "large" or has_geoparquet_layers:
-        engine_name = "duckdb"
     t0 = time.perf_counter()
     result = _engine(engine_name).get(ctx)
     t_engine_get_ms = (time.perf_counter() - t0) * 1000.0
@@ -395,6 +387,8 @@ def scenarios():
                 "id": s.id,
                 "title": s.title,
                 "defaultView": s.defaultView.model_dump(),
+                "default": bool(s.default),
+                "enginePolicy": str(s.runtime.enginePolicy),
                 "dataSize": s.dataSize,
                 "hasGeoParquet": bool(has_geoparquet),
                 "enabled": bool(s.enabled),

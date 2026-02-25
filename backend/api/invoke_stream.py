@@ -41,6 +41,30 @@ def _normalize_engine(name: str | None) -> str:
     return "in_memory"
 
 
+def _resolve_engine_name_for_scenario(*, scenario, requested_engine: str | None) -> str:
+    """
+    Resolve effective engine using YAML policy + layer source auto-detection.
+    """
+    runtime_policy = (
+        getattr(getattr(scenario, "runtime", None), "enginePolicy", "auto") or "auto"
+    )
+    if runtime_policy in {"duckdb", "in_memory"}:
+        return runtime_policy
+
+    # Auto policy: if any layer uses GeoParquet, force DuckDB.
+    has_geoparquet_layers = any(
+        layer_cfg.source.type == "geoparquet" for layer_cfg in (scenario.layers or [])
+    )
+    if has_geoparquet_layers:
+        return "duckdb"
+
+    return (
+        _default_engine_name()
+        if requested_engine is None
+        else _normalize_engine(requested_engine)
+    )
+
+
 @lru_cache(maxsize=2)
 def _engine(name: str) -> LayerEngine:
     if name == "duckdb":
@@ -191,17 +215,9 @@ async def handle_incoming_message(thread):
             ),
         )
 
-        engine_name = (
-            _default_engine_name()
-            if thread.engine is None
-            else _normalize_engine(thread.engine)
+        engine_name = _resolve_engine_name_for_scenario(
+            scenario=scenario, requested_engine=thread.engine
         )
-        has_geoparquet_layers = any(
-            layer_cfg.source.type == "geoparquet"
-            for layer_cfg in (scenario.layers or [])
-        )
-        if (scenario.dataSize or "small").lower() == "large" or has_geoparquet_layers:
-            engine_name = "duckdb"
         t0 = time.perf_counter()
         result = _engine(engine_name).get(ctx)
         t_engine_get_ms = (time.perf_counter() - t0) * 1000.0

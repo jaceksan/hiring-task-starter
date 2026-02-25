@@ -5,6 +5,9 @@ title: "Prague: Population & Infrastructure (GeoParquet)"
 # Intended as a small, reproducible fixture to exercise the DuckDB+GeoParquet path.
 dataSize: small
 enabled: true
+default: true
+runtime:
+  enginePolicy: auto
 
 defaultView:
   center:

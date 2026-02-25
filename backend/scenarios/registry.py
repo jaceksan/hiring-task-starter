@@ -9,8 +9,6 @@ import yaml
 
 from scenarios.types import ScenarioConfig
 
-DEFAULT_SCENARIO_ID = "prague_population_infrastructure_small"
-
 
 def _repo_root() -> Path:
     # .../hiring-task-starter/backend/scenarios/registry.py -> repo root is 2 levels up
@@ -63,11 +61,17 @@ def _enabled_registry() -> dict[str, ScenarioEntry]:
 def default_scenario_id() -> str:
     reg = _enabled_registry()
     if not reg:
-        return DEFAULT_SCENARIO_ID
-    if DEFAULT_SCENARIO_ID in reg:
-        return DEFAULT_SCENARIO_ID
-    # Fall back to stable ordering.
-    return next(iter(reg.keys()), DEFAULT_SCENARIO_ID)
+        raise RuntimeError(
+            "No enabled scenarios discovered under `scenarios/*/scenario.yaml`"
+        )
+
+    # Prefer YAML-defined default scenario, if configured.
+    defaults = [sid for sid, entry in reg.items() if bool(entry.config.default)]
+    if defaults:
+        return sorted(defaults)[0]
+
+    # Fall back to stable ordering over enabled scenarios.
+    return next(iter(reg.keys()))
 
 
 def list_scenarios(*, enabled_only: bool = True) -> list[ScenarioConfig]:

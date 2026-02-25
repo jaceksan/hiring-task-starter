@@ -4,6 +4,9 @@ title: "Czech Republic: Population & Infrastructure (Large)"
 # GeoParquet-backed large scenario (query-on-read via DuckDB `read_parquet()`).
 enabled: true
 dataSize: large
+default: false
+runtime:
+  enginePolicy: auto
 
 defaultView:
   center:

@@ -24,6 +24,7 @@ LayerSourceType = Literal[
     "geojson_polygons", "overpass_points", "overpass_lines", "geoparquet"
 ]
 GeometryKind = Literal["points", "lines", "polygons"]
+EnginePolicy = Literal["auto", "duckdb", "in_memory"]
 
 
 class ScenarioLayerSource(BaseModel):
@@ -112,6 +113,11 @@ class ScenarioPlot(BaseModel):
     traceTitles: dict[str, str] | None = None
 
 
+class ScenarioRuntime(BaseModel):
+    # "auto" derives engine from layer source types, while explicit values force one engine.
+    enginePolicy: EnginePolicy = "auto"
+
+
 class ScenarioConfig(BaseModel):
     id: str
     title: str
@@ -119,6 +125,8 @@ class ScenarioConfig(BaseModel):
     # UI + engine hints
     dataSize: str = Field(default="small")  # "small" | "large"
     enabled: bool = True
+    default: bool = False
+    runtime: ScenarioRuntime = Field(default_factory=ScenarioRuntime)
 
     # Optional per-scenario example prompts shown in the UI.
     examplePrompts: list[str] | None = None
