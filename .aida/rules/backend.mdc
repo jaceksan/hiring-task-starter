@@ -1,0 +1,14 @@
+---
+description: Backend guardrails (FastAPI and DuckDB)
+---
+
+## Runtime and environment
+
+- Assume backend hot reload normally works.
+- For ad-hoc Python commands in backend, use `uv run` instead of system Python.
+
+## Config and cache behavior
+
+- Scenario YAML and related layer config may be cached in-process.
+- After changing scenario config, prefer the UI action **Reload config** (`POST /dev/clear-caches`).
+- Mention backend restart only if dependency/import-time changes require it or reloader is stuck.

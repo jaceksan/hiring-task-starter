@@ -1,0 +1,48 @@
+# AIDA validation policy
+#
+# This file wires domains -> pipelines -> steps (command_id + processor_id).
+# Initially empty (validate may no-op until you configure routes).
+validation_policy:
+  codegen: []
+  routes:
+    - domain: backend
+      pipeline: backend_fast
+    - domain: frontend
+      pipeline: frontend_fast
+    - domain: frontend_e2e
+      pipeline: frontend_e2e
+    - domain: repo
+      pipeline: repo_fast
+
+  pipelines:
+    backend_fast:
+      steps:
+        - command_id: lint_backend
+          processor_id: passthrough
+        - command_id: types_backend
+          processor_id: passthrough
+        - command_id: test_backend
+          processor_id: pytest
+
+    frontend_fast:
+      steps:
+        - command_id: lint_frontend
+          processor_id: passthrough
+        - command_id: types_frontend
+          processor_id: passthrough
+
+    frontend_e2e:
+      steps:
+        - command_id: lint_frontend
+          processor_id: passthrough
+        - command_id: types_frontend
+          processor_id: passthrough
+        - command_id: test_e2e_frontend
+          processor_id: passthrough
+
+    repo_fast:
+      steps:
+        - command_id: lint_all
+          processor_id: passthrough
+        - command_id: types_all
+          processor_id: passthrough

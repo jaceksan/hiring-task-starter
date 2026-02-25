@@ -1,0 +1,16 @@
+---
+description: Backlog maintenance conventions for this repository
+alwaysApply: true
+---
+
+## Backlog conventions
+
+- Treat `BACKLOG.md` order as priority unless the user explicitly reprioritizes.
+- Keep each backlog item concise; put extra detail in `backlog/*.md`.
+- Update backlog details when decisions or new requirements are made in chat.
+
+## Completion flow
+
+- When an item is finished, remove it from `BACKLOG.md` or move it to a short-lived done section.
+- Add a short outcome note to the corresponding detail file if one exists.
+- Add follow-up work as new backlog items at the right priority.

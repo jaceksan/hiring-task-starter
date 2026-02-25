@@ -1,0 +1,16 @@
+---
+description: Project MVP conventions and code-size limits
+alwaysApply: true
+---
+
+## MVP constraints
+
+- Backward compatibility is not required in this repository.
+- Prefer direct refactors over compatibility layers and migrations.
+- Assume local state can be reset and services restarted during development.
+
+## Code-size guardrails
+
+- Prefer small, composable modules over large multi-purpose files.
+- Soft target for new files: under 200 lines.
+- If a file grows near 300 lines, split logic into helpers/hooks/components.

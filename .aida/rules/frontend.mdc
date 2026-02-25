@@ -1,0 +1,17 @@
+---
+description: Frontend guardrails (React, Plotly, Playwright)
+---
+
+## Component installs
+
+- Use the latest Shadcn CLI when adding new components.
+
+## UI and map stability
+
+- Keep E2E interactions deterministic; avoid wheel/drag map interactions in tests.
+- Preserve user map view unless the feature explicitly focuses results.
+- Keep highlighted IDs stable across Plotly refreshes.
+
+## Persistence limits
+
+- Avoid storing large Plotly payloads in localStorage.
