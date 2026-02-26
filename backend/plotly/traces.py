@@ -429,10 +429,9 @@ def trace_point_clusters(layer: Layer, clusters: list[ClusterMarker]) -> dict[st
         "name": f"{layer.title} (clusters)",
         "lon": [c.lon for c in clusters],
         "lat": [c.lat for c in clusters],
-        "mode": "markers+text",
-        "text": [f"~{c.count}" for c in clusters],
+        "mode": "markers",
+        "text": ["" for _ in clusters],
         "customdata": [c.count for c in clusters],
-        "textposition": "middle center",
         "marker": {
             "size": [min(26, 8 + int(c.count**0.5) * 2) for c in clusters],
             "color": color,

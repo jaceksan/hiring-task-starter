@@ -78,7 +78,13 @@ def _feature_matches_risk(
     bucket = _risk_bucket_from_raw(raw)
     if bucket is None:
         return False
-    return bucket == flood_risk_level
+    rank = {"low": 0, "medium": 1, "high": 2, "very_high": 3, "extreme": 4}
+    target = rank.get(flood_risk_level, None)
+    current = rank.get(bucket, None)
+    if target is None or current is None:
+        return False
+    # Threshold semantics: selecting "medium" shows medium+ risks, etc.
+    return current >= target
 
 
 def active_flood_zone_features(

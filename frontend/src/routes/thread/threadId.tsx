@@ -27,20 +27,11 @@ import { useInvokeAgent } from "./threadId/useInvokeAgent";
 import { usePlotController } from "./threadId/usePlotController";
 import { useTelemetry } from "./threadId/useTelemetry";
 
-const ROAD_TYPES = [
-	{ id: "motorway", label: "Motorway (+link)" },
-	{ id: "trunk", label: "Trunk (+link)" },
-	{ id: "primary", label: "Primary" },
-	{ id: "secondary", label: "Secondary" },
-	{ id: "tertiary", label: "Tertiary" },
-] as const;
-
 const FLOOD_RISK_LEVELS: { id: FloodRiskLevel; label: string }[] = [
 	{ id: "extreme", label: "Extreme" },
-	{ id: "very_high", label: "Very high" },
-	{ id: "high", label: "High" },
-	{ id: "medium", label: "Medium" },
-	{ id: "low", label: "Low" },
+	{ id: "very_high", label: "Very high+" },
+	{ id: "high", label: "High+" },
+	{ id: "medium", label: "Medium+" },
 	{ id: "any", label: "All risks" },
 ];
 
@@ -148,12 +139,6 @@ function RouteComponent() {
 		title: string;
 		body: string;
 	} | null>(null);
-	const [roadToast, setRoadToast] = useState<string | null>(null);
-	const roadToastLastKeyRef = useRef<string | null>(null);
-	const [selectedRoadTypes, setSelectedRoadTypes] = useState<string[]>([
-		"motorway",
-		"trunk",
-	]);
 	const [floodRiskLevel, setFloodRiskLevel] = useState<FloodRiskLevel>("any");
 	const [selectedFloodZoneIds, setSelectedFloodZoneIds] = useState<string[]>(
 		[],
@@ -167,11 +152,6 @@ function RouteComponent() {
 		const t = window.setTimeout(() => setSlowToast(null), 10_000);
 		return () => window.clearTimeout(t);
 	}, [slowToast]);
-	useEffect(() => {
-		if (!roadToast) return;
-		const t = window.setTimeout(() => setRoadToast(null), 8_000);
-		return () => window.clearTimeout(t);
-	}, [roadToast]);
 
 	const maybeShowSlowToast = useMemo(() => {
 		return (stats: PlotPerfStats | null) => {
@@ -269,43 +249,11 @@ function RouteComponent() {
 			});
 		};
 	}, []);
-	const maybeShowRoadToast = useMemo(() => {
-		return (stats: PlotPerfStats | null) => {
-			const control = asRecord(asRecord(stats)?.roadHighlightControl);
-			const selected = Array.isArray(control?.selectedTypes)
-				? (control.selectedTypes as unknown[]).filter(
-						(v) => typeof v === "string",
-					)
-				: [];
-			const hidden = Array.isArray(control?.hiddenTypes)
-				? (control.hiddenTypes as unknown[]).filter(
-						(v) => typeof v === "string",
-					)
-				: [];
-			const reasons = asRecord(control?.hiddenReasonByType);
-			const hiddenForDensity = hidden.filter((type) => {
-				const reason = reasons?.[type];
-				return reason === "tooDense" || reason === "sourceCapped";
-			});
-			if (selected.length === 0 || hiddenForDensity.length === 0) {
-				roadToastLastKeyRef.current = null;
-				setRoadToast(null);
-				return;
-			}
-			const key = hiddenForDensity.slice().sort().join("|");
-			if (roadToastLastKeyRef.current === key) return;
-			roadToastLastKeyRef.current = key;
-			setRoadToast(
-				`Hidden road types (too many features in view): ${hiddenForDensity.join(", ")}`,
-			);
-		};
-	}, []);
 	const onPlotRefreshStats = useMemo(() => {
 		return (stats: PlotPerfStats | null) => {
 			maybeShowSlowToast(stats);
-			maybeShowRoadToast(stats);
 		};
-	}, [maybeShowRoadToast, maybeShowSlowToast]);
+	}, [maybeShowSlowToast]);
 
 	const {
 		plotContainerRef,
@@ -328,7 +276,7 @@ function RouteComponent() {
 		floodRiskLevel,
 		selectedFloodZoneIds,
 		selectedPlaceCategories,
-		roadHighlightTypes: selectedRoadTypes,
+		roadHighlightTypes: [],
 		onPlotRefreshStats,
 	});
 	const schedulePlotRefreshRef = useRef(schedulePlotRefresh);
@@ -520,56 +468,8 @@ function RouteComponent() {
 						</div>
 					</div>
 				)}
-				{roadToast && (
-					<div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 w-[560px] max-w-[94%] rounded-md border border-border bg-background/95 px-3 py-2 text-xs shadow">
-						<div className="flex items-start justify-between gap-3">
-							<div>
-								<div className="font-semibold">Road highlight note</div>
-								<div className="text-muted-foreground mt-0.5">{roadToast}</div>
-							</div>
-							<Button
-								size="sm"
-								variant="ghost"
-								className="h-7 px-2"
-								onClick={() => setRoadToast(null)}
-							>
-								Close
-							</Button>
-						</div>
-					</div>
-				)}
 				<div className="absolute right-3 top-3 z-20 w-[240px] rounded-md border border-border bg-background/95 px-3 py-2 text-xs shadow">
-					<div className="font-semibold">Road highlights</div>
-					<div className="text-muted-foreground mt-0.5 mb-2">
-						Show full types only (hide when too dense).
-					</div>
-					<div className="space-y-1.5">
-						{ROAD_TYPES.map((item) => (
-							<label
-								key={item.id}
-								className="flex items-center justify-between gap-2 cursor-pointer"
-							>
-								<span>{item.label}</span>
-								<input
-									type="checkbox"
-									checked={selectedRoadTypes.includes(item.id)}
-									onChange={(e) => {
-										const checked = e.currentTarget.checked;
-										setSelectedRoadTypes((prev) => {
-											const next = new Set(prev);
-											if (checked) next.add(item.id);
-											else next.delete(item.id);
-											return ROAD_TYPES.map((t) => t.id).filter((id) =>
-												next.has(id),
-											);
-										});
-										refreshUsingCurrentView();
-									}}
-								/>
-							</label>
-						))}
-					</div>
-					<div className="mt-3 pt-2 border-t border-border">
+					<div>
 						<div className="font-semibold">Flood risk</div>
 						<div className="text-muted-foreground mt-0.5 mb-2">
 							Used for flood-zone filtering in requests.
