@@ -173,7 +173,10 @@ def filter_flood_layer_for_request(
         metadata=layer.metadata,
     )
     next_layers = LayerBundle(
-        layers=[filtered_layer if l.id == layer.id else l for l in layers.layers]
+        layers=[
+            filtered_layer if layer_item.id == layer.id else layer_item
+            for layer_item in layers.layers
+        ]
     )
     return (
         next_layers,

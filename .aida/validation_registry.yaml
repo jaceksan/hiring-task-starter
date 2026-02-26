@@ -4,6 +4,21 @@
 registry:
   includes: []
   commands:
+    fix_backend:
+      argv: ["make", "fix-backend"]
+      cwd: "{workspace_root}"
+      timeout_sec: 1200
+
+    fix_frontend:
+      argv: ["make", "fix-frontend"]
+      cwd: "{workspace_root}"
+      timeout_sec: 1200
+
+    fix_all:
+      argv: ["make", "fix-all"]
+      cwd: "{workspace_root}"
+      timeout_sec: 1800
+
     lint_backend:
       argv: ["make", "lint-backend"]
       cwd: "{workspace_root}"
@@ -35,9 +50,14 @@ registry:
       timeout_sec: 1200
 
     test_backend:
-      argv: ["make", "test-backend"]
-      cwd: "{workspace_root}"
+      argv: ["uv", "run", "pytest", "-q", "-m", "not integration"]
+      cwd: "{workspace_root}/backend"
       timeout_sec: 1800
+
+    test_backend_integration:
+      argv: ["uv", "run", "pytest", "-q", "-m", "integration"]
+      cwd: "{workspace_root}/backend"
+      timeout_sec: 2400
 
     test_e2e_frontend:
       argv: ["make", "test-e2e-frontend"]

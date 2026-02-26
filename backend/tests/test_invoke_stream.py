@@ -1,6 +1,10 @@
 import asyncio
 
+import pytest
 from agent.router import AgentResponse
+from engine.types import EngineResult
+from geo.index import build_geo_index
+from layers.types import Layer, LayerBundle, PointFeature
 from main import (
     ApiBbox,
     ApiCenter,
@@ -12,6 +16,58 @@ from main import (
     handle_incoming_message,
 )
 from plotly.types import Highlight
+
+
+@pytest.fixture(autouse=True)
+def _disable_stream_delay(monkeypatch):
+    async def _no_sleep(_seconds: float):
+        return None
+
+    monkeypatch.setattr("api.invoke_stream.sleep", _no_sleep)
+
+
+@pytest.fixture(autouse=True)
+def _use_fast_fake_engine(monkeypatch):
+    layers = LayerBundle(
+        layers=[
+            Layer(
+                id="places",
+                kind="points",
+                title="Places",
+                features=[PointFeature(id="p1", lon=14.43, lat=50.07, props={})],
+                style={},
+                metadata={},
+            ),
+            Layer(
+                id="roads",
+                kind="lines",
+                title="Roads",
+                features=[],
+                style={},
+                metadata={},
+            ),
+            Layer(
+                id="flood_zones",
+                kind="polygons",
+                title="Flood zones",
+                features=[],
+                style={},
+                metadata={},
+            ),
+        ]
+    )
+    index = build_geo_index(layers)
+    result = EngineResult(layers=layers, index=index, stats={})
+
+    class _FakeEngine:
+        def get(self, _ctx):
+            return result
+
+    monkeypatch.setattr("api.invoke_stream._engine", lambda _name: _FakeEngine())
+    monkeypatch.setattr(
+        "api.invoke_stream._resolve_engine_name_for_scenario",
+        lambda **_kwargs: "in_memory",
+    )
 
 
 def test_invoke_stream_passes_request_context_to_router(monkeypatch):
@@ -49,7 +105,11 @@ def test_invoke_stream_passes_request_context_to_router(monkeypatch):
     assert seen_context == {"floodRiskLevel": "medium"}
 
 
-def test_invoke_stream_emits_required_event_types():
+def test_invoke_stream_emits_required_event_types(monkeypatch):
+    def fake_route_prompt(*args, **kwargs):
+        return AgentResponse(message="ok")
+
+    monkeypatch.setattr("api.invoke_stream.route_prompt", fake_route_prompt)
     thread = ApiThread(
         id=1,
         title="t",
@@ -79,7 +139,11 @@ def test_invoke_stream_emits_required_event_types():
     assert {"append", "plot_data", "commit"}.issubset(seen)
 
 
-def test_invoke_stream_flooded_count_includes_answer_text():
+def test_invoke_stream_flooded_count_includes_answer_text(monkeypatch):
+    def fake_route_prompt(*args, **kwargs):
+        return AgentResponse(message="I found 1 place in flood zones.")
+
+    monkeypatch.setattr("api.invoke_stream.route_prompt", fake_route_prompt)
     thread = ApiThread(
         id=1,
         title="t",
@@ -110,7 +174,13 @@ def test_invoke_stream_flooded_count_includes_answer_text():
     assert "I found" in text
 
 
-def test_invoke_stream_safest_with_reachable_roads_does_not_error():
+def test_invoke_stream_safest_with_reachable_roads_does_not_error(monkeypatch):
+    def fake_route_prompt(*args, **kwargs):
+        return AgentResponse(
+            message="Safest nearby places with reachable roads: Place A, Place B."
+        )
+
+    monkeypatch.setattr("api.invoke_stream.route_prompt", fake_route_prompt)
     thread = ApiThread(
         id=1,
         title="t",

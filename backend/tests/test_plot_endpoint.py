@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import pytest
 
 from fastapi.testclient import TestClient
 
 from main import app
+
+pytestmark = pytest.mark.integration
 
 
 def test_plot_endpoint_returns_plot_payload():

@@ -20,7 +20,7 @@ help:
 		"  types-frontend           Run frontend typechecks" \
 		"  types-backend            Run backend typechecks (currently no-op)" \
 		"  test-all                 Run tests (where available)" \
-		"  test-backend             Run backend unit tests" \
+		"  test-backend             Run backend unit tests (excludes integration)" \
 		"  test-frontend            Run frontend tests (currently no-op)" \
 		"  test-integration-all     Run integration tests (where available)" \
 		"  test-integration-backend Run backend integration tests" \
@@ -70,7 +70,7 @@ types-frontend:
 test-all: test-backend test-frontend
 
 test-backend:
-	@cd backend && uv run pytest -q
+	@cd backend && uv run pytest -q -m "not integration"
 
 test-frontend:
 	@:

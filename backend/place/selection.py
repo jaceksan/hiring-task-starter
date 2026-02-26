@@ -64,7 +64,10 @@ def filter_points_layer_by_category(
             metadata=layer.metadata,
         )
         next_layers = LayerBundle(
-            layers=[replacement if l.id == layer.id else l for l in layers.layers]
+            layers=[
+                replacement if layer_item.id == layer.id else layer_item
+                for layer_item in layers.layers
+            ]
         )
         return next_layers, {
             "selectedCategories": [],
@@ -90,7 +93,10 @@ def filter_points_layer_by_category(
         metadata=layer.metadata,
     )
     next_layers = LayerBundle(
-        layers=[replacement if l.id == layer.id else l for l in layers.layers]
+        layers=[
+            replacement if layer_item.id == layer.id else layer_item
+            for layer_item in layers.layers
+        ]
     )
     return next_layers, {
         "selectedCategories": sorted(selected_categories or []),

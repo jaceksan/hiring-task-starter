@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from main import app
+
+pytestmark = pytest.mark.integration
 
 
 def test_prague_geoparquet_fixture_files_exist_and_non_empty():

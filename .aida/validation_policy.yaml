@@ -17,6 +17,8 @@ validation_policy:
   pipelines:
     backend_fast:
       steps:
+        - command_id: fix_backend
+          processor_id: passthrough
         - command_id: lint_backend
           processor_id: passthrough
         - command_id: types_backend
@@ -26,6 +28,8 @@ validation_policy:
 
     frontend_fast:
       steps:
+        - command_id: fix_frontend
+          processor_id: passthrough
         - command_id: lint_frontend
           processor_id: passthrough
         - command_id: types_frontend
@@ -33,6 +37,8 @@ validation_policy:
 
     frontend_e2e:
       steps:
+        - command_id: fix_frontend
+          processor_id: passthrough
         - command_id: lint_frontend
           processor_id: passthrough
         - command_id: types_frontend
@@ -42,6 +48,8 @@ validation_policy:
 
     repo_fast:
       steps:
+        - command_id: fix_all
+          processor_id: passthrough
         - command_id: lint_all
           processor_id: passthrough
         - command_id: types_all

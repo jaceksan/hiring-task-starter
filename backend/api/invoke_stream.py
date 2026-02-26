@@ -315,9 +315,10 @@ async def handle_incoming_message(thread):
             try:
                 points_cfg = next(
                     (
-                        l
-                        for l in scenario.layers
-                        if l.id == scenario.plot.highlightLayerId and l.kind == "points"
+                        layer_cfg
+                        for layer_cfg in scenario.layers
+                        if layer_cfg.id == scenario.plot.highlightLayerId
+                        and layer_cfg.kind == "points"
                     ),
                     None,
                 )
