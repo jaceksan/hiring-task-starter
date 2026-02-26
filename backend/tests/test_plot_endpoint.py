@@ -51,7 +51,10 @@ def test_plot_endpoint_can_return_clusters_at_low_zoom():
     assert resp.status_code == 200
     payload = resp.json()
     names = {t.get("name") for t in payload.get("data", [])}
-    assert any(isinstance(n, str) and n.endswith("(clusters)") for n in names)
+    assert any(
+        isinstance(n, str) and (n.endswith("(clusters)") or n.endswith("(density)"))
+        for n in names
+    )
 
 
 def test_plot_endpoint_preserves_highlight_when_provided():

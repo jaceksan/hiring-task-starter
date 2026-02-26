@@ -6,6 +6,7 @@ import duckdb
 
 from engine.duckdb_impl.geoparquet.cluster_counts import (
     enrich_clusters_with_exact_counts,
+    query_exact_density_bins,
 )
 from geo.aoi import BBox
 from layers.types import PointFeature
@@ -111,3 +112,36 @@ def test_enrich_clusters_with_exact_counts_applies_place_category_filter(
 
     assert enriched is not None
     assert sorted([c.exact_count for c in enriched]) == [1, 2]
+
+
+def test_query_exact_density_bins_returns_all_bin_counts(tmp_path: Path) -> None:
+    parquet = tmp_path / "points.parquet"
+    _write_points_table(parquet)
+    zoom = 8.0
+    aoi = BBox(min_lon=14.2, min_lat=49.9, max_lon=14.8, max_lat=50.3)
+
+    bins = query_exact_density_bins(
+        path=parquet,
+        aoi=aoi,
+        grid_m=grid_size_m(zoom),
+        place_category_filter=None,
+    )
+
+    assert sorted([b.exact_count for b in bins]) == [2, 3]
+    assert all((b.bin_size_m or 0) > 0 for b in bins)
+
+
+def test_query_exact_density_bins_applies_place_category_filter(tmp_path: Path) -> None:
+    parquet = tmp_path / "points.parquet"
+    _write_points_table(parquet)
+    zoom = 8.0
+    aoi = BBox(min_lon=14.2, min_lat=49.9, max_lon=14.8, max_lat=50.3)
+
+    bins = query_exact_density_bins(
+        path=parquet,
+        aoi=aoi,
+        grid_m=grid_size_m(zoom),
+        place_category_filter={"urban"},
+    )
+
+    assert sorted([b.exact_count for b in bins]) == [1, 2]

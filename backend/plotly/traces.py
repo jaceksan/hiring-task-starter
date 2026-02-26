@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import math
 from typing import Any
+
+from pyproj import Transformer
 
 from geo.aoi import BBox
 from lod.points import ClusterMarker
@@ -418,28 +421,76 @@ def trace_points(layer: Layer) -> dict[str, Any]:
 
 
 def trace_point_clusters(layer: Layer, clusters: list[ClusterMarker]) -> dict[str, Any]:
-    # Style inherits from the point layer, but with cluster-specific defaults.
-    style = layer.style or {}
-    marker = style.get("marker") or {}
-    color = (
-        marker.get("color") if isinstance(marker, dict) else None
-    ) or "rgba(255, 193, 7, 0.55)"
+    counts = [
+        int(c.exact_count if c.exact_count is not None else c.count) for c in clusters
+    ]
+    if not clusters:
+        return {
+            "type": "choroplethmapbox",
+            "name": f"{layer.title} (density)",
+            "geojson": {"type": "FeatureCollection", "features": []},
+            "locations": [],
+            "z": [],
+        }
+    bin_size_m = float(clusters[0].bin_size_m) if clusters[0].bin_size_m else 1000.0
+    region_label = f"{(bin_size_m / 1000.0):.2g} km grid cell"
+    t_inv = Transformer.from_crs("EPSG:3857", "EPSG:4326", always_xy=True)
+    features: list[dict[str, Any]] = []
+    locations: list[str] = []
+    zvals: list[float] = []
+    customdata: list[list[Any]] = []
+    for i, c in enumerate(clusters):
+        x0 = float(c.cell_x) * bin_size_m
+        y0 = float(c.cell_y) * bin_size_m
+        x1 = x0 + bin_size_m
+        y1 = y0 + bin_size_m
+        lon0, lat0 = t_inv.transform(x0, y0)
+        lon1, lat1 = t_inv.transform(x1, y1)
+        feature_id = f"bin-{i}"
+        features.append(
+            {
+                "type": "Feature",
+                "properties": {"id": feature_id},
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [
+                        [
+                            [lon0, lat0],
+                            [lon1, lat0],
+                            [lon1, lat1],
+                            [lon0, lat1],
+                            [lon0, lat0],
+                        ]
+                    ],
+                },
+            }
+        )
+        locations.append(feature_id)
+        zvals.append(float(math.log1p(max(1, counts[i]))))
+        customdata.append([counts[i], region_label])
+
     return {
-        "type": "scattermapbox",
-        "name": f"{layer.title} (clusters)",
-        "lon": [c.lon for c in clusters],
-        "lat": [c.lat for c in clusters],
-        "mode": "markers",
-        "text": ["" for _ in clusters],
-        "marker": {
-            "size": [min(26, 8 + int(c.count**0.5) * 2) for c in clusters],
-            "color": color,
-            "line": {"color": "rgba(255, 193, 7, 0.9)", "width": 1},
-        },
-        "customdata": [
-            c.exact_count if c.exact_count is not None else c.count for c in clusters
+        "type": "choroplethmapbox",
+        "name": f"{layer.title} (density)",
+        "geojson": {"type": "FeatureCollection", "features": features},
+        "locations": locations,
+        "featureidkey": "properties.id",
+        "z": zvals,
+        "zmin": 0.0,
+        "zmax": max(zvals) if zvals else 1.0,
+        "colorscale": [
+            [0.0, "#fff7bc"],
+            [0.25, "#fee391"],
+            [0.5, "#fec44f"],
+            [0.75, "#fe9929"],
+            [1.0, "#d95f0e"],
         ],
-        "hovertemplate": "Count in this region: %{customdata}<extra></extra>",
+        "marker": {"line": {"color": "rgba(0,0,0,0.07)", "width": 0.25}},
+        "colorbar": {"title": "Places / cell"},
+        "customdata": customdata,
+        "hovertemplate": "Count in this %{customdata[1]}: %{customdata[0]}<extra></extra>",
+        "showscale": True,
+        "opacity": 0.78,
     }
 
 

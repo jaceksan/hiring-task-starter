@@ -146,12 +146,22 @@ function RouteComponent() {
 	const [selectedPlaceCategories, setSelectedPlaceCategories] = useState<
 		PlaceCategoryId[]
 	>(DEFAULT_PLACE_CATEGORIES);
+	const [knownPlaceCategories, setKnownPlaceCategories] = useState<
+		PlaceCategoryId[]
+	>(DEFAULT_PLACE_CATEGORIES);
 	const slowToastLastShownAtRef = useRef<number>(0);
 	useEffect(() => {
 		if (!slowToast) return;
 		const t = window.setTimeout(() => setSlowToast(null), 10_000);
 		return () => window.clearTimeout(t);
 	}, [slowToast]);
+	const placeCategoryResetKey = scenarioId;
+	useEffect(() => {
+		// Per scenario: show all categories by default.
+		void placeCategoryResetKey;
+		setKnownPlaceCategories(DEFAULT_PLACE_CATEGORIES);
+		setSelectedPlaceCategories(DEFAULT_PLACE_CATEGORIES);
+	}, [placeCategoryResetKey]);
 
 	const maybeShowSlowToast = useMemo(() => {
 		return (stats: PlotPerfStats | null) => {
@@ -398,12 +408,14 @@ function RouteComponent() {
 		[placeControl?.availableCategories],
 	);
 	useEffect(() => {
-		// Keep selection valid as scenario/dataset changes.
+		// Keep category list stable across zoom changes: merge newly discovered categories,
+		// never shrink on AOI refresh.
 		if (availablePlaceCategories.length === 0) return;
-		setSelectedPlaceCategories((prev) => {
-			const setAvail = new Set(availablePlaceCategories);
-			const kept = prev.filter((x) => setAvail.has(x));
-			return kept.length > 0 ? kept : [...availablePlaceCategories];
+		setKnownPlaceCategories((prev) => {
+			const setPrev = new Set(prev);
+			const extras = availablePlaceCategories.filter((x) => !setPrev.has(x));
+			if (extras.length === 0) return prev;
+			return [...prev, ...extras];
 		});
 	}, [availablePlaceCategories]);
 
@@ -516,7 +528,7 @@ function RouteComponent() {
 						<div className="text-muted-foreground mt-0.5 mb-2">
 							Show/hide place categories.
 						</div>
-						{availablePlaceCategories.length > 0 && (
+						{knownPlaceCategories.length > 0 && (
 							<div className="flex gap-1 mb-2">
 								<Button
 									size="sm"
@@ -534,9 +546,9 @@ function RouteComponent() {
 									variant="ghost"
 									className="h-6 px-2 text-[11px]"
 									onClick={() => {
-										setSelectedPlaceCategories([...availablePlaceCategories]);
+										setSelectedPlaceCategories([...knownPlaceCategories]);
 										refreshUsingCurrentView({
-											selectedPlaceCategories: [...availablePlaceCategories],
+											selectedPlaceCategories: [...knownPlaceCategories],
 										});
 									}}
 								>
@@ -545,7 +557,7 @@ function RouteComponent() {
 							</div>
 						)}
 						<div className="space-y-1.5">
-							{availablePlaceCategories.map((item) => (
+							{knownPlaceCategories.map((item) => (
 								<label
 									key={item}
 									className="flex items-center justify-between gap-2 cursor-pointer"
@@ -560,7 +572,7 @@ function RouteComponent() {
 												const next = new Set(prev);
 												if (checked) next.add(item);
 												else next.delete(item);
-												const out = availablePlaceCategories.filter((id) =>
+												const out = knownPlaceCategories.filter((id) =>
 													next.has(id),
 												);
 												refreshUsingCurrentView({

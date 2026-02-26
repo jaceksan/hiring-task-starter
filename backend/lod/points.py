@@ -16,6 +16,7 @@ class ClusterMarker:
     cell_x: int
     cell_y: int
     exact_count: int | None = None
+    bin_size_m: float | None = None
 
 
 def should_cluster_points(zoom: float, n_points: int, max_points: int) -> bool:
@@ -34,6 +35,25 @@ def grid_size_m(zoom: float) -> float:
     if zoom <= 10:
         return 1_000.0
     if zoom <= 11:
+        return 500.0
+    return 250.0
+
+
+def density_grid_size_m(zoom: float) -> float:
+    """
+    Coarser than point-cluster grid at mid zoom to avoid overly dense dot lattices.
+    """
+    if zoom <= 6:
+        return 12_000.0
+    if zoom <= 8:
+        return 6_000.0
+    if zoom <= 9:
+        return 3_000.0
+    if zoom <= 10:
+        return 1_500.0
+    if zoom <= 11:
+        return 800.0
+    if zoom <= 12.5:
         return 500.0
     return 250.0
 
@@ -72,6 +92,7 @@ def cluster_points(points: list[PointFeature], *, zoom: float) -> list[ClusterMa
                 count=int(count),
                 cell_x=int(cx),
                 cell_y=int(cy),
+                bin_size_m=float(grid),
             )
         )
 

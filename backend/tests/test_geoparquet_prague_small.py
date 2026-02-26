@@ -52,6 +52,10 @@ def test_plot_endpoint_duckdb_geoparquet_prague_small_returns_layers():
 
     names = {t.get("name") for t in payload.get("data", [])}
     # Scenario titles should appear as trace names.
-    assert "Places (points)" in names or "Places (points) (clusters)" in names
+    assert (
+        "Places (points)" in names
+        or "Places (points) (clusters)" in names
+        or "Places (points) (density)" in names
+    )
     assert "Roads (lines)" in names
     assert "Flood zones (polygons)" in names

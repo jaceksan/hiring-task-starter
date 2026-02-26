@@ -19,12 +19,13 @@ from api.invoke_stream import (
 from engine.duckdb_impl.geoparquet.pins import query_geoparquet_layer_pinned_ids
 from engine.duckdb_impl.geoparquet.cluster_counts import (
     enrich_clusters_with_exact_counts,
+    query_exact_density_bins,
 )
 from engine.types import LayerBundle, MapContext
 from flood.selection import filter_flood_layer_for_request, parse_request_flood_context
 from geo.aoi import BBox
 from layers.types import Layer
-from lod.points import grid_size_m
+from lod.points import density_grid_size_m, grid_size_m
 from place.selection import (
     filter_points_layer_by_category,
     parse_request_place_categories,
@@ -349,6 +350,15 @@ def plot(body: ApiPlotRequest):
                 None,
             )
             if points_cfg is not None and points_cfg.source.type == "geoparquet":
+                density_grid_m = density_grid_size_m(ctx.view_zoom)
+                beer_clusters = query_exact_density_bins(
+                    path=resolve_repo_path(points_cfg.source.path),
+                    aoi=aoi,
+                    grid_m=density_grid_m,
+                    place_category_filter=place_categories,
+                )
+        except Exception:
+            try:
                 beer_clusters = enrich_clusters_with_exact_counts(
                     path=resolve_repo_path(points_cfg.source.path),
                     aoi=aoi,
@@ -356,8 +366,8 @@ def plot(body: ApiPlotRequest):
                     grid_m=grid_size_m(ctx.view_zoom),
                     place_category_filter=place_categories,
                 )
-        except Exception:
-            pass
+            except Exception:
+                pass
 
     highlight = None
     highlights = []

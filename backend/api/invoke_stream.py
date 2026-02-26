@@ -11,6 +11,7 @@ from agent.router import route_prompt
 from engine.duckdb import DuckDBEngine
 from engine.duckdb_impl.geoparquet.cluster_counts import (
     enrich_clusters_with_exact_counts,
+    query_exact_density_bins,
 )
 from engine.in_memory import InMemoryEngine
 from engine.types import LayerEngine, MapContext
@@ -18,7 +19,7 @@ from flood.selection import filter_flood_layer_for_request, parse_request_flood_
 from geo.aoi import BBox
 from geo.tiles import tile_zoom_for_view_zoom, tiles_for_bbox
 from lod.policy import apply_lod
-from lod.points import grid_size_m
+from lod.points import density_grid_size_m, grid_size_m
 from place.selection import (
     filter_points_layer_by_category,
     parse_request_place_categories,
@@ -323,6 +324,15 @@ async def handle_incoming_message(thread):
                     None,
                 )
                 if points_cfg is not None and points_cfg.source.type == "geoparquet":
+                    density_grid_m = density_grid_size_m(ctx.view_zoom)
+                    beer_clusters = query_exact_density_bins(
+                        path=resolve_repo_path(points_cfg.source.path),
+                        aoi=aoi,
+                        grid_m=density_grid_m,
+                        place_category_filter=place_categories,
+                    )
+            except Exception:
+                try:
                     beer_clusters = enrich_clusters_with_exact_counts(
                         path=resolve_repo_path(points_cfg.source.path),
                         aoi=aoi,
@@ -330,8 +340,8 @@ async def handle_incoming_message(thread):
                         grid_m=grid_size_m(ctx.view_zoom),
                         place_category_filter=place_categories,
                     )
-            except Exception:
-                pass
+                except Exception:
+                    pass
 
         # Send the map payload before commit so frontend attaches it to the message.
         t3 = time.perf_counter()
