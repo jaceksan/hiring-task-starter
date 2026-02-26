@@ -5,12 +5,18 @@ from typing import Any
 from layers.types import Layer, LayerBundle, PointFeature
 
 
-def parse_request_place_sources(request_context: dict[str, Any] | None) -> set[str]:
-    raw = (
-        request_context.get("placeSourceTypes")
-        if isinstance(request_context, dict)
-        else None
-    )
+def parse_request_place_categories(
+    request_context: dict[str, Any] | None,
+) -> set[str] | None:
+    if not isinstance(request_context, dict):
+        return None
+    # Backward compatibility: older frontend sent placeSourceTypes.
+    if "placeCategories" in request_context:
+        raw = request_context.get("placeCategories")
+    elif "placeSourceTypes" in request_context:
+        raw = request_context.get("placeSourceTypes")
+    else:
+        return None
     if not isinstance(raw, list):
         return set()
     return {
@@ -18,15 +24,15 @@ def parse_request_place_sources(request_context: dict[str, Any] | None) -> set[s
     }
 
 
-def filter_points_layer_by_source(
-    layers: LayerBundle, *, layer_id: str, selected_sources: set[str]
+def filter_points_layer_by_category(
+    layers: LayerBundle, *, layer_id: str, selected_categories: set[str] | None
 ) -> tuple[LayerBundle, dict[str, Any]]:
     layer = layers.get(layer_id)
     if layer is None or layer.kind != "points":
         return layers, {
-            "selectedSources": sorted(selected_sources),
-            "availableSources": [],
-            "activeSources": [],
+            "selectedCategories": sorted(selected_categories or []),
+            "availableCategories": [],
+            "activeCategories": [],
             "beforeCount": 0,
             "afterCount": 0,
         }
@@ -34,26 +40,46 @@ def filter_points_layer_by_source(
     points = [f for f in layer.features if isinstance(f, PointFeature)]
     available = sorted(
         {
-            str((p.props or {}).get("place_source") or "").strip().lower()
+            str((p.props or {}).get("place_category") or "").strip().lower()
             for p in points
-            if str((p.props or {}).get("place_source") or "").strip()
+            if str((p.props or {}).get("place_category") or "").strip()
         }
     )
     before_count = len(points)
-    if not selected_sources:
+    if selected_categories is None:
         return layers, {
-            "selectedSources": [],
-            "availableSources": available,
-            "activeSources": available,
+            "selectedCategories": [],
+            "availableCategories": available,
+            "activeCategories": available,
             "beforeCount": before_count,
             "afterCount": before_count,
         }
+    if not selected_categories:
+        replacement = Layer(
+            id=layer.id,
+            kind=layer.kind,
+            title=layer.title,
+            features=[],
+            style=layer.style,
+            metadata=layer.metadata,
+        )
+        next_layers = LayerBundle(
+            layers=[replacement if l.id == layer.id else l for l in layers.layers]
+        )
+        return next_layers, {
+            "selectedCategories": [],
+            "availableCategories": available,
+            "activeCategories": [],
+            "beforeCount": before_count,
+            "afterCount": 0,
+        }
 
-    active = sorted([s for s in selected_sources if s in set(available)])
+    active = sorted([s for s in selected_categories if s in set(available)])
     filtered = [
         p
         for p in points
-        if str((p.props or {}).get("place_source") or "").strip().lower() in set(active)
+        if str((p.props or {}).get("place_category") or "").strip().lower()
+        in set(active)
     ]
     replacement = Layer(
         id=layer.id,
@@ -67,9 +93,9 @@ def filter_points_layer_by_source(
         layers=[replacement if l.id == layer.id else l for l in layers.layers]
     )
     return next_layers, {
-        "selectedSources": sorted(selected_sources),
-        "availableSources": available,
-        "activeSources": active,
+        "selectedCategories": sorted(selected_categories or []),
+        "availableCategories": available,
+        "activeCategories": active,
         "beforeCount": before_count,
         "afterCount": len(filtered),
     }

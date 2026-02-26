@@ -20,7 +20,7 @@ import { asRecord, calcBboxFromCenterZoom } from "./threadId/plotlyMapUtils";
 import { TelemetryPanel } from "./threadId/TelemetryPanel";
 import type {
 	FloodRiskLevel,
-	PlaceSourceType,
+	PlaceCategoryId,
 	PlotPerfStats,
 } from "./threadId/types";
 import { useInvokeAgent } from "./threadId/useInvokeAgent";
@@ -36,15 +36,39 @@ const ROAD_TYPES = [
 ] as const;
 
 const FLOOD_RISK_LEVELS: { id: FloodRiskLevel; label: string }[] = [
-	{ id: "high", label: "High (100y)" },
-	{ id: "medium", label: "Medium (50y+)" },
-	{ id: "any", label: "Any risk" },
+	{ id: "extreme", label: "Extreme" },
+	{ id: "very_high", label: "Very high" },
+	{ id: "high", label: "High" },
+	{ id: "medium", label: "Medium" },
+	{ id: "low", label: "Low" },
+	{ id: "any", label: "All risks" },
 ];
 
-const PLACE_SOURCE_TYPES: { id: PlaceSourceType; label: string }[] = [
-	{ id: "settlement", label: "Settlements" },
-	{ id: "poi", label: "POIs" },
-];
+const PRETTY_PLACE_CATEGORY_LABELS: Record<string, string> = {
+	capital: "Capital",
+	urban: "Urban",
+	suburban_rural: "Suburban/Rural",
+	local_small: "Local/Small",
+	other_settlement: "Other settlements",
+	food_drink: "Food & Drink",
+	health: "Health",
+	education: "Education",
+	transport: "Transport",
+	shopping: "Shopping",
+	tourism_culture: "Tourism/Culture",
+	sport_leisure: "Sport/Leisure",
+	public_services: "Public services",
+	worship: "Worship",
+	other_poi: "Other POIs",
+};
+const DEFAULT_PLACE_CATEGORIES = Object.keys(PRETTY_PLACE_CATEGORY_LABELS);
+
+function prettyPlaceCategoryLabel(id: string): string {
+	return (
+		PRETTY_PLACE_CATEGORY_LABELS[id] ??
+		id.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())
+	);
+}
 
 export const Route = createFileRoute("/thread/$threadId")({
 	params: {
@@ -134,9 +158,9 @@ function RouteComponent() {
 	const [selectedFloodZoneIds, setSelectedFloodZoneIds] = useState<string[]>(
 		[],
 	);
-	const [selectedPlaceSourceTypes, setSelectedPlaceSourceTypes] = useState<
-		PlaceSourceType[]
-	>(["settlement", "poi"]);
+	const [selectedPlaceCategories, setSelectedPlaceCategories] = useState<
+		PlaceCategoryId[]
+	>(DEFAULT_PLACE_CATEGORIES);
 	const slowToastLastShownAtRef = useRef<number>(0);
 	useEffect(() => {
 		if (!slowToast) return;
@@ -303,10 +327,14 @@ function RouteComponent() {
 		scenarioId,
 		floodRiskLevel,
 		selectedFloodZoneIds,
-		selectedPlaceSourceTypes,
+		selectedPlaceCategories,
 		roadHighlightTypes: selectedRoadTypes,
 		onPlotRefreshStats,
 	});
+	const schedulePlotRefreshRef = useRef(schedulePlotRefresh);
+	useEffect(() => {
+		schedulePlotRefreshRef.current = schedulePlotRefresh;
+	}, [schedulePlotRefresh]);
 
 	const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -317,7 +345,7 @@ function RouteComponent() {
 			scenarioId,
 			floodRiskLevel,
 			selectedFloodZoneIds,
-			selectedPlaceSourceTypes,
+			selectedPlaceCategories,
 			autoMinimizeChat,
 			mapView,
 			getCurrentBbox,
@@ -389,7 +417,11 @@ function RouteComponent() {
 						};
 					});
 					if (bbox) {
-						schedulePlotRefresh({ center: nextCenter, zoom: nextZoom, bbox });
+						schedulePlotRefreshRef.current({
+							center: nextCenter,
+							zoom: nextZoom,
+							bbox,
+						});
 					}
 				}
 			} catch {
@@ -403,13 +435,30 @@ function RouteComponent() {
 		defaultExamplePrompts,
 		scenarioId,
 		getViewportSize,
-		schedulePlotRefresh,
 		setMapView,
 		setPlotData,
 	]);
 
 	const stats = getStats();
 	const floodSelection = stats?.floodSelection;
+	const placeControl = stats?.placeControl;
+	const availablePlaceCategories = useMemo(
+		() =>
+			(placeControl?.availableCategories ?? []).filter(
+				(x): x is string => typeof x === "string" && x.length > 0,
+			),
+		[placeControl?.availableCategories],
+	);
+	useEffect(() => {
+		// Keep selection valid as scenario/dataset changes.
+		if (availablePlaceCategories.length === 0) return;
+		setSelectedPlaceCategories((prev) => {
+			const setAvail = new Set(availablePlaceCategories);
+			const kept = prev.filter((x) => setAvail.has(x));
+			return kept.length > 0 ? kept : [...availablePlaceCategories];
+		});
+	}, [availablePlaceCategories]);
+
 	const floodMode =
 		floodSelection?.mode ?? (selectedFloodZoneIds.length ? "selected" : "aoi");
 	const floodModeCount =
@@ -418,6 +467,30 @@ function RouteComponent() {
 			: floodMode === "selected"
 				? selectedFloodZoneIds.length
 				: 0;
+
+	const refreshUsingCurrentView = (
+		overrides?: Partial<{
+			floodRiskLevel: FloodRiskLevel;
+			selectedFloodZoneIds: string[];
+			selectedPlaceCategories: PlaceCategoryId[];
+		}>,
+	) => {
+		const authoritative = getAuthoritativeMapContext();
+		const center = authoritative?.center ?? mapView.center;
+		const zoom = authoritative?.zoom ?? mapView.zoom;
+		const bbox = authoritative?.bbox ?? mapView.bbox;
+		if (!bbox) return;
+		schedulePlotRefresh({
+			center,
+			zoom,
+			bbox,
+			floodRiskLevel: overrides?.floodRiskLevel ?? floodRiskLevel,
+			selectedFloodZoneIds:
+				overrides?.selectedFloodZoneIds ?? selectedFloodZoneIds,
+			selectedPlaceCategories:
+				overrides?.selectedPlaceCategories ?? selectedPlaceCategories,
+		});
+	};
 
 	return (
 		<div className="w-full h-full">
@@ -490,14 +563,7 @@ function RouteComponent() {
 												next.has(id),
 											);
 										});
-										const bbox = mapView.bbox;
-										if (bbox) {
-											schedulePlotRefresh({
-												center: mapView.center,
-												zoom: mapView.zoom,
-												bbox,
-											});
-										}
+										refreshUsingCurrentView();
 									}}
 								/>
 							</label>
@@ -525,16 +591,7 @@ function RouteComponent() {
 										checked={floodRiskLevel === item.id}
 										onChange={() => {
 											setFloodRiskLevel(item.id);
-											const bbox = mapView.bbox;
-											if (bbox) {
-												schedulePlotRefresh({
-													center: mapView.center,
-													zoom: mapView.zoom,
-													bbox,
-													floodRiskLevel: item.id,
-													selectedFloodZoneIds,
-												});
-											}
+											refreshUsingCurrentView({ floodRiskLevel: item.id });
 										}}
 									/>
 								</label>
@@ -547,16 +604,7 @@ function RouteComponent() {
 								className="h-7 px-2 mt-2"
 								onClick={() => {
 									setSelectedFloodZoneIds([]);
-									const bbox = mapView.bbox;
-									if (bbox) {
-										schedulePlotRefresh({
-											center: mapView.center,
-											zoom: mapView.zoom,
-											bbox,
-											floodRiskLevel,
-											selectedFloodZoneIds: [],
-										});
-									}
+									refreshUsingCurrentView({ selectedFloodZoneIds: [] });
 								}}
 							>
 								Clear selected zones ({selectedFloodZoneIds.length})
@@ -566,36 +614,58 @@ function RouteComponent() {
 					<div className="mt-3 pt-2 border-t border-border">
 						<div className="font-semibold">Places</div>
 						<div className="text-muted-foreground mt-0.5 mb-2">
-							Show/hide place source categories.
+							Show/hide place categories.
 						</div>
+						{availablePlaceCategories.length > 0 && (
+							<div className="flex gap-1 mb-2">
+								<Button
+									size="sm"
+									variant="ghost"
+									className="h-6 px-2 text-[11px]"
+									onClick={() => {
+										setSelectedPlaceCategories([]);
+										refreshUsingCurrentView({ selectedPlaceCategories: [] });
+									}}
+								>
+									None
+								</Button>
+								<Button
+									size="sm"
+									variant="ghost"
+									className="h-6 px-2 text-[11px]"
+									onClick={() => {
+										setSelectedPlaceCategories([...availablePlaceCategories]);
+										refreshUsingCurrentView({
+											selectedPlaceCategories: [...availablePlaceCategories],
+										});
+									}}
+								>
+									All
+								</Button>
+							</div>
+						)}
 						<div className="space-y-1.5">
-							{PLACE_SOURCE_TYPES.map((item) => (
+							{availablePlaceCategories.map((item) => (
 								<label
-									key={item.id}
+									key={item}
 									className="flex items-center justify-between gap-2 cursor-pointer"
 								>
-									<span>{item.label}</span>
+									<span>{prettyPlaceCategoryLabel(item)}</span>
 									<input
 										type="checkbox"
-										checked={selectedPlaceSourceTypes.includes(item.id)}
+										checked={selectedPlaceCategories.includes(item)}
 										onChange={(e) => {
 											const checked = e.currentTarget.checked;
-											setSelectedPlaceSourceTypes((prev) => {
+											setSelectedPlaceCategories((prev) => {
 												const next = new Set(prev);
-												if (checked) next.add(item.id);
-												else next.delete(item.id);
-												const out = PLACE_SOURCE_TYPES.map((t) => t.id).filter(
-													(id) => next.has(id),
+												if (checked) next.add(item);
+												else next.delete(item);
+												const out = availablePlaceCategories.filter((id) =>
+													next.has(id),
 												);
-												const bbox = mapView.bbox;
-												if (bbox) {
-													schedulePlotRefresh({
-														center: mapView.center,
-														zoom: mapView.zoom,
-														bbox,
-														selectedPlaceSourceTypes: out,
-													});
-												}
+												refreshUsingCurrentView({
+													selectedPlaceCategories: out,
+												});
 												return out;
 											});
 										}}
@@ -651,16 +721,7 @@ function RouteComponent() {
 							if (next.has(zoneId)) next.delete(zoneId);
 							else next.add(zoneId);
 							const out = [...next].sort();
-							const bbox = mapView.bbox;
-							if (bbox) {
-								schedulePlotRefresh({
-									center: mapView.center,
-									zoom: mapView.zoom,
-									bbox,
-									floodRiskLevel,
-									selectedFloodZoneIds: out,
-								});
-							}
+							refreshUsingCurrentView({ selectedFloodZoneIds: out });
 							return out;
 						});
 					}}

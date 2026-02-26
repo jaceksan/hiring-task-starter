@@ -18,10 +18,13 @@ from api.invoke_stream import (
 )
 from engine.duckdb_impl.geoparquet.pins import query_geoparquet_layer_pinned_ids
 from engine.types import LayerBundle, MapContext
-from flood.selection import active_flood_zone_features, parse_request_flood_context
+from flood.selection import filter_flood_layer_for_request, parse_request_flood_context
 from geo.aoi import BBox
 from layers.types import Layer
-from place.selection import filter_points_layer_by_source, parse_request_place_sources
+from place.selection import (
+    filter_points_layer_by_category,
+    parse_request_place_categories,
+)
 from plotly.build_map import build_map_plot
 from roads.highlight_control import build_road_type_highlights, normalize_road_types
 from scenarios.registry import (
@@ -78,8 +81,11 @@ class ApiViewport(BaseModel):
 
 
 class ApiRequestContext(BaseModel):
-    floodRiskLevel: Literal["high", "medium", "any"] | None = None
+    floodRiskLevel: (
+        Literal["extreme", "very_high", "high", "medium", "low", "any"] | None
+    ) = None
     selectedFloodZoneIds: list[str] | None = None
+    placeCategories: list[str] | None = None
     placeSourceTypes: list[str] | None = None
 
 
@@ -272,13 +278,26 @@ def plot(body: ApiPlotRequest):
         except Exception:
             pass
 
-    place_sources = parse_request_place_sources(ctx.request_context)
+    flood_risk_level, selected_zone_ids = parse_request_flood_context(
+        ctx.request_context
+    )
+    place_categories = parse_request_place_categories(ctx.request_context)
     place_filter_stats: dict[str, object] | None = None
     if scenario.routing.primaryPointsLayerId:
-        aoi_layers, place_filter_stats = filter_points_layer_by_source(
+        aoi_layers, place_filter_stats = filter_points_layer_by_category(
             aoi_layers,
             layer_id=scenario.routing.primaryPointsLayerId,
-            selected_sources=place_sources,
+            selected_categories=place_categories,
+        )
+    flood_filter_stats: dict[str, object] | None = None
+    if scenario.routing.maskPolygonsLayerId:
+        aoi_layers, flood_filter_stats, _active_flood_zones = (
+            filter_flood_layer_for_request(
+                aoi_layers,
+                layer_id=scenario.routing.maskPolygonsLayerId,
+                flood_risk_level=flood_risk_level,
+                selected_zone_ids=selected_zone_ids,
+            )
         )
 
     selected_road_types = normalize_road_types(body.roadHighlightTypes)
@@ -300,6 +319,11 @@ def plot(body: ApiPlotRequest):
         view_zoom=ctx.view_zoom,
         scenario_id=ctx.scenario_id,
         cluster_points_layer_id=scenario.plot.highlightLayerId,
+        cache_scope=(
+            tuple(sorted(place_categories or set())),
+            flood_risk_level,
+            tuple(sorted(selected_zone_ids)),
+        ),
         highlight_layer_id=next(iter(highlight_ids_by_layer.keys()), None),
         highlight_feature_ids=next(iter(highlight_ids_by_layer.values()), None),
         highlight_feature_ids_by_layer=highlight_ids_by_layer or None,
@@ -354,19 +378,6 @@ def plot(body: ApiPlotRequest):
     t_json_ms = (time.perf_counter() - t_json0) * 1000.0
     payload_bytes = len(payload_json)
     try:
-        flood_risk_level, selected_zone_ids = parse_request_flood_context(
-            ctx.request_context
-        )
-        mask_layer = (
-            aoi_layers.get(scenario.routing.maskPolygonsLayerId)
-            if scenario.routing.maskPolygonsLayerId
-            else None
-        )
-        active_flood_zones = active_flood_zone_features(
-            mask_layer,
-            flood_risk_level=flood_risk_level,
-            selected_zone_ids=selected_zone_ids,
-        )
         payload["layout"]["meta"]["stats"]["cache"] = cache_stats
         payload["layout"]["meta"]["stats"]["engine"] = engine_name
         payload["layout"]["meta"]["stats"]["scenarioId"] = ctx.scenario_id
@@ -374,12 +385,7 @@ def plot(body: ApiPlotRequest):
         payload["layout"]["meta"]["stats"]["payloadBytes"] = payload_bytes
         payload["layout"]["meta"]["stats"]["roadHighlightControl"] = road_filter_status
         payload["layout"]["meta"]["stats"]["placeControl"] = place_filter_stats
-        payload["layout"]["meta"]["stats"]["floodSelection"] = {
-            "mode": "selected" if selected_zone_ids else "aoi",
-            "riskLevel": flood_risk_level,
-            "selectedCount": len(selected_zone_ids),
-            "activeZoneCount": len(active_flood_zones),
-        }
+        payload["layout"]["meta"]["stats"]["floodSelection"] = flood_filter_stats
         if getattr(result, "stats", None):
             payload["layout"]["meta"]["stats"]["engineStats"] = result.stats
         payload["layout"]["meta"]["stats"]["timingsMs"] = {

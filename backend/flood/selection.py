@@ -5,9 +5,9 @@ from typing import Any, Literal
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import unary_union
 
-from layers.types import Layer, PolygonFeature
+from layers.types import Layer, LayerBundle, PolygonFeature
 
-FloodRiskLevel = Literal["high", "medium", "any"]
+FloodRiskLevel = Literal["extreme", "very_high", "high", "medium", "low", "any"]
 
 
 def parse_request_flood_context(
@@ -19,7 +19,7 @@ def parse_request_flood_context(
         else None
     )
     level = str(raw_level or "any").strip().lower()
-    if level not in {"high", "medium", "any"}:
+    if level not in {"extreme", "very_high", "high", "medium", "low", "any"}:
         level = "any"
 
     raw_selected = (
@@ -45,6 +45,10 @@ def _risk_bucket_from_raw(value: Any) -> str | None:
     v = str(value).strip().lower()
     if not v:
         return None
+    if v in {"extreme", "q5", "5y", "5"}:
+        return "extreme"
+    if v in {"very_high", "q20", "20y", "20"}:
+        return "very_high"
     if v in {"high", "q100", "100y", "100"}:
         return "high"
     if v in {"medium", "q50", "50y", "50"}:
@@ -74,10 +78,7 @@ def _feature_matches_risk(
     bucket = _risk_bucket_from_raw(raw)
     if bucket is None:
         return False
-    if flood_risk_level == "high":
-        return bucket == "high"
-    # medium means "50y+" => medium + high
-    return bucket in {"medium", "high"}
+    return bucket == flood_risk_level
 
 
 def active_flood_zone_features(
@@ -120,3 +121,61 @@ def union_from_polygons(features: list[PolygonFeature]) -> Polygon | MultiPolygo
         return Polygon()
     u = unary_union(polys)
     return u.buffer(0) if hasattr(u, "buffer") else u
+
+
+def filter_flood_layer_for_request(
+    layers: LayerBundle,
+    *,
+    layer_id: str | None,
+    flood_risk_level: FloodRiskLevel,
+    selected_zone_ids: set[str],
+) -> tuple[LayerBundle, dict[str, Any], list[PolygonFeature]]:
+    if not layer_id:
+        return (
+            layers,
+            {
+                "mode": "selected" if selected_zone_ids else "aoi",
+                "riskLevel": flood_risk_level,
+                "selectedCount": len(selected_zone_ids),
+                "activeZoneCount": 0,
+            },
+            [],
+        )
+    layer = layers.get(layer_id)
+    if layer is None or layer.kind != "polygons":
+        return (
+            layers,
+            {
+                "mode": "selected" if selected_zone_ids else "aoi",
+                "riskLevel": flood_risk_level,
+                "selectedCount": len(selected_zone_ids),
+                "activeZoneCount": 0,
+            },
+            [],
+        )
+    active = active_flood_zone_features(
+        layer,
+        flood_risk_level=flood_risk_level,
+        selected_zone_ids=selected_zone_ids,
+    )
+    filtered_layer = Layer(
+        id=layer.id,
+        kind=layer.kind,
+        title=layer.title,
+        features=active,
+        style=layer.style,
+        metadata=layer.metadata,
+    )
+    next_layers = LayerBundle(
+        layers=[filtered_layer if l.id == layer.id else l for l in layers.layers]
+    )
+    return (
+        next_layers,
+        {
+            "mode": "selected" if selected_zone_ids else "aoi",
+            "riskLevel": flood_risk_level,
+            "selectedCount": len(selected_zone_ids),
+            "activeZoneCount": len(active),
+        },
+        active,
+    )

@@ -84,7 +84,7 @@ layers:
         nameColumn: water_name
         classColumn: flood_risk_level
         geometryColumn: geometry
-        propertyColumns: [water_name, source_fclass, code]
+        propertyColumns: [water_name, source_fclass]
         minZoomForGeometry: 11.5
     style:
       fillcolor: "rgba(30, 136, 229, 0.15)"
@@ -97,18 +97,28 @@ layers:
         waterEntityProperty: name
         defaultFillColor: "rgba(30, 136, 229, 0.15)"
         bands:
+          - id: extreme
+            label: "Extreme"
+            value: extreme
+            fillColor: "rgba(183, 28, 28, 0.40)"
+            lineColor: "rgba(183, 28, 28, 0.85)"
+          - id: very_high
+            label: "Very High"
+            value: very_high
+            fillColor: "rgba(211, 47, 47, 0.36)"
+            lineColor: "rgba(211, 47, 47, 0.80)"
           - id: high
-            label: "High (100y)"
+            label: "High"
             value: high
             fillColor: "rgba(229, 57, 53, 0.35)"
             lineColor: "rgba(229, 57, 53, 0.75)"
           - id: medium
-            label: "Medium (50y+)"
+            label: "Medium"
             value: medium
             fillColor: "rgba(251, 140, 0, 0.28)"
             lineColor: "rgba(251, 140, 0, 0.70)"
           - id: low
-            label: "Any risk"
+            label: "Low"
             value: low
             fillColor: "rgba(30, 136, 229, 0.20)"
             lineColor: "rgba(30, 136, 229, 0.60)"
@@ -124,7 +134,7 @@ layers:
         nameColumn: name
         classColumn: fclass
         geometryColumn: geometry
-        propertyColumns: [population, place_source, code]
+        propertyColumns: [population, place_source, place_category]
     style:
       marker:
         size: 6

@@ -11,11 +11,14 @@ from agent.router import route_prompt
 from engine.duckdb import DuckDBEngine
 from engine.in_memory import InMemoryEngine
 from engine.types import LayerEngine, MapContext
-from flood.selection import active_flood_zone_features, parse_request_flood_context
+from flood.selection import filter_flood_layer_for_request, parse_request_flood_context
 from geo.aoi import BBox
 from geo.tiles import tile_zoom_for_view_zoom, tiles_for_bbox
 from lod.policy import apply_lod
-from place.selection import filter_points_layer_by_source, parse_request_place_sources
+from place.selection import (
+    filter_points_layer_by_category,
+    parse_request_place_categories,
+)
 from plotly.build_map import build_map_plot
 from scenarios.registry import default_scenario_id, get_scenario
 from telemetry.singleton import get_store
@@ -99,6 +102,7 @@ def _apply_lod_cached(
     highlight_layer_id: str | None,
     highlight_feature_ids: set[str] | None,
     highlight_feature_ids_by_layer: dict[str, set[str]] | None = None,
+    cache_scope: tuple | None = None,
 ):
     """
     Cache LOD output by AOI bucket + zoom bucket.
@@ -126,6 +130,7 @@ def _apply_lod_cached(
     key = (
         scenario_id,
         engine_name,
+        cache_scope or (),
         cluster_points_layer_id,
         tile_zoom,
         zoom_bucket,
@@ -230,13 +235,26 @@ async def handle_incoming_message(thread):
         t_engine_get_ms = (time.perf_counter() - t0) * 1000.0
         aoi_layers = result.layers
         index = result.index
-        place_sources = parse_request_place_sources(ctx.request_context)
+        flood_risk_level, selected_zone_ids = parse_request_flood_context(
+            ctx.request_context
+        )
+        place_categories = parse_request_place_categories(ctx.request_context)
         place_filter_stats: dict[str, object] | None = None
         if scenario.routing.primaryPointsLayerId:
-            aoi_layers, place_filter_stats = filter_points_layer_by_source(
+            aoi_layers, place_filter_stats = filter_points_layer_by_category(
                 aoi_layers,
                 layer_id=scenario.routing.primaryPointsLayerId,
-                selected_sources=place_sources,
+                selected_categories=place_categories,
+            )
+        flood_filter_stats: dict[str, object] | None = None
+        if scenario.routing.maskPolygonsLayerId:
+            aoi_layers, flood_filter_stats, _active_flood_zones = (
+                filter_flood_layer_for_request(
+                    aoi_layers,
+                    layer_id=scenario.routing.maskPolygonsLayerId,
+                    flood_risk_level=flood_risk_level,
+                    selected_zone_ids=selected_zone_ids,
+                )
             )
 
         t1 = time.perf_counter()
@@ -271,6 +289,11 @@ async def handle_incoming_message(thread):
             view_zoom=thread.map.view.zoom,
             scenario_id=ctx.scenario_id,
             cluster_points_layer_id=scenario.plot.highlightLayerId,
+            cache_scope=(
+                tuple(sorted(place_categories or set())),
+                flood_risk_level,
+                tuple(sorted(selected_zone_ids)),
+            ),
             highlight_layer_id=primary_highlight.layer_id
             if primary_highlight is not None
             else None,
@@ -298,30 +321,12 @@ async def handle_incoming_message(thread):
         )
         t_plot_ms = (time.perf_counter() - t3) * 1000.0
         try:
-            flood_risk_level, selected_zone_ids = parse_request_flood_context(
-                ctx.request_context
-            )
-            mask_layer = (
-                aoi_layers.get(scenario.routing.maskPolygonsLayerId)
-                if scenario.routing.maskPolygonsLayerId
-                else None
-            )
-            active_flood_zones = active_flood_zone_features(
-                mask_layer,
-                flood_risk_level=flood_risk_level,
-                selected_zone_ids=selected_zone_ids,
-            )
             plot["layout"]["meta"]["stats"]["cache"] = cache_stats
             plot["layout"]["meta"]["stats"]["engine"] = engine_name
             plot["layout"]["meta"]["stats"]["scenarioId"] = ctx.scenario_id
             plot["layout"]["meta"]["stats"]["scenarioDataSize"] = scenario.dataSize
             plot["layout"]["meta"]["stats"]["placeControl"] = place_filter_stats
-            plot["layout"]["meta"]["stats"]["floodSelection"] = {
-                "mode": "selected" if selected_zone_ids else "aoi",
-                "riskLevel": flood_risk_level,
-                "selectedCount": len(selected_zone_ids),
-                "activeZoneCount": len(active_flood_zones),
-            }
+            plot["layout"]["meta"]["stats"]["floodSelection"] = flood_filter_stats
             if getattr(result, "stats", None):
                 plot["layout"]["meta"]["stats"]["engineStats"] = result.stats
             t_json0 = time.perf_counter()

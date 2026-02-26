@@ -12,7 +12,7 @@ import type {
 	FloodRiskLevel,
 	MapCenter,
 	MapViewState,
-	PlaceSourceType,
+	PlaceCategoryId,
 	PlotPerfStats,
 	ViewportSize,
 } from "./types";
@@ -30,7 +30,7 @@ export function usePlotController(args: {
 	scenarioId: string;
 	floodRiskLevel: FloodRiskLevel;
 	selectedFloodZoneIds: string[];
-	selectedPlaceSourceTypes: PlaceSourceType[];
+	selectedPlaceCategories: PlaceCategoryId[];
 	roadHighlightTypes: string[];
 	onPlotRefreshStats?: (stats: PlotPerfStats | null) => void;
 }) {
@@ -40,7 +40,7 @@ export function usePlotController(args: {
 		scenarioId,
 		floodRiskLevel,
 		selectedFloodZoneIds,
-		selectedPlaceSourceTypes,
+		selectedPlaceCategories,
 		roadHighlightTypes,
 		onPlotRefreshStats,
 	} = args;
@@ -198,21 +198,21 @@ export function usePlotController(args: {
 			bbox: BBox;
 			floodRiskLevel?: FloodRiskLevel;
 			selectedFloodZoneIds?: string[];
-			selectedPlaceSourceTypes?: PlaceSourceType[];
+			selectedPlaceCategories?: PlaceCategoryId[];
 		}) => {
 			if (invokeBusyRef.current) return;
 			const effectiveFloodRiskLevel = next.floodRiskLevel ?? floodRiskLevel;
 			const effectiveSelectedFloodZoneIds =
 				next.selectedFloodZoneIds ?? selectedFloodZoneIds;
-			const effectiveSelectedPlaceSourceTypes =
-				next.selectedPlaceSourceTypes ?? selectedPlaceSourceTypes;
+			const effectiveSelectedPlaceCategories =
+				next.selectedPlaceCategories ?? selectedPlaceCategories;
 
 			const key = JSON.stringify({
 				s: scenarioId,
 				e: engine,
 				r: effectiveFloodRiskLevel,
 				zones: [...new Set(effectiveSelectedFloodZoneIds)].sort(),
-				ps: [...new Set(effectiveSelectedPlaceSourceTypes)].sort(),
+				pc: [...new Set(effectiveSelectedPlaceCategories)].sort(),
 				z: Math.round(next.zoom * 10) / 10,
 				rt: [...new Set(roadHighlightTypes)].sort(),
 				b: {
@@ -249,7 +249,7 @@ export function usePlotController(args: {
 								context: {
 									floodRiskLevel: effectiveFloodRiskLevel,
 									selectedFloodZoneIds: effectiveSelectedFloodZoneIds,
-									placeSourceTypes: effectiveSelectedPlaceSourceTypes,
+									placeCategories: effectiveSelectedPlaceCategories,
 								},
 							},
 							highlights: currentHighlightRef.current(),
@@ -284,9 +284,7 @@ export function usePlotController(args: {
 					// explicit layout.mapbox.zoom/center values which would "snap
 					// back" the map to whatever the backend sent. Instead, keep
 					// mapbox view management purely in userland (onRelayout → state).
-					setPlotData((prev) => {
-						const prevLayout = asRecord(prev.layout) ?? {};
-						const prevMb = asRecord(prevLayout.mapbox) ?? {};
+					setPlotData((_prev) => {
 						const respLayout = asRecord(payload.layout) ?? {};
 						const respMb = asRecord(respLayout.mapbox) ?? {};
 						return {
@@ -295,12 +293,11 @@ export function usePlotController(args: {
 								...respLayout,
 								mapbox: {
 									...respMb,
-									// Preserve current view — do not let the backend
-									// response override the user's zoom/pan position.
-									center: (prevMb.center ?? respMb.center) as
-										| Record<string, number>
-										| undefined,
-									zoom: (prevMb.zoom ?? respMb.zoom) as number | undefined,
+									// Pin mapbox view to the request context used for this refresh.
+									// This avoids selector-driven refreshes snapping back to stale
+									// center/zoom values kept in plot layout state.
+									center: next.center,
+									zoom: next.zoom,
 								},
 							},
 						} as Pick<PlotParams, "data" | "layout">;
@@ -318,7 +315,7 @@ export function usePlotController(args: {
 			roadHighlightTypes,
 			scenarioId,
 			selectedFloodZoneIds,
-			selectedPlaceSourceTypes,
+			selectedPlaceCategories,
 		],
 	);
 

@@ -270,7 +270,7 @@ COPY (
 (FORMAT PARQUET, COMPRESSION '${COMPRESSION}', ROW_GROUP_SIZE ${ROW_GROUP_SIZE});
 SQL
 
-step "Build enriched flood_zones + places from raw extracts"
+step "Build enriched roads output"
 run duckdb :memory: <<SQL
 INSTALL spatial;
 LOAD spatial;
@@ -298,6 +298,12 @@ FROM read_parquet('${OUT_DIR}/roads_raw.parquet')
 WHERE geometry IS NOT NULL
 ) TO '${OUT_DIR}/roads.parquet'
 (FORMAT PARQUET, COMPRESSION '${COMPRESSION}');
+SQL
+
+step "Build enriched flood_zones output"
+run duckdb :memory: <<SQL
+INSTALL spatial;
+LOAD spatial;
 
 COPY (
 WITH water AS (
@@ -317,8 +323,10 @@ risk_bands AS (
     source_fclass,
     water_name,
     CASE
-      WHEN source_fclass IN ('water', 'reservoir') THEN 'high'
-      WHEN source_fclass IN ('riverbank', 'wetland') THEN 'medium'
+      WHEN source_fclass IN ('riverbank') THEN 'extreme'
+      WHEN source_fclass IN ('water') THEN 'very_high'
+      WHEN source_fclass IN ('reservoir') THEN 'high'
+      WHEN source_fclass IN ('wetland') THEN 'medium'
       ELSE 'low'
     END AS flood_risk_level,
     geometry
@@ -342,6 +350,12 @@ FROM risk_bands
 WHERE geometry IS NOT NULL
 ) TO '${OUT_DIR}/flood_zones.parquet'
 (FORMAT PARQUET, COMPRESSION '${COMPRESSION}');
+SQL
+
+step "Build enriched places output"
+run duckdb :memory: <<SQL
+INSTALL spatial;
+LOAD spatial;
 
 COPY (
 WITH settlements AS (
@@ -375,15 +389,27 @@ unioned AS (
   UNION ALL
   SELECT * FROM pois
 ),
-ranked AS (
+categorized AS (
   SELECT
     *,
-    ROW_NUMBER() OVER (
-      PARTITION BY osm_id
-      ORDER BY
-        CASE WHEN name IS NOT NULL AND TRIM(name) <> '' THEN 0 ELSE 1 END,
-        src_priority
-    ) AS rn
+    CASE
+      WHEN place_source = 'settlement' AND fclass = 'national_capital' THEN 'capital'
+      WHEN place_source = 'settlement' AND fclass IN ('city', 'town') THEN 'urban'
+      WHEN place_source = 'settlement' AND fclass IN ('suburb', 'village') THEN 'suburban_rural'
+      WHEN place_source = 'settlement' AND fclass IN ('hamlet', 'locality') THEN 'local_small'
+      WHEN place_source = 'settlement' THEN 'other_settlement'
+      WHEN place_source = 'poi' AND fclass IN ('biergarten', 'pub', 'bar', 'cafe', 'restaurant', 'fast_food') THEN 'food_drink'
+      WHEN place_source = 'poi' AND fclass IN ('hospital', 'clinic', 'doctors', 'dentist', 'pharmacy', 'veterinary') THEN 'health'
+      WHEN place_source = 'poi' AND fclass IN ('school', 'college', 'university', 'kindergarten', 'library') THEN 'education'
+      WHEN place_source = 'poi' AND fclass IN ('bus_station', 'railway_station', 'station', 'tram_stop', 'subway_entrance', 'fuel', 'parking', 'aerodrome') THEN 'transport'
+      WHEN place_source = 'poi' AND fclass IN ('supermarket', 'mall', 'convenience', 'bakery', 'clothes', 'department_store', 'market_place') THEN 'shopping'
+      WHEN place_source = 'poi' AND fclass IN ('museum', 'theatre', 'cinema', 'attraction', 'viewpoint', 'zoo', 'hotel', 'hostel', 'camp_site') THEN 'tourism_culture'
+      WHEN place_source = 'poi' AND fclass IN ('sports_centre', 'stadium', 'swimming_pool', 'park', 'playground') THEN 'sport_leisure'
+      WHEN place_source = 'poi' AND fclass IN ('town_hall', 'post_office', 'police', 'fire_station', 'courthouse', 'bank', 'atm') THEN 'public_services'
+      WHEN place_source = 'poi' AND fclass IN ('place_of_worship', 'graveyard') THEN 'worship'
+      WHEN place_source = 'poi' THEN 'other_poi'
+      ELSE 'other'
+    END AS place_category
   FROM unioned
 )
 SELECT
@@ -393,6 +419,7 @@ SELECT
   population,
   name,
   place_source,
+  place_category,
   geometry,
   STRUCT_PACK(
     xmin := CAST(ST_XMin(geometry) AS FLOAT),
@@ -400,8 +427,7 @@ SELECT
     xmax := CAST(ST_XMax(geometry) AS FLOAT),
     ymax := CAST(ST_YMax(geometry) AS FLOAT)
   ) AS geometry_bbox
-FROM ranked
-WHERE rn = 1
+FROM categorized
 ) TO '${OUT_DIR}/places.parquet'
 (FORMAT PARQUET, COMPRESSION '${COMPRESSION}');
 SQL

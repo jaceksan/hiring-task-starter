@@ -31,6 +31,13 @@ def _format_extra_props(
     return out
 
 
+def _format_place_category_label(raw: Any) -> str:
+    s = str(raw or "").strip().lower()
+    if not s:
+        return ""
+    return s.replace("_", " ").title()
+
+
 def trace_aoi_bbox(aoi: BBox) -> dict[str, Any]:
     b = aoi.normalized()
     lons = [b.min_lon, b.max_lon, b.max_lon, b.min_lon, b.min_lon]
@@ -104,7 +111,7 @@ def _trace_polygons(
             hover_text = ""
         extra = _format_extra_props(
             f.props or {},
-            keys=["source_fclass", "code"],
+            keys=["source_fclass"],
             exclude_values={entity or ""},
         )
         if extra:
@@ -316,7 +323,7 @@ def trace_lines(layer: Layer) -> dict[str, Any]:
         hover_parts.extend(
             _format_extra_props(
                 props,
-                keys=["maxspeed", "oneway", "bridge", "tunnel", "code"],
+                keys=["maxspeed", "oneway", "bridge", "tunnel"],
             )
         )
         hover_text = "<br>".join(hover_parts)
@@ -372,13 +379,31 @@ def trace_points(layer: Layer) -> dict[str, Any]:
                                 if str((p.props or {}).get("fclass") or "").strip()
                                 else ""
                             ),
+                            (
+                                "category: "
+                                + _format_place_category_label(
+                                    (p.props or {}).get("place_category")
+                                )
+                                if _format_place_category_label(
+                                    (p.props or {}).get("place_category")
+                                )
+                                else ""
+                            ),
+                            (
+                                f"source: {str((p.props or {}).get('place_source') or '').strip()}"
+                                if str(
+                                    (p.props or {}).get("place_source") or ""
+                                ).strip()
+                                else ""
+                            ),
+                            (
+                                f"population: {int((p.props or {}).get('population') or 0)}"
+                                if int((p.props or {}).get("population") or 0) > 0
+                                else ""
+                            ),
                         ]
                         if x
                     ],
-                    *_format_extra_props(
-                        p.props or {},
-                        keys=["place_source", "population", "code"],
-                    ),
                 ]
             )
             for p in feats
@@ -405,14 +430,15 @@ def trace_point_clusters(layer: Layer, clusters: list[ClusterMarker]) -> dict[st
         "lon": [c.lon for c in clusters],
         "lat": [c.lat for c in clusters],
         "mode": "markers+text",
-        "text": [str(c.count) for c in clusters],
+        "text": [f"~{c.count}" for c in clusters],
+        "customdata": [c.count for c in clusters],
         "textposition": "middle center",
         "marker": {
             "size": [min(26, 8 + int(c.count**0.5) * 2) for c in clusters],
             "color": color,
             "line": {"color": "rgba(255, 193, 7, 0.9)", "width": 1},
         },
-        "hovertemplate": "%{text}<extra></extra>",
+        "hovertemplate": "Approx visible count: %{customdata}<extra></extra>",
     }
 
 

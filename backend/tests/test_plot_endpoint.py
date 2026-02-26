@@ -248,7 +248,7 @@ def test_plot_endpoint_reports_place_source_filter_stats():
                     "maxLat": 50.18,
                 },
                 "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
-                "context": {"placeSourceTypes": ["settlement"]},
+                "context": {"placeCategories": ["urban"]},
             },
             "engine": "duckdb",
             "scenarioId": "prague_population_infrastructure_small",
@@ -258,7 +258,7 @@ def test_plot_endpoint_reports_place_source_filter_stats():
     payload = resp.json()
     stats = payload.get("layout", {}).get("meta", {}).get("stats", {})
     place = stats.get("placeControl") or {}
-    assert "settlement" in (place.get("activeSources") or [])
+    assert "urban" in (place.get("activeCategories") or [])
     assert isinstance(place.get("beforeCount"), int)
     assert isinstance(place.get("afterCount"), int)
     assert int(place.get("afterCount") or 0) <= int(place.get("beforeCount") or 0)
