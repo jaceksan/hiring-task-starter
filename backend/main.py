@@ -17,10 +17,14 @@ from api.invoke_stream import (
     handle_incoming_message,
 )
 from engine.duckdb_impl.geoparquet.pins import query_geoparquet_layer_pinned_ids
+from engine.duckdb_impl.geoparquet.cluster_counts import (
+    enrich_clusters_with_exact_counts,
+)
 from engine.types import LayerBundle, MapContext
 from flood.selection import filter_flood_layer_for_request, parse_request_flood_context
 from geo.aoi import BBox
 from layers.types import Layer
+from lod.points import grid_size_m
 from place.selection import (
     filter_points_layer_by_category,
     parse_request_place_categories,
@@ -329,6 +333,30 @@ def plot(body: ApiPlotRequest):
         highlight_feature_ids_by_layer=highlight_ids_by_layer or None,
     )
     t_lod_ms = (time.perf_counter() - t1) * 1000.0
+    if (
+        engine_name == "duckdb"
+        and beer_clusters is not None
+        and scenario.plot.highlightLayerId
+    ):
+        try:
+            points_cfg = next(
+                (
+                    l
+                    for l in scenario.layers
+                    if l.id == scenario.plot.highlightLayerId and l.kind == "points"
+                ),
+                None,
+            )
+            if points_cfg is not None and points_cfg.source.type == "geoparquet":
+                beer_clusters = enrich_clusters_with_exact_counts(
+                    path=resolve_repo_path(points_cfg.source.path),
+                    aoi=aoi,
+                    clusters=beer_clusters,
+                    grid_m=grid_size_m(ctx.view_zoom),
+                    place_category_filter=place_categories,
+                )
+        except Exception:
+            pass
 
     highlight = None
     highlights = []

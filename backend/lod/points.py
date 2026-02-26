@@ -13,6 +13,9 @@ class ClusterMarker:
     lon: float
     lat: float
     count: int
+    cell_x: int
+    cell_y: int
+    exact_count: int | None = None
 
 
 def should_cluster_points(zoom: float, n_points: int, max_points: int) -> bool:
@@ -20,7 +23,7 @@ def should_cluster_points(zoom: float, n_points: int, max_points: int) -> bool:
     return zoom <= 9.5 or n_points > max_points
 
 
-def _grid_size_m(zoom: float) -> float:
+def grid_size_m(zoom: float) -> float:
     # Coarser grids at low zoom.
     if zoom <= 6:
         return 8_000.0
@@ -46,7 +49,7 @@ def cluster_points(points: list[PointFeature], *, zoom: float) -> list[ClusterMa
     """
     t_fwd = transformer_4326_to_3857()
     t_inv = _transformer_3857_to_4326()
-    grid = _grid_size_m(zoom)
+    grid = grid_size_m(zoom)
 
     buckets: dict[tuple[int, int], tuple[int, float, float]] = {}
     # (cell_x, cell_y) -> (count, sum_x, sum_y)
@@ -58,11 +61,19 @@ def cluster_points(points: list[PointFeature], *, zoom: float) -> list[ClusterMa
         buckets[(cx, cy)] = (count + 1, sx + x, sy + y)
 
     out: list[ClusterMarker] = []
-    for count, sx, sy in buckets.values():
+    for (cx, cy), (count, sx, sy) in buckets.items():
         x = sx / count
         y = sy / count
         lon, lat = t_inv.transform(x, y)
-        out.append(ClusterMarker(lon=float(lon), lat=float(lat), count=int(count)))
+        out.append(
+            ClusterMarker(
+                lon=float(lon),
+                lat=float(lat),
+                count=int(count),
+                cell_x=int(cx),
+                cell_y=int(cy),
+            )
+        )
 
     # Larger clusters first (nice at low zoom).
     out.sort(key=lambda c: c.count, reverse=True)

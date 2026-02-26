@@ -9,18 +9,22 @@ from functools import lru_cache
 
 from agent.router import route_prompt
 from engine.duckdb import DuckDBEngine
+from engine.duckdb_impl.geoparquet.cluster_counts import (
+    enrich_clusters_with_exact_counts,
+)
 from engine.in_memory import InMemoryEngine
 from engine.types import LayerEngine, MapContext
 from flood.selection import filter_flood_layer_for_request, parse_request_flood_context
 from geo.aoi import BBox
 from geo.tiles import tile_zoom_for_view_zoom, tiles_for_bbox
 from lod.policy import apply_lod
+from lod.points import grid_size_m
 from place.selection import (
     filter_points_layer_by_category,
     parse_request_place_categories,
 )
 from plotly.build_map import build_map_plot
-from scenarios.registry import default_scenario_id, get_scenario
+from scenarios.registry import default_scenario_id, get_scenario, resolve_repo_path
 from telemetry.singleton import get_store
 
 
@@ -303,6 +307,30 @@ async def handle_incoming_message(thread):
             highlight_feature_ids_by_layer=highlight_ids_by_layer or None,
         )
         t_lod_ms = (time.perf_counter() - t2) * 1000.0
+        if (
+            engine_name == "duckdb"
+            and beer_clusters is not None
+            and scenario.plot.highlightLayerId
+        ):
+            try:
+                points_cfg = next(
+                    (
+                        l
+                        for l in scenario.layers
+                        if l.id == scenario.plot.highlightLayerId and l.kind == "points"
+                    ),
+                    None,
+                )
+                if points_cfg is not None and points_cfg.source.type == "geoparquet":
+                    beer_clusters = enrich_clusters_with_exact_counts(
+                        path=resolve_repo_path(points_cfg.source.path),
+                        aoi=aoi,
+                        clusters=beer_clusters,
+                        grid_m=grid_size_m(ctx.view_zoom),
+                        place_category_filter=place_categories,
+                    )
+            except Exception:
+                pass
 
         # Send the map payload before commit so frontend attaches it to the message.
         t3 = time.perf_counter()

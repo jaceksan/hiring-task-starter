@@ -431,13 +431,15 @@ def trace_point_clusters(layer: Layer, clusters: list[ClusterMarker]) -> dict[st
         "lat": [c.lat for c in clusters],
         "mode": "markers",
         "text": ["" for _ in clusters],
-        "customdata": [c.count for c in clusters],
         "marker": {
             "size": [min(26, 8 + int(c.count**0.5) * 2) for c in clusters],
             "color": color,
             "line": {"color": "rgba(255, 193, 7, 0.9)", "width": 1},
         },
-        "hovertemplate": "Approx visible count: %{customdata}<extra></extra>",
+        "customdata": [
+            c.exact_count if c.exact_count is not None else c.count for c in clusters
+        ],
+        "hovertemplate": "Count in this region: %{customdata}<extra></extra>",
     }
 
 
