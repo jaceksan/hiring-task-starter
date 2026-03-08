@@ -1,0 +1,81 @@
+scenarios/prague_population_infrastructure_small/scenario.yaml
+  496edb793ba1d277 70-75,93-106,108,110,114-116,121-122,126-127,131-132,136-137,141-142
+frontend/e2e/message-persistence.spec.ts
+  496edb793ba1d277 3-4,30-34,51-52,74,89,99,127,131,164,167,169-202
+Makefile
+  496edb793ba1d277 7,28-29,88-95
+backend/agent/router.py
+  496edb793ba1d277 5,35,180,191,195-196,209-217,221-235
+.aida/validation_policy.yaml
+  496edb793ba1d277 14-17,43,45-47,49-50
+.aida/change_domains.yaml
+  496edb793ba1d277 30-39
+backend/geo/index.py
+  496edb793ba1d277 280-282
+backend/tests/test_geoparquet_prague_small_integration.py
+  496edb793ba1d277 12,16
+backend/api/invoke_stream.py
+  496edb793ba1d277 176-216,317-332,426-428,455,457
+.aida/validation_registry.yaml
+  496edb793ba1d277 59-64
+frontend/e2e/zoom-stability.spec.ts
+  496edb793ba1d277 3-4,12-16,28,31
+frontend/src/routes/thread/threadId/useInvokeAgent.ts
+  496edb793ba1d277 9,42,61,75-76,197,214-222
+backend/engine/duckdb_impl/geoparquet/layer.py
+  496edb793ba1d277 131-143
+backend/telemetry/store.py
+  496edb793ba1d277 154,157,164-165,170,210,228
+backend/main.py
+  496edb793ba1d277 14,149-161,321-328,330-334,456-458
+scenarios/prague_population_infrastructure_test/scenario.yaml
+  496edb793ba1d277 1-177
+frontend/package.json
+  496edb793ba1d277 9-11,17
+backend/plotly/traces.py
+  496edb793ba1d277 44-46,51-54,59-60,64-65,69-70,77-79,405,474-478,480,485,516-517
+frontend/src/routes/thread/threadId/usePlotController.ts
+  496edb793ba1d277 54,58-59,61,147,168,195-205,215,223-226,236-247,285,352-369,503,505
+backend/tests/test_plot_endpoint.py
+  496edb793ba1d277 11-19,28-30,32-33,43,52-54,56-57,69,75-77,80,84-85,91-92,96,102-104,118-119,125,147,150-151,154,161,170-172,175-176,192-193,196-197,209-210,213-214,232-234,237,244,248-278
+backend/tests/test_geoparquet_prague_small.py
+  496edb793ba1d277 12,32-35,40-41,44,51
+backend/tests/test_invoke_stream.py
+  496edb793ba1d277 2,268,270-318
+frontend/src/routes/thread/threadId.tsx
+  496edb793ba1d277 278,280,316,439,441-444,459,515-516,531-532,554-555,569,597,654-655
+scenarios/czech_population_infrastructure_large/scenario.yaml
+  496edb793ba1d277 110,112,118,123-124,128-129,133-134,138-139,143-144
+frontend/e2e/highlight-motorways.spec.ts
+  496edb793ba1d277 85
+backend/plotly/build_map.py
+  496edb793ba1d277 167,173,184,186-190,193,195-198,207,239
+frontend/src/routes/thread/threadId/types.ts
+  496edb793ba1d277 37,49,59-66,78
+backend/tests/test_plot_payload.py
+  496edb793ba1d277 122-164,183-184,195-196,202-203,206,220-221,257,259-263,265-268
+backend/tests/test_router_highlight.py
+  496edb793ba1d277 130,136-140,151,186,188-189,192,198-199,204-253
+backend/telemetry/sql.py
+  496edb793ba1d277 22,32-33,41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "804c2df6696082d873c7567da218e5d12e73c842",
+  "prompts": {
+    "496edb793ba1d277": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "70be9548-7451-4db1-9e1e-7d57dca1e9e4",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Jan Soubusta <jan.soubusta@gooddata.com>",
+      "messages": [],
+      "total_additions": 964,
+      "total_deletions": 308,
+      "accepted_lines": 903,
+      "overriden_lines": 0
+    }
+  }
+}
