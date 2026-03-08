@@ -1,0 +1,25 @@
+backlog/0200-mvt-scenario.md
+  496edb793ba1d277 5,7-11,17-19,21-43
+BACKLOG.md
+  496edb793ba1d277 11-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "1cdf9a873e17c559f0c5052978669efd379d6afa",
+  "prompts": {
+    "496edb793ba1d277": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "70be9548-7451-4db1-9e1e-7d57dca1e9e4",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Jan Soubusta <jan.soubusta@gooddata.com>",
+      "messages": [],
+      "total_additions": 36,
+      "total_deletions": 6,
+      "accepted_lines": 38,
+      "overriden_lines": 0
+    }
+  }
+}
