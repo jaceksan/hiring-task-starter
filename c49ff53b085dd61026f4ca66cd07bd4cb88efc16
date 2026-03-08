@@ -1,0 +1,49 @@
+backend/engine/duckdb_impl/geoparquet/sql.py
+  496edb793ba1d277 188-219
+backend/plotly/build_map.py
+  496edb793ba1d277 41,48-59,71-75,77,79,81,85,87,89,273
+backend/api/invoke_stream.py
+  496edb793ba1d277 23,289,419,429
+backend/engine/duckdb_impl/geoparquet/layer.py
+  496edb793ba1d277 24,30,165,187-235,243,269,271,289,291
+backend/engine/duckdb_impl/geoparquet/policy.py
+  496edb793ba1d277 5-11,92-161
+backend/map_context.py
+  496edb793ba1d277 1-18
+frontend/src/routes/thread/threadId/types.ts
+  496edb793ba1d277 13,60
+backend/tests/test_plot_payload.py
+  496edb793ba1d277 272-303
+backend/main.py
+  496edb793ba1d277 30,97,306,443,460
+backend/tests/test_road_class_budget.py
+  496edb793ba1d277 1-31
+frontend/src/routes/thread/threadId/usePlotController.ts
+  496edb793ba1d277 15,35,46,218,227,239,289,356
+frontend/src/routes/thread/threadId/useInvokeAgent.ts
+  496edb793ba1d277 18,30,55,121
+backend/plotly/traces.py
+  496edb793ba1d277 129,168,184-188,191,214,227,253,282,327,342,354,359,390,402-407,410,414,426-431,435,485,506-513
+frontend/src/routes/thread/threadId.tsx
+  496edb793ba1d277 23,38-42,155,298,318,449,471,528-552
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "c49ff53b085dd61026f4ca66cd07bd4cb88efc16",
+  "prompts": {
+    "496edb793ba1d277": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "70be9548-7451-4db1-9e1e-7d57dca1e9e4",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Jan Soubusta <jan.soubusta@gooddata.com>",
+      "messages": [],
+      "total_additions": 381,
+      "total_deletions": 30,
+      "accepted_lines": 734,
+      "overriden_lines": 0
+    }
+  }
+}
