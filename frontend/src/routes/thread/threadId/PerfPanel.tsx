@@ -1,3 +1,6 @@
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import type { PlotPerfStats } from "./types";
 
 export function PerfPanel(props: {
@@ -5,6 +8,7 @@ export function PerfPanel(props: {
 	fallbackEngine: string;
 }) {
 	const { stats, fallbackEngine } = props;
+	const [open, setOpen] = useState(true);
 	const t = stats.timingsMs;
 	// Note: timingsMs is backend-provided; keep rendering tolerant to missing fields.
 	const parts = [
@@ -22,9 +26,28 @@ export function PerfPanel(props: {
 		: null;
 
 	return (
-		<div className="absolute top-2 left-2 z-10 rounded-md border border-border bg-background/90 px-3 py-2 text-xs max-w-[320px]">
-			<div className="font-semibold mb-1">Perf</div>
-			<div className="space-y-0.5 text-muted-foreground">
+		<div className="absolute top-2 left-2 z-10 rounded-md border border-border bg-background/90 px-3 py-2 text-xs max-w-[340px]">
+			<div className="mb-1 flex items-center justify-between gap-2">
+				<div className="font-semibold">Perf</div>
+				<Button
+					size="sm"
+					variant="ghost"
+					className="h-6 px-2 text-[11px]"
+					onClick={() => setOpen((prev) => !prev)}
+					title={open ? "Collapse performance panel" : "Expand performance panel"}
+				>
+					{open ? (
+						<>
+							Collapse <ChevronDown className="size-3" />
+						</>
+					) : (
+						<>
+							Expand <ChevronUp className="size-3" />
+						</>
+					)}
+				</Button>
+			</div>
+			{open && <div className="space-y-0.5 text-muted-foreground">
 				<div>
 					engine:{" "}
 					<span className="text-foreground">
@@ -82,7 +105,7 @@ export function PerfPanel(props: {
 						</span>
 					</div>
 				)}
-			</div>
+			</div>}
 		</div>
 	);
 }

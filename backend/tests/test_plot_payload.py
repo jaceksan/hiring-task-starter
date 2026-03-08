@@ -254,7 +254,7 @@ def test_trace_point_clusters_uses_lighter_density_palette():
     density = next(
         t for t in plot["data"] if t.get("name") == "Places (points) (density)"
     )
-    assert density.get("opacity") == 0.28
+    assert density.get("opacity") == 0.2
     assert density.get("colorscale") == [
         [0.0, "#fffef7"],
         [0.25, "#fff8dd"],
@@ -263,6 +263,6 @@ def test_trace_point_clusters_uses_lighter_density_palette():
         [1.0, "#e7c77a"],
     ]
     assert density.get("marker", {}).get("line") == {
-        "color": "rgba(138, 111, 44, 0.10)",
-        "width": 0.15,
+        "color": "rgba(138, 111, 44, 0.06)",
+        "width": 0.1,
     }

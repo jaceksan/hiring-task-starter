@@ -44,15 +44,31 @@ def build_map_plot(
     if aoi is not None:
         traces.append(trace_aoi_bbox(aoi))
 
-    # Render layers in a stable order: polygons -> lines -> points.
-    for layer in layers.of_kind("polygons"):
-        traces.extend(trace_polygons(layer))
-    for layer in layers.of_kind("lines"):
-        traces.append(trace_lines(layer))
-    for layer in layers.of_kind("points"):
-        if clusters is not None and cluster_layer_id and layer.id == cluster_layer_id:
-            traces.append(trace_point_clusters(layer, clusters))
-        else:
+    clustered_layer_present = bool(
+        clusters is not None
+        and cluster_layer_id
+        and any(layer.id == cluster_layer_id for layer in layers.of_kind("points"))
+    )
+
+    # Keep ordering stable, but when density cells are present render them first so
+    # flood polygons remain legible on top of aggregated place regions.
+    if clustered_layer_present:
+        for layer in layers.of_kind("points"):
+            if clusters is not None and cluster_layer_id and layer.id == cluster_layer_id:
+                traces.append(trace_point_clusters(layer, clusters))
+            else:
+                traces.append(trace_points(layer))
+        for layer in layers.of_kind("polygons"):
+            traces.extend(trace_polygons(layer))
+        for layer in layers.of_kind("lines"):
+            traces.append(trace_lines(layer))
+    else:
+        # Default map browsing: polygons -> lines -> points.
+        for layer in layers.of_kind("polygons"):
+            traces.extend(trace_polygons(layer))
+        for layer in layers.of_kind("lines"):
+            traces.append(trace_lines(layer))
+        for layer in layers.of_kind("points"):
             traces.append(trace_points(layer))
 
     # Highlight overlay should not silently disappear due to LOD/caps.

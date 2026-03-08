@@ -72,7 +72,7 @@ const Container = ({ className, ...props }: React.ComponentProps<"div">) => {
 	return (
 		<div
 			className={cn(
-				"p-1 border border-border rounded-2xl flex flex-col gap-1",
+				"p-0.5 border border-border rounded-lg flex flex-col gap-0.5",
 				className,
 			)}
 			{...props}
@@ -92,7 +92,10 @@ const Textarea = ({
 	return (
 		<textarea
 			placeholder="Ask PangeAI..."
-			className={cn("p-2 resize-none focus:outline-none", className)}
+			className={cn(
+				"px-1.5 py-1 resize-none focus:outline-none text-xs leading-snug max-h-24 overflow-y-auto",
+				className,
+			)}
 			onKeyDown={(event) => {
 				if (event.key === "Enter" && event.shiftKey === false) {
 					event.preventDefault();
@@ -116,7 +119,7 @@ const Textarea = ({
 const Toolbar = ({ className, ...props }: React.ComponentProps<"div">) => {
 	return (
 		<div
-			className={cn("flex justify-between items-center", className)}
+			className={cn("flex justify-between items-center pt-0.5", className)}
 			{...props}
 		/>
 	);
@@ -136,7 +139,7 @@ const SendButton = () => {
 		<Button
 			size="icon"
 			variant="default"
-			className="rounded-full"
+			className="rounded-full size-6"
 			type="submit"
 			disabled={disabled}
 		>

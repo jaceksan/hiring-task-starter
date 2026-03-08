@@ -5,7 +5,7 @@ import {
 	notFound,
 	useNavigate,
 } from "@tanstack/react-router";
-import { Home } from "lucide-react";
+import { ChevronDown, ChevronUp, Home } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Plotly from "react-plotly.js";
 import z from "zod";
@@ -296,6 +296,7 @@ function RouteComponent() {
 	}, [schedulePlotRefresh]);
 
 	const [drawerOpen, setDrawerOpen] = useState(false);
+	const [controlsOpen, setControlsOpen] = useState(true);
 
 	const { mutate, isPending, partialMessage, clearPartialMessage } =
 		useInvokeAgent({
@@ -488,9 +489,31 @@ function RouteComponent() {
 						</div>
 					</div>
 				)}
-				<div className="absolute right-3 top-3 z-20 w-[240px] rounded-md border border-border bg-background/95 px-3 py-2 text-xs shadow">
-					<div>
-						<div className="font-semibold">Flood risk</div>
+				<div className="absolute right-3 top-3 z-20 w-[250px] rounded-md border border-border bg-background/95 px-3 py-2 text-xs shadow">
+					<div className="mb-1 flex items-center justify-between gap-2">
+						<div className="font-semibold">Filters</div>
+						<Button
+							size="sm"
+							variant="ghost"
+							className="h-6 px-2 text-[11px]"
+							onClick={() => setControlsOpen((prev) => !prev)}
+							title={controlsOpen ? "Collapse filters" : "Expand filters"}
+						>
+							{controlsOpen ? (
+								<>
+									Collapse <ChevronDown className="size-3" />
+								</>
+							) : (
+								<>
+									Expand <ChevronUp className="size-3" />
+								</>
+							)}
+						</Button>
+					</div>
+					{controlsOpen && (
+						<>
+							<div>
+								<div className="font-semibold">Flood risk</div>
 						<div className="text-muted-foreground mt-0.5 mb-2">
 							Used for flood-zone filtering in requests.
 						</div>
@@ -536,9 +559,9 @@ function RouteComponent() {
 								Clear selected zones ({selectedFloodZoneIds.length})
 							</Button>
 						)}
-					</div>
-					<div className="mt-3 pt-2 border-t border-border">
-						<div className="font-semibold">Places</div>
+							</div>
+							<div className="mt-3 pt-2 border-t border-border">
+								<div className="font-semibold">Places</div>
 						<div className="text-muted-foreground mt-0.5 mb-2">
 							Show/hide place categories.
 						</div>
@@ -602,7 +625,9 @@ function RouteComponent() {
 								</label>
 							))}
 						</div>
-					</div>
+							</div>
+						</>
+					)}
 				</div>
 				{telemetryOpen && (
 					<TelemetryPanel

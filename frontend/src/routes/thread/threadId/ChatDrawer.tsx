@@ -80,26 +80,27 @@ export function ChatDrawer(props: {
 			className={[
 				"absolute left-0 right-0 bottom-0 z-20",
 				"border-t border-border bg-background/95 backdrop-blur",
-				open ? "h-[42vh]" : "h-[60px]",
+				open ? "h-[24vh] min-h-[170px]" : "h-[38px]",
 			].join(" ")}
 		>
 			<div className="h-full flex flex-col min-h-0">
-				<div className="h-[60px] shrink-0 px-3 flex items-center gap-2 border-b border-border">
+				<div className="h-[38px] shrink-0 px-2 flex items-center gap-1 border-b border-border">
 					<Button
 						size="sm"
 						variant="secondary"
+						className="h-6 px-2 text-[11px]"
 						onClick={() => setOpen(!open)}
 						title={open ? "Collapse chat" : "Expand chat"}
 					>
 						{open ? "Collapse" : "Chat"}
 					</Button>
 
-					<div className="font-semibold whitespace-nowrap overflow-hidden overflow-ellipsis">
+					<div className="text-[13px] font-semibold whitespace-nowrap overflow-hidden overflow-ellipsis">
 						{threadTitle}
 					</div>
 
 					{!open && lastAiPreview && (
-						<div className="text-xs text-muted-foreground whitespace-nowrap overflow-hidden overflow-ellipsis">
+						<div className="text-[10px] text-muted-foreground whitespace-nowrap overflow-hidden overflow-ellipsis">
 							{lastAiPreview}
 						</div>
 					)}
@@ -108,13 +109,14 @@ export function ChatDrawer(props: {
 						<Button
 							size="icon"
 							variant="ghost"
+							className="size-6"
 							title="Clear messages"
 							disabled={disabled}
 							onClick={() => void onClearMessages()}
 						>
 							<Trash2 />
 						</Button>
-						<div className="text-xs text-muted-foreground shrink-0 ml-1">
+						<div className="text-[10px] text-muted-foreground shrink-0 ml-1">
 							{formatDate(threadCreatedAt)}
 						</div>
 					</div>
@@ -146,17 +148,18 @@ export function ChatDrawer(props: {
 							</div>
 						</div>
 
-						<div className="p-3 border-t border-border">
-							<div className="mb-2">
-								<div className="text-xs text-muted-foreground mb-1">
+						<div className="p-1.5 border-t border-border">
+							<div className="mb-1">
+								<div className="text-[10px] text-muted-foreground mb-0.5">
 									Example questions
 								</div>
-								<div className="flex flex-wrap gap-2">
+								<div className="flex flex-wrap gap-1">
 									{examplePrompts.map((prompt) => (
 										<Button
 											key={prompt}
 											size="sm"
 											variant="secondary"
+											className="h-5 px-1.5 text-[10px]"
 											disabled={disabled}
 											onClick={() => onPromptClick(prompt)}
 										>
