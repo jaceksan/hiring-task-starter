@@ -5,77 +5,74 @@ registry:
   includes: []
   commands:
     fix_backend:
-      argv: ["make", "fix-backend"]
-      cwd: "{workspace_root}"
+      argv:
+      - make
+      - fix-backend
+      cwd: '{workspace_root}'
       timeout_sec: 1200
-
     fix_frontend:
-      argv: ["make", "fix-frontend"]
-      cwd: "{workspace_root}"
+      argv:
+      - make
+      - fix-frontend
+      cwd: '{workspace_root}'
       timeout_sec: 1200
-
     fix_all:
-      argv: ["make", "fix-all"]
-      cwd: "{workspace_root}"
+      argv:
+      - make
+      - fix-all
+      cwd: '{workspace_root}'
       timeout_sec: 1800
-
     lint_backend:
-      argv: ["make", "lint-backend"]
-      cwd: "{workspace_root}"
+      argv:
+      - make
+      - lint-backend
+      cwd: '{workspace_root}'
       timeout_sec: 1200
-
     lint_frontend:
-      argv: ["make", "lint-frontend"]
-      cwd: "{workspace_root}"
+      argv:
+      - make
+      - lint-frontend
+      cwd: '{workspace_root}'
       timeout_sec: 1200
-
     lint_all:
-      argv: ["make", "lint-all"]
-      cwd: "{workspace_root}"
+      argv:
+      - make
+      - lint-all
+      cwd: '{workspace_root}'
       timeout_sec: 1800
-
     types_backend:
-      argv: ["make", "types-backend"]
-      cwd: "{workspace_root}"
+      argv:
+      - make
+      - types-backend
+      cwd: '{workspace_root}'
       timeout_sec: 600
-
     types_frontend:
-      argv: ["make", "types-frontend"]
-      cwd: "{workspace_root}"
+      argv:
+      - make
+      - types-frontend
+      cwd: '{workspace_root}'
       timeout_sec: 1200
-
     types_all:
-      argv: ["make", "types-all"]
-      cwd: "{workspace_root}"
+      argv:
+      - make
+      - types-all
+      cwd: '{workspace_root}'
       timeout_sec: 1200
-
     test_backend:
-      argv: ["uv", "run", "pytest", "-q", "-m", "not integration"]
-      cwd: "{workspace_root}/backend"
+      argv:
+      - uv
+      - run
+      - pytest
+      - -q
+      - -m
+      - not integration
+      cwd: '{workspace_root}/backend'
       timeout_sec: 1800
-
-    test_backend_integration:
-      argv: ["uv", "run", "pytest", "-q", "-m", "integration"]
-      cwd: "{workspace_root}/backend"
-      timeout_sec: 2400
-
     test_e2e_frontend:
-      argv: ["make", "test-e2e-frontend"]
-      cwd: "{workspace_root}"
-      timeout_sec: 3600
-
-    test_integration_backend:
-      argv: ["make", "test-integration-backend"]
-      cwd: "{workspace_root}"
-      timeout_sec: 2400
-
-    test_integration_frontend:
-      argv: ["make", "test-integration-frontend"]
-      cwd: "{workspace_root}"
-      timeout_sec: 3600
-
-    test_all:
-      argv: ["make", "test-all"]
-      cwd: "{workspace_root}"
+      argv:
+      - make
+      - test-e2e-frontend
+      cwd: '{workspace_root}'
       timeout_sec: 3600
   processors: {}
+version: 1

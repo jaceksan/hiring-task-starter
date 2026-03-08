@@ -3,35 +3,33 @@
 # Define how changed paths map to validation domains.
 # See `.aida/validation_policy.yaml` for mapping domains to pipelines.
 domains:
-  - id: backend
-    description: Backend Python and backend dependency changes
-    match_globs:
-      - "backend/**/*.py"
-      - "backend/pyproject.toml"
-      - "backend/requirements.txt"
-      - "backend/uv.lock"
-    root_depth: 1
-
-  - id: frontend
-    description: Frontend source and dependency changes
-    match_globs:
-      - "frontend/src/**"
-      - "frontend/package.json"
-      - "frontend/package-lock.json"
-      - "frontend/tsconfig*.json"
-      - "frontend/vite.config.*"
-      - "frontend/biome.json*"
-    root_depth: 1
-
-  - id: frontend_e2e
-    description: Frontend Playwright end-to-end tests
-    match_globs:
-      - "frontend/e2e/**"
-      - "frontend/playwright.config.*"
-    root_depth: 1
-
-  - id: repo
-    description: Repository-level build orchestration changes
-    match_globs:
-      - "Makefile"
-    root_depth: 0
+- id: backend
+  description: Backend Python and backend dependency changes
+  match_globs:
+  - backend/**/*.py
+  - backend/pyproject.toml
+  - backend/requirements.txt
+  - backend/uv.lock
+  root_depth: 1
+- id: frontend
+  description: Frontend source and dependency changes
+  match_globs:
+  - frontend/src/**
+  - frontend/package.json
+  - frontend/package-lock.json
+  - frontend/tsconfig*.json
+  - frontend/vite.config.*
+  - frontend/biome.json*
+  root_depth: 1
+- id: frontend_e2e
+  description: Frontend Playwright end-to-end tests
+  match_globs:
+  - frontend/e2e/**
+  - frontend/playwright.config.*
+  root_depth: 1
+- id: repo
+  description: Repository-level build orchestration changes
+  match_globs:
+  - Makefile
+  root_depth: 0
+version: 1

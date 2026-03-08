@@ -127,6 +127,62 @@ def test_escape_roads_prompt_returns_points_and_roads_highlights():
     assert any(h.layer_id == "roads" for h in resp.highlights)
 
 
+def test_count_prompt_returns_points_and_active_flood_zone_highlights():
+    flood = PolygonFeature(
+        id="f1",
+        rings=[[(0.0, 0.0), (2.0, 0.0), (2.0, 2.0), (0.0, 2.0), (0.0, 0.0)]],
+        props={"flood_risk_level": "high"},
+    )
+    places = [
+        PointFeature(id="p_in", lon=1.0, lat=1.0, props={"name": "In flood"}),
+        PointFeature(id="p_out", lon=5.0, lat=5.0, props={"name": "Outside"}),
+    ]
+    bundle = LayerBundle(
+        layers=[
+            Layer(
+                id="flood_zones",
+                kind="polygons",
+                title="Flood",
+                features=[flood],
+                style={},
+            ),
+            Layer(
+                id="places", kind="points", title="Places", features=places, style={}
+            ),
+        ]
+    )
+    index = build_geo_index(bundle)
+    routing = ScenarioRouting(
+        primaryPointsLayerId="places",
+        maskPolygonsLayerId="flood_zones",
+        pointLabelSingular="place",
+        pointLabelPlural="places",
+        maskLabel="flood zones",
+        showLayersKeywords=["show layers"],
+        countKeywords=["how many"],
+        maskKeywords=["flood"],
+        recommendKeywords=["recommend"],
+        proximity=[],
+        highlightRules=[],
+    )
+
+    resp = route_prompt(
+        "how many places are flooded?",
+        layers=bundle,
+        index=index,
+        aoi=BBox(min_lon=-1, min_lat=-1, max_lon=6, max_lat=6),
+        routing=routing,
+        request_context={"floodRiskLevel": "high"},
+    )
+
+    assert resp.highlight is not None
+    assert resp.highlight.layer_id == "places"
+    assert resp.highlight.feature_ids == {"p_in"}
+    assert resp.highlights is not None
+    assert any(h.layer_id == "places" and h.feature_ids == {"p_in"} for h in resp.highlights)
+    assert any(h.layer_id == "flood_zones" and h.feature_ids == {"f1"} for h in resp.highlights)
+
+
 def test_safest_prompt_respects_selected_flood_zones():
     flood_hi = PolygonFeature(
         id="f_hi",

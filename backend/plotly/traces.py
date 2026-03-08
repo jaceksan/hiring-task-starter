@@ -479,18 +479,18 @@ def trace_point_clusters(layer: Layer, clusters: list[ClusterMarker]) -> dict[st
         "zmin": 0.0,
         "zmax": max(zvals) if zvals else 1.0,
         "colorscale": [
-            [0.0, "#fff7bc"],
-            [0.25, "#fee391"],
-            [0.5, "#fec44f"],
-            [0.75, "#fe9929"],
-            [1.0, "#d95f0e"],
+            [0.0, "#fffbe6"],
+            [0.25, "#fff1b8"],
+            [0.5, "#ffe08a"],
+            [0.75, "#f7c65f"],
+            [1.0, "#e8a63c"],
         ],
-        "marker": {"line": {"color": "rgba(0,0,0,0.07)", "width": 0.25}},
+        "marker": {"line": {"color": "rgba(120, 92, 24, 0.16)", "width": 0.2}},
         "colorbar": {"title": "Places / cell"},
         "customdata": customdata,
         "hovertemplate": "Count in this %{customdata[1]}: %{customdata[0]}<extra></extra>",
         "showscale": True,
-        "opacity": 0.78,
+        "opacity": 0.48,
     }
 
 

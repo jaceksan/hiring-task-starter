@@ -1,8 +1,3 @@
----
-description: MCP-powered development workflow (AIDA)
-alwaysApply: true
----
-
 # You must follow this guidance only if AIDA MCP tools are available.
 Call AIDA MCP `get_rules` at every task start and after every scope change; the `query` must match the current requested task.
 Reuse one stable `session_id` for the whole conversation when calling `get_rules`.

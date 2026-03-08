@@ -123,7 +123,6 @@ function RouteComponent() {
 
 	const defaultExamplePrompts = useMemo(
 		() => [
-			"show layers",
 			"how many places are flooded?",
 			"show me escape roads for places in flood zone",
 			"show safest nearby places outside selected flood risk with reachable roads",

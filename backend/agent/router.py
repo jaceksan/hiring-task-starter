@@ -140,7 +140,6 @@ def route_prompt(
     return AgentResponse(
         message=(
             "I didn't recognize that prompt yet. Try:\n"
-            f"- show layers\n"
             f"- how many {routing.pointLabelPlural} are flooded?\n"
             "- show me escape roads for places in flood zone\n"
             "- show safest nearby places outside selected flood risk with reachable roads\n"
@@ -176,11 +175,34 @@ def _count_points_in_mask(
     u = union_from_polygons(active_zones)
     in_mask = [pt for pt in pts if is_point_in_union(pt, u)]
     out_mask = [pt for pt in pts if not is_point_in_union(pt, u)]
+    highlights: list[Highlight] = []
+    if in_mask:
+        highlights.append(
+            Highlight(
+                layer_id=pts_layer.id,
+                feature_ids={pt.id for pt in in_mask},
+                title=f"Flooded {routing.pointLabelPlural}",
+                mode="prompt",
+            )
+        )
+    if active_zones:
+        highlights.append(
+            Highlight(
+                layer_id=mask_layer.id,
+                feature_ids={zone.id for zone in active_zones},
+                title="Active flood zones",
+                mode="context",
+            )
+        )
+    primary_highlight = highlights[0] if highlights else None
     return AgentResponse(
         message=(
             f"I found {len(in_mask)} {routing.pointLabelPlural} in {routing.maskLabel} "
             f"and {len(out_mask)} outside of it."
-        )
+        ),
+        highlight=primary_highlight,
+        highlights=highlights or None,
+        focus_map=bool(in_mask),
     )
 
 

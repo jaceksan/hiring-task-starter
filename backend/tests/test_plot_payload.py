@@ -1,4 +1,5 @@
 from layers.types import Layer, LayerBundle, LineFeature, PointFeature, PolygonFeature
+from lod.points import ClusterMarker
 from plotly.build_map import build_map_plot
 from plotly.types import Highlight
 
@@ -148,15 +149,15 @@ def test_build_map_plot_uses_flood_risk_bands_and_hover_metadata():
                         "id": "high",
                         "label": "High (100y)",
                         "value": "high",
-                        "fillColor": "rgba(229, 57, 53, 0.35)",
-                        "lineColor": "rgba(229, 57, 53, 0.75)",
+                        "fillColor": "rgba(229, 57, 53, 0.18)",
+                        "lineColor": "rgba(229, 57, 53, 0.55)",
                     },
                     {
                         "id": "medium",
                         "label": "Medium (50y+)",
                         "value": "medium",
-                        "fillColor": "rgba(251, 140, 0, 0.28)",
-                        "lineColor": "rgba(251, 140, 0, 0.70)",
+                        "fillColor": "rgba(255, 183, 77, 0.16)",
+                        "lineColor": "rgba(245, 124, 0, 0.48)",
                     },
                 ],
                 "defaultFillColor": "rgba(30, 136, 229, 0.15)",
@@ -173,8 +174,48 @@ def test_build_map_plot_uses_flood_risk_bands_and_hover_metadata():
     high = next(
         t for t in traces if t.get("name") == "Flood zones (polygons) - High (100y)"
     )
-    assert high.get("fillcolor") == "rgba(229, 57, 53, 0.35)"
-    assert high.get("line", {}).get("color") == "rgba(229, 57, 53, 0.75)"
+    assert high.get("fillcolor") == "rgba(229, 57, 53, 0.18)"
+    assert high.get("line", {}).get("color") == "rgba(229, 57, 53, 0.55)"
     text = [x for x in (high.get("text") or []) if isinstance(x, str)]
     assert any("Risk: High (100y)" in x for x in text)
     assert any("Water: Vltava" in x for x in text)
+
+
+def test_trace_point_clusters_uses_lighter_density_palette():
+    bundle = LayerBundle(
+        layers=[
+            Layer(
+                id="places",
+                kind="points",
+                title="Places (points)",
+                features=[],
+                style={},
+            )
+        ]
+    )
+    plot = build_map_plot(
+        bundle,
+        clusters=[
+            ClusterMarker(
+                lon=14.4,
+                lat=50.08,
+                count=25,
+                cell_x=1,
+                cell_y=2,
+                exact_count=25,
+                bin_size_m=1000.0,
+            )
+        ],
+        cluster_layer_id="places",
+    )
+    density = next(
+        t for t in plot["data"] if t.get("name") == "Places (points) (density)"
+    )
+    assert density.get("opacity") == 0.48
+    assert density.get("colorscale") == [
+        [0.0, "#fffbe6"],
+        [0.25, "#fff1b8"],
+        [0.5, "#ffe08a"],
+        [0.75, "#f7c65f"],
+        [1.0, "#e8a63c"],
+    ]

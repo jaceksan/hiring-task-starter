@@ -124,7 +124,7 @@ test("zoomed out view uses clusters (LOD)", async ({ page }) => {
   });
 
   await openChatDrawer(page);
-  await page.getByRole("button", { name: "show layers" }).click();
+  await page.getByRole("button", { name: "how many places are flooded?" }).click();
   // Assert on the actual Plotly trace names (legend may not be visible in the DOM).
   await expectPlotlyTraceName(page, /\(clusters\)$/);
 });
@@ -168,4 +168,3 @@ test("highlighted response can render clusters at low zoom", async ({ page }) =>
   ).toBeVisible({ timeout: 30_000 });
   await expectPlotlyTraceName(page, /\(clusters\)$/);
 });
-
