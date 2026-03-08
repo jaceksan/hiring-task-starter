@@ -1,0 +1,29 @@
+backlog/0201-larger-layers.md
+  496edb793ba1d277 3-11
+backlog/0050-demo-simplification-reset.md
+  496edb793ba1d277 3-12
+backlog/0101-highlighting-roadmap.md
+  496edb793ba1d277 5,7-9,17-22
+BACKLOG.md
+  496edb793ba1d277 6-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "51b46cead9786c5ffbf78e61fb93277fb9059c24",
+  "prompts": {
+    "496edb793ba1d277": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "70be9548-7451-4db1-9e1e-7d57dca1e9e4",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Jan Soubusta <jan.soubusta@gooddata.com>",
+      "messages": [],
+      "total_additions": 32,
+      "total_deletions": 21,
+      "accepted_lines": 32,
+      "overriden_lines": 0
+    }
+  }
+}
