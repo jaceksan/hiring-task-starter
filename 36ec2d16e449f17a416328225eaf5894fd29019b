@@ -1,0 +1,55 @@
+backend/engine/duckdb_impl/geoparquet/pins.py
+  496edb793ba1d277 25,32
+backend/layers/types.py
+  496edb793ba1d277 50
+backend/engine/duckdb_impl/geoparquet/layer.py
+  496edb793ba1d277 37,44
+backend/telemetry/store.py
+  496edb793ba1d277 166-170,181
+backlog/0301-backend-ty-typechecking.md
+  496edb793ba1d277 3-12
+backend/tests/test_invoke_stream.py
+  496edb793ba1d277 13,98
+backend/plotly/traces.py
+  496edb793ba1d277 320-321,413,437
+backend/tests/test_lod_policy.py
+  496edb793ba1d277 37-39,84-88,90
+backend/geo/index.py
+  496edb793ba1d277 88,232,238
+backend/tests/test_layers_load.py
+  496edb793ba1d277 6-11,13-25
+backend/agent/router.py
+  496edb793ba1d277 17,191,222
+Makefile
+  496edb793ba1d277 21,65
+backend/flood/selection.py
+  496edb793ba1d277 3,30,39
+backend/api/invoke_stream.py
+  496edb793ba1d277 177-179,212-213,373,400-401,468,471-473
+backend/tests/test_telemetry_store.py
+  496edb793ba1d277 26-28,32
+backend/main.py
+  496edb793ba1d277 6,28,49,284-304,309,347,390,416
+backend/pyproject.toml
+  496edb793ba1d277 56,63-65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "36ec2d16e449f17a416328225eaf5894fd29019b",
+  "prompts": {
+    "496edb793ba1d277": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "70be9548-7451-4db1-9e1e-7d57dca1e9e4",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Jan Soubusta <jan.soubusta@gooddata.com>",
+      "messages": [],
+      "total_additions": 110,
+      "total_deletions": 60,
+      "accepted_lines": 502,
+      "overriden_lines": 7
+    }
+  }
+}
