@@ -1,0 +1,27 @@
+.mcp.json
+  f0944461a1f962f4 4
+.codex/config.toml
+  f0944461a1f962f4 2
+.cursor/mcp.json
+  f0944461a1f962f4 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "f7e5efff2389b1ed54385693c0b44d1ac7474a8c",
+  "prompts": {
+    "f0944461a1f962f4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ccddf-bbac-7812-8c04-c74f2ab68522",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Jan Soubusta <jan.soubusta@gooddata.com>",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 3,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
