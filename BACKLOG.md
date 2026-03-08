@@ -8,8 +8,9 @@ The order of items below is the priority order (top = highest). Each item has up
   - Details: [`backlog/0101-highlighting-roadmap.md`](backlog/0101-highlighting-roadmap.md)
 
 - **P2 — Scenario B: implement MVT/vector-tile scenario (massive layers)**
-  - Add backend tile endpoint + per-layer tile query policy; render in frontend as a vector tile overlay.
-  - Decide/implement geometry preprocessing to avoid problematic WKB variants (e.g. `UNKNOWN M`) and keep tiles deterministic.
+  - Move heavy CZ base geometry (`roads`, `flood_zones`, dense polygons) to vector tiles, keeping Plotly for interactive highlights/markers.
+  - Prefer precomputed multi-zoom tiles (Google/Seznam style) with deterministic geometry preprocessing/generalization and class visibility by zoom.
+  - Define perf targets (CZ zoom bands, p95 response/render) and use cache-friendly tile serving/versioning.
   - Details: [`backlog/0200-mvt-scenario.md`](backlog/0200-mvt-scenario.md)
 
 - **P3 — Evaluate GeoArrow for the GeoParquet/DuckDB pipeline**
