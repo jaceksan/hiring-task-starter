@@ -66,8 +66,13 @@ def apply_lod(
     for layer in line_layers:
         feats = [f for f in layer.features if isinstance(f, LineFeature)]
         keep_ids = keep_by_layer.get(layer.id)
+        no_feature_drop = layer.id == "roads"
         line_out[layer.id] = simplify_lines_until_budget(
-            feats, zoom, max_vertices=line_budget_each, keep_ids=keep_ids
+            feats,
+            zoom,
+            max_vertices=line_budget_each,
+            keep_ids=keep_ids,
+            allow_feature_drop=not no_feature_drop,
         )
 
     # Points: cluster/cap only the configured primary layer; cap others deterministically.

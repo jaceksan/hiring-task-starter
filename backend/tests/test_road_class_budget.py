@@ -17,7 +17,7 @@ def test_choose_road_classes_by_budget_rejects_tertiary_when_over_cap():
     assert meta.get("cumulativeAtCutoff") == 660
 
 
-def test_choose_road_classes_by_budget_keeps_first_group_when_it_exceeds_cap():
+def test_choose_road_classes_by_budget_drops_all_when_first_group_exceeds_cap():
     admitted, meta = choose_road_classes_by_budget(
         class_counts={
             "motorway": 1600,
@@ -26,6 +26,6 @@ def test_choose_road_classes_by_budget_keeps_first_group_when_it_exceeds_cap():
         allowed_classes={"motorway", "primary"},
         cap=1000,
     )
-    assert admitted == {"motorway"}
-    assert meta.get("oversizedFirstGroup") is True
+    assert admitted == set()
+    assert meta.get("oversizedFirstGroup") is False
     assert meta.get("rejectedAtClass") == "motorway"

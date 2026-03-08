@@ -138,9 +138,6 @@ def choose_road_classes_by_budget(
         if group_count <= 0:
             continue
         if cumulative == 0 and group_count > int(cap):
-            admitted.update(group)
-            cumulative += int(group_count)
-            oversized_first = True
             rejected_at = group[0]
             break
         if cumulative + group_count <= int(cap):

@@ -1,3 +1,6 @@
+import math
+
+import pytest
 from layers.types import Layer, LayerBundle, LineFeature, PointFeature, PolygonFeature
 from lod.points import ClusterMarker
 from plotly.build_map import build_map_plot
@@ -254,9 +257,11 @@ def test_trace_point_clusters_uses_lighter_density_palette():
     density = next(
         t for t in plot["data"] if t.get("name") == "Places (points) (density)"
     )
-    assert density.get("z") == [25.0]
-    assert density.get("zmin") == 1.0
-    assert density.get("zmax") == 25.0
+    z = density.get("z") or []
+    assert len(z) == 1
+    assert z[0] == pytest.approx(math.log1p(25.0))
+    assert density.get("zmin") == 0.0
+    assert density.get("zmax") == pytest.approx(math.log1p(25.0))
     assert density.get("opacity") == 0.2
     assert density.get("colorscale") == [
         [0.0, "#fffef7"],

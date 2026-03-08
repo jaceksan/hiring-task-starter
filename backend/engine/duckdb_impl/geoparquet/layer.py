@@ -129,7 +129,7 @@ def query_geoparquet_layer_bbox(
     # LOD runs *after* decoding; without a pre-cap, we can spend seconds decoding
     # tens of thousands of WKB geometries only to drop most of them later.
     hard_cap = None
-    if kind == "lines":
+    if kind == "lines" and not policy_enabled:
         # Lines (roads) are typically the dominant decode bottleneck.
         # Keep a much stricter adaptive cap at lower zooms where detail is less useful.
         z = float(view_zoom)

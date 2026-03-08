@@ -23,6 +23,7 @@ def simplify_lines_until_budget(
     *,
     max_vertices: int,
     keep_ids: set[str] | None,
+    allow_feature_drop: bool = True,
 ) -> list[LineFeature]:
     # Start with a zoom-derived tolerance, then increase until we're under budget.
     base_tol = line_tol_m(zoom)
@@ -33,7 +34,7 @@ def simplify_lines_until_budget(
         if count_line_vertices(out) <= max_vertices:
             break
         out = simplify_lines(lines, tolerance_m=tol)
-    if count_line_vertices(out) > max_vertices:
+    if allow_feature_drop and count_line_vertices(out) > max_vertices:
         out = cap_lines_to_vertex_budget(out, max_vertices, keep_ids=keep_ids)
     return out
 
@@ -157,9 +158,15 @@ def simplify_lines(
             ys.append(y)
         ls = LineString(list(zip(xs, ys)))
         simp = ls.simplify(tolerance_m, preserve_topology=False)
+        coords_m: list[tuple[float, float]]
         if simp.is_empty:
-            continue
-        coords_m = list(simp.coords)
+            coords_m = list(ls.coords)
+        else:
+            coords_m = list(simp.coords)
+            if len(coords_m) < 2:
+                # Keep the original segment instead of dropping it; this keeps class-level
+                # rendering complete when strict "no partial class" mode is desired.
+                coords_m = list(ls.coords)
         if len(coords_m) < 2:
             continue
         coords_ll = [t_inv.transform(x, y) for x, y in coords_m]

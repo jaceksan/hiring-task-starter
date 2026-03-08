@@ -66,6 +66,38 @@ def test_line_simplification_respects_vertex_budget():
     assert sum(len(f.coords) for f in out.features if isinstance(f, LineFeature)) <= 60
 
 
+def test_roads_layer_keeps_all_segments_under_line_lod():
+    line_a = LineFeature(
+        id="a",
+        coords=[(14.0 + i * 0.00005, 50.0 + (i % 5) * 0.00001) for i in range(140)],
+        props={"fclass": "motorway"},
+    )
+    line_b = LineFeature(
+        id="b",
+        coords=[(14.2 + i * 0.00005, 50.1 + (i % 5) * 0.00001) for i in range(140)],
+        props={"fclass": "motorway"},
+    )
+    layers = LayerBundle(
+        layers=[
+            Layer(id="roads", kind="lines", title="Roads", features=[line_a, line_b], style={})
+        ]
+    )
+    lod_layers, _clusters = apply_lod(
+        layers,
+        view_zoom=6.0,
+        highlight_layer_id=None,
+        highlight_feature_ids=None,
+        cluster_points_layer_id="points",
+        budgets=LodBudgets(
+            max_points_rendered=10_000, max_line_vertices=40, max_poly_vertices=10_000
+        ),
+    )
+    out = lod_layers.get("roads")
+    assert out is not None
+    ids = {f.id for f in out.features if isinstance(f, LineFeature)}
+    assert ids == {"a", "b"}
+
+
 def test_polygon_simplification_respects_vertex_budget():
     # A \"circle-ish\" polygon with many vertices.
     ring = []

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from pyproj import Transformer
@@ -74,6 +75,26 @@ def _point_hover_text(point: PointFeature) -> str:
             ],
         ]
     )
+
+
+def _density_colorbar(zmax: float) -> dict[str, Any]:
+    # Keep log-scaled coloring for contrast while showing user-facing tick labels
+    # in real place counts.
+    max_tick = max(0.0, float(zmax))
+    tick_vals = [0.0]
+    for ratio in [0.2, 0.4, 0.6, 0.8, 1.0]:
+        tick_vals.append(max_tick * ratio)
+    out_vals: list[float] = []
+    for v in tick_vals:
+        if out_vals and abs(v - out_vals[-1]) < 1e-9:
+            continue
+        out_vals.append(v)
+    tick_text = [str(int(round(math.expm1(v)))) for v in out_vals]
+    return {
+        "title": "Places / cell",
+        "tickvals": out_vals,
+        "ticktext": tick_text,
+    }
 
 
 def trace_aoi_bbox(aoi: BBox) -> dict[str, Any]:
@@ -479,7 +500,7 @@ def trace_point_clusters(
             }
         )
         locations.append(feature_id)
-        zvals.append(float(max(1, counts[i])))
+        zvals.append(float(math.log1p(max(1, counts[i]))))
         customdata.append([counts[i], region_label])
 
     trace = {
@@ -489,7 +510,7 @@ def trace_point_clusters(
         "locations": locations,
         "featureidkey": "properties.id",
         "z": zvals,
-        "zmin": 1.0,
+        "zmin": 0.0,
         "zmax": max(zvals) if zvals else 1.0,
         "colorscale": [
             [0.0, "#fffef7"],
@@ -499,7 +520,7 @@ def trace_point_clusters(
             [1.0, "#e7c77a"],
         ],
         "marker": {"line": {"color": "rgba(138, 111, 44, 0.06)", "width": 0.1}},
-        "colorbar": {"title": "Places / cell"},
+        "colorbar": _density_colorbar(max(zvals) if zvals else 1.0),
         "showscale": True,
         "opacity": 0.2,
     }
