@@ -8,6 +8,16 @@ from main import app
 
 pytestmark = pytest.mark.integration
 
+TEST_SCENARIO_ID = "prague_population_infrastructure_test"
+TEST_CENTER = {"lat": 50.0755, "lon": 14.4378}
+TEST_BBOX = {
+    "minLon": 14.38,
+    "minLat": 50.04,
+    "maxLon": 14.50,
+    "maxLat": 50.12,
+}
+LOW_ZOOM_BBOX = {"minLon": 13.8, "minLat": 49.8, "maxLon": 14.9, "maxLat": 50.5}
+
 
 def test_plot_endpoint_returns_plot_payload():
     client = TestClient(app)
@@ -15,15 +25,12 @@ def test_plot_endpoint_returns_plot_payload():
         "/plot",
         json={
             "map": {
-                "bbox": {
-                    "minLon": 14.22,
-                    "minLat": 49.94,
-                    "maxLon": 14.70,
-                    "maxLat": 50.18,
-                },
-                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
+                "bbox": TEST_BBOX,
+                "view": {"center": TEST_CENTER, "zoom": 10.5},
+                "context": {"placeCategories": ["urban"], "floodRiskLevel": "high"},
             },
-            "engine": "in_memory",
+            "engine": "duckdb",
+            "scenarioId": TEST_SCENARIO_ID,
         },
     )
     assert resp.status_code == 200
@@ -33,7 +40,7 @@ def test_plot_endpoint_returns_plot_payload():
     meta = data["layout"].get("meta") or {}
     assert "stats" in meta
     assert meta["stats"].get("engine") == "duckdb"
-    assert meta["stats"].get("scenarioId") == "prague_population_infrastructure_small"
+    assert meta["stats"].get("scenarioId") == TEST_SCENARIO_ID
 
 
 def test_plot_endpoint_can_return_clusters_at_low_zoom():
@@ -42,10 +49,12 @@ def test_plot_endpoint_can_return_clusters_at_low_zoom():
         "/plot",
         json={
             "map": {
-                "bbox": {"minLon": -20, "minLat": 30, "maxLon": 40, "maxLat": 70},
-                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 3.0},
+                "bbox": LOW_ZOOM_BBOX,
+                "view": {"center": TEST_CENTER, "zoom": 3.0},
+                "context": {"placeCategories": ["urban"]},
             },
-            "engine": "in_memory",
+            "engine": "duckdb",
+            "scenarioId": TEST_SCENARIO_ID,
         },
     )
     assert resp.status_code == 200
@@ -57,51 +66,42 @@ def test_plot_endpoint_can_return_clusters_at_low_zoom():
     )
 
 
-def test_plot_endpoint_preserves_highlight_when_provided():
+def test_plot_endpoint_drops_empty_highlight_from_meta_when_unrenderable():
     client = TestClient(app)
     resp = client.post(
         "/plot",
         json={
             "map": {
-                "bbox": {
-                    "minLon": 14.22,
-                    "minLat": 49.94,
-                    "maxLon": 14.70,
-                    "maxLat": 50.18,
-                },
-                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
+                "bbox": TEST_BBOX,
+                "view": {"center": TEST_CENTER, "zoom": 10.5},
+                "context": {"placeCategories": ["urban"]},
             },
             "highlight": {
-                "layerId": "beer_pois",
+                "layerId": "places",
                 "featureIds": ["node/123", "node/456"],
                 "title": "MyHighlight",
             },
-            "engine": "in_memory",
+            "engine": "duckdb",
+            "scenarioId": TEST_SCENARIO_ID,
         },
     )
     assert resp.status_code == 200
     payload = resp.json()
-    # highlight trace should be present even if the IDs don't exist in current AOI (it will be empty).
-    # More importantly: meta should carry highlight info for frontend to round-trip.
     meta = payload.get("layout", {}).get("meta", {})
-    assert meta.get("highlight", {}).get("title") == "MyHighlight"
-    assert meta.get("highlight", {}).get("layerId") == "beer_pois"
+    # Empty/unrenderable highlights are intentionally dropped from meta to avoid stale overlay loops.
+    assert "highlight" not in meta
     assert "stats" in meta
 
 
-def test_plot_endpoint_preserves_multiple_highlights_when_provided():
+def test_plot_endpoint_drops_empty_multi_highlights_from_meta_when_unrenderable():
     client = TestClient(app)
     resp = client.post(
         "/plot",
         json={
             "map": {
-                "bbox": {
-                    "minLon": 14.22,
-                    "minLat": 49.94,
-                    "maxLon": 14.70,
-                    "maxLat": 50.18,
-                },
-                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
+                "bbox": TEST_BBOX,
+                "view": {"center": TEST_CENTER, "zoom": 10.5},
+                "context": {"placeCategories": ["urban"]},
             },
             "highlights": [
                 {
@@ -115,14 +115,14 @@ def test_plot_endpoint_preserves_multiple_highlights_when_provided():
                     "title": "Escape roads",
                 },
             ],
-            "engine": "in_memory",
+            "engine": "duckdb",
+            "scenarioId": TEST_SCENARIO_ID,
         },
     )
     assert resp.status_code == 200
     payload = resp.json()
     meta = payload.get("layout", {}).get("meta", {})
-    assert isinstance(meta.get("highlights"), list)
-    assert len(meta.get("highlights")) == 2
+    assert "highlights" not in meta
 
 
 def test_plot_endpoint_supports_duckdb_engine(tmp_path, monkeypatch):
@@ -144,28 +144,21 @@ def test_plot_endpoint_supports_duckdb_engine(tmp_path, monkeypatch):
         "/plot",
         json={
             "map": {
-                "bbox": {
-                    "minLon": 14.22,
-                    "minLat": 49.94,
-                    "maxLon": 14.70,
-                    "maxLat": 50.18,
-                },
+                "bbox": TEST_BBOX,
                 # Keep this test fast by staying below minZoomForGeometry for lines/polygons.
                 # That still exercises the DuckDB+GeoParquet code path for points + bbox filtering.
-                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 11.0},
+                "view": {"center": TEST_CENTER, "zoom": 10.5},
+                "context": {"placeCategories": ["urban"]},
             },
             "engine": "duckdb",
-            "scenarioId": "prague_population_infrastructure_small",
+            "scenarioId": TEST_SCENARIO_ID,
         },
     )
     assert resp.status_code == 200
     payload = resp.json()
     meta = payload.get("layout", {}).get("meta", {})
     assert meta.get("stats", {}).get("engine") == "duckdb"
-    assert (
-        meta.get("stats", {}).get("scenarioId")
-        == "prague_population_infrastructure_small"
-    )
+    assert meta.get("stats", {}).get("scenarioId") == TEST_SCENARIO_ID
 
 
 def test_plot_endpoint_reports_road_highlight_control_status():
@@ -174,16 +167,13 @@ def test_plot_endpoint_reports_road_highlight_control_status():
         "/plot",
         json={
             "map": {
-                "bbox": {
-                    "minLon": 14.22,
-                    "minLat": 49.94,
-                    "maxLon": 14.70,
-                    "maxLat": 50.18,
-                },
-                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
+                "bbox": TEST_BBOX,
+                "view": {"center": TEST_CENTER, "zoom": 10.5},
+                "context": {"placeCategories": ["urban"]},
             },
             "roadHighlightTypes": ["motorway", "trunks", "secondary"],
-            "engine": "in_memory",
+            "engine": "duckdb",
+            "scenarioId": TEST_SCENARIO_ID,
         },
     )
     assert resp.status_code == 200
@@ -199,16 +189,12 @@ def test_plot_endpoint_accepts_request_context():
         "/plot",
         json={
             "map": {
-                "bbox": {
-                    "minLon": 14.22,
-                    "minLat": 49.94,
-                    "maxLon": 14.70,
-                    "maxLat": 50.18,
-                },
-                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
+                "bbox": TEST_BBOX,
+                "view": {"center": TEST_CENTER, "zoom": 10.5},
                 "context": {"floodRiskLevel": "high"},
             },
-            "engine": "in_memory",
+            "engine": "duckdb",
+            "scenarioId": TEST_SCENARIO_ID,
         },
     )
     assert resp.status_code == 200
@@ -220,16 +206,12 @@ def test_plot_endpoint_reports_flood_selection_stats():
         "/plot",
         json={
             "map": {
-                "bbox": {
-                    "minLon": 14.22,
-                    "minLat": 49.94,
-                    "maxLon": 14.70,
-                    "maxLat": 50.18,
-                },
-                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
+                "bbox": TEST_BBOX,
+                "view": {"center": TEST_CENTER, "zoom": 10.5},
                 "context": {"floodRiskLevel": "medium", "selectedFloodZoneIds": []},
             },
-            "engine": "in_memory",
+            "engine": "duckdb",
+            "scenarioId": TEST_SCENARIO_ID,
         },
     )
     assert resp.status_code == 200
@@ -247,24 +229,50 @@ def test_plot_endpoint_reports_place_source_filter_stats():
         "/plot",
         json={
             "map": {
-                "bbox": {
-                    "minLon": 14.22,
-                    "minLat": 49.94,
-                    "maxLon": 14.70,
-                    "maxLat": 50.18,
-                },
-                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 12.0},
-                "context": {"placeCategories": ["urban"]},
+                "bbox": TEST_BBOX,
+                "view": {"center": TEST_CENTER, "zoom": 10.5},
+                "context": {"placeCategories": ["capital"]},
             },
             "engine": "duckdb",
-            "scenarioId": "prague_population_infrastructure_small",
+            "scenarioId": TEST_SCENARIO_ID,
         },
     )
     assert resp.status_code == 200
     payload = resp.json()
     stats = payload.get("layout", {}).get("meta", {}).get("stats", {})
     place = stats.get("placeControl") or {}
-    assert "urban" in (place.get("activeCategories") or [])
+    assert "capital" in (place.get("activeCategories") or [])
     assert isinstance(place.get("beforeCount"), int)
     assert isinstance(place.get("afterCount"), int)
     assert int(place.get("afterCount") or 0) <= int(place.get("beforeCount") or 0)
+
+
+def test_plot_endpoint_reports_flooded_count_prompt_stats_from_highlights():
+    client = TestClient(app)
+    resp = client.post(
+        "/plot",
+        json={
+            "map": {
+                "bbox": TEST_BBOX,
+                "view": {"center": TEST_CENTER, "zoom": 10.5},
+                "context": {"floodRiskLevel": "high"},
+            },
+            "highlights": [
+                {
+                    "layerId": "places",
+                    "featureIds": ["node/123"],
+                    "title": "Flooded places",
+                    "mode": "prompt",
+                }
+            ],
+            "engine": "duckdb",
+            "scenarioId": TEST_SCENARIO_ID,
+        },
+    )
+    assert resp.status_code == 200
+    payload = resp.json()
+    stats = payload.get("layout", {}).get("meta", {}).get("stats", {})
+    assert stats.get("promptType") == "flooded_count"
+    count_stats = stats.get("countStats") or {}
+    assert count_stats.get("promptType") == "flooded_count"
+    assert "approximate" in count_stats

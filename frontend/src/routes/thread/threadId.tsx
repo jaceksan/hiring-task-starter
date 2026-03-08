@@ -275,7 +275,9 @@ function RouteComponent() {
 		getAuthoritativeMapContext,
 		getStats,
 		schedulePlotRefresh,
+		clearPromptHighlights,
 		abortPlotRefresh,
+		suppressPlotRefresh,
 		setInvokeBusy,
 		onRelayout,
 	} = usePlotController({
@@ -311,6 +313,7 @@ function RouteComponent() {
 			setPlotData,
 			setMapView,
 			abortPlotRefresh,
+			suppressPlotRefresh,
 			setDrawerOpen,
 			refetchThread: refetch,
 		});
@@ -433,7 +436,12 @@ function RouteComponent() {
 			selectedFloodZoneIds: string[];
 			selectedPlaceCategories: PlaceCategoryId[];
 		}>,
+		opts?: { keepHighlights?: boolean },
 	) => {
+		const keepHighlights = opts?.keepHighlights ?? true;
+		if (!keepHighlights) {
+			clearPromptHighlights();
+		}
 		const authoritative = getAuthoritativeMapContext();
 		const center = authoritative?.center ?? mapView.center;
 		const zoom = authoritative?.zoom ?? mapView.zoom;
@@ -448,6 +456,7 @@ function RouteComponent() {
 				overrides?.selectedFloodZoneIds ?? selectedFloodZoneIds,
 			selectedPlaceCategories:
 				overrides?.selectedPlaceCategories ?? selectedPlaceCategories,
+			highlightsOverride: keepHighlights ? undefined : [],
 		});
 	};
 
@@ -502,7 +511,10 @@ function RouteComponent() {
 										checked={floodRiskLevel === item.id}
 										onChange={() => {
 											setFloodRiskLevel(item.id);
-											refreshUsingCurrentView({ floodRiskLevel: item.id });
+											refreshUsingCurrentView(
+												{ floodRiskLevel: item.id },
+												{ keepHighlights: false },
+											);
 										}}
 									/>
 								</label>
@@ -515,7 +527,10 @@ function RouteComponent() {
 								className="h-7 px-2 mt-2"
 								onClick={() => {
 									setSelectedFloodZoneIds([]);
-									refreshUsingCurrentView({ selectedFloodZoneIds: [] });
+									refreshUsingCurrentView(
+										{ selectedFloodZoneIds: [] },
+										{ keepHighlights: false },
+									);
 								}}
 							>
 								Clear selected zones ({selectedFloodZoneIds.length})
@@ -535,7 +550,10 @@ function RouteComponent() {
 									className="h-6 px-2 text-[11px]"
 									onClick={() => {
 										setSelectedPlaceCategories([]);
-										refreshUsingCurrentView({ selectedPlaceCategories: [] });
+										refreshUsingCurrentView(
+											{ selectedPlaceCategories: [] },
+											{ keepHighlights: false },
+										);
 									}}
 								>
 									None
@@ -548,7 +566,7 @@ function RouteComponent() {
 										setSelectedPlaceCategories([...knownPlaceCategories]);
 										refreshUsingCurrentView({
 											selectedPlaceCategories: [...knownPlaceCategories],
-										});
+										}, { keepHighlights: false });
 									}}
 								>
 									All
@@ -576,7 +594,7 @@ function RouteComponent() {
 												);
 												refreshUsingCurrentView({
 													selectedPlaceCategories: out,
-												});
+												}, { keepHighlights: false });
 												return out;
 											});
 										}}
@@ -632,7 +650,10 @@ function RouteComponent() {
 							if (next.has(zoneId)) next.delete(zoneId);
 							else next.add(zoneId);
 							const out = [...next].sort();
-							refreshUsingCurrentView({ selectedFloodZoneIds: out });
+							refreshUsingCurrentView(
+								{ selectedFloodZoneIds: out },
+								{ keepHighlights: false },
+							);
 							return out;
 						});
 					}}

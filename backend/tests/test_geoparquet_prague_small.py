@@ -9,6 +9,8 @@ from main import app
 
 pytestmark = pytest.mark.integration
 
+TEST_SCENARIO_ID = "prague_population_infrastructure_test"
+
 
 def test_prague_geoparquet_fixture_files_exist_and_non_empty():
     repo = Path(__file__).resolve().parents[2]
@@ -27,28 +29,26 @@ def test_plot_endpoint_duckdb_geoparquet_prague_small_returns_layers():
         json={
             "map": {
                 "bbox": {
-                    "minLon": 14.22,
-                    "minLat": 49.94,
-                    "maxLon": 14.70,
-                    "maxLat": 50.18,
+                    "minLon": 14.38,
+                    "minLat": 50.04,
+                    "maxLon": 14.50,
+                    "maxLat": 50.12,
                 },
                 # Keep this test fast (avoid decoding large line/polygon geometries).
                 # The scenario uses `minZoomForGeometry` for roads/water; below that threshold
                 # those layers should be present but empty.
-                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 11.0},
+                "view": {"center": {"lat": 50.0755, "lon": 14.4378}, "zoom": 10.5},
+                "context": {"placeCategories": ["urban"]},
             },
             "engine": "duckdb",
-            "scenarioId": "prague_population_infrastructure_small",
+            "scenarioId": TEST_SCENARIO_ID,
         },
     )
     assert resp.status_code == 200
     payload = resp.json()
     meta = payload.get("layout", {}).get("meta", {})
     assert meta.get("stats", {}).get("engine") == "duckdb"
-    assert (
-        meta.get("stats", {}).get("scenarioId")
-        == "prague_population_infrastructure_small"
-    )
+    assert meta.get("stats", {}).get("scenarioId") == TEST_SCENARIO_ID
 
     names = {t.get("name") for t in payload.get("data", [])}
     # Scenario titles should appear as trace names.

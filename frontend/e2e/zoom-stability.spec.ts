@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+const TEST_SCENARIO_ID = "prague_population_infrastructure_test";
+
 async function disableAutoMinimizeChat(page: any) {
 	const toggle = page.getByLabel(/auto-minimize chat/i);
 	if ((await toggle.count()) > 0) {
@@ -7,15 +9,11 @@ async function disableAutoMinimizeChat(page: any) {
 	}
 }
 
-async function selectPragueGeoParquetScenario(page: any) {
-	const scenario = page.getByTitle("Select scenario pack");
-	if ((await scenario.count()) > 0) {
-		await scenario.selectOption("prague_population_infrastructure_small");
-	}
-	const engine = page.getByTitle("Select backend engine");
-	if ((await engine.count()) > 0) {
-		await engine.selectOption("duckdb");
-	}
+async function primePragueTestScenario(page: any) {
+	await page.addInitScript((scenarioId: string) => {
+		window.localStorage.setItem("pange_scenario", scenarioId);
+		window.localStorage.setItem("pange_engine", "duckdb");
+	}, TEST_SCENARIO_ID);
 }
 
 async function getMapboxZoom(page: any): Promise<number | null> {
@@ -27,12 +25,12 @@ async function getMapboxZoom(page: any): Promise<number | null> {
 	});
 }
 
-test("plot refresh with different zoom does not snap back the map", async ({
+test("plot refresh with different zoom does not snap back the map @smoke", async ({
 	page,
 }) => {
+	await primePragueTestScenario(page);
 	await page.goto("/");
 	await disableAutoMinimizeChat(page);
-	await selectPragueGeoParquetScenario(page);
 
 	await page.getByRole("button", { name: /start new thread/i }).click();
 	await page.waitForURL(/\/thread\/\d+$/);

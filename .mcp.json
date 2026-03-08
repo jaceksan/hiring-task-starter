@@ -1,7 +1,8 @@
 {
   "mcpServers": {
     "aida": {
-      "url": "http://localhost:9910/mcp"
+      "command": "aida-mcp",
+      "args": []
     }
   }
 }

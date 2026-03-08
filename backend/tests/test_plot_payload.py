@@ -119,6 +119,49 @@ def test_build_map_plot_supports_multiple_highlight_overlays():
     assert isinstance(stats.get("highlightOverlays"), list)
 
 
+def test_highlighted_points_keep_place_hover_details():
+    bundle = LayerBundle(
+        layers=[
+            Layer(
+                id="places",
+                kind="points",
+                title="Places (points)",
+                features=[
+                    PointFeature(
+                        id="node/1",
+                        lon=14.4,
+                        lat=50.08,
+                        props={
+                            "name": "Alpha",
+                            "fclass": "townhall",
+                            "place_category": "public_services",
+                            "place_source": "osm",
+                            "population": 42,
+                        },
+                    )
+                ],
+                style={},
+            )
+        ]
+    )
+    flooded = Highlight(
+        layer_id="places",
+        feature_ids={"node/1"},
+        title="Flooded places",
+        mode="prompt",
+    )
+    plot = build_map_plot(bundle, highlights=[flooded], highlight_source_layers=bundle)
+    trace = next(t for t in plot["data"] if t.get("name") == "Flooded places")
+    assert trace.get("mode") == "markers"
+    assert trace.get("hovertemplate") == "%{text}<extra></extra>"
+    text = trace.get("text") or []
+    assert any("Alpha" in x for x in text)
+    assert any("class: townhall" in x for x in text)
+    assert any("category: Public Services" in x for x in text)
+    assert any("source: osm" in x for x in text)
+    assert any("population: 42" in x for x in text)
+
+
 def test_build_map_plot_uses_flood_risk_bands_and_hover_metadata():
     flood_layer = Layer(
         id="flood_zones",
@@ -137,8 +180,8 @@ def test_build_map_plot_uses_flood_risk_bands_and_hover_metadata():
             ),
         ],
         style={
-            "fillcolor": "rgba(30, 136, 229, 0.15)",
-            "line": {"color": "rgba(30, 136, 229, 0.45)", "width": 1},
+            "fillcolor": "rgba(30, 136, 229, 0.09)",
+            "line": {"color": "rgba(30, 136, 229, 0.28)", "width": 1},
         },
         metadata={
             "floodRisk": {
@@ -149,18 +192,18 @@ def test_build_map_plot_uses_flood_risk_bands_and_hover_metadata():
                         "id": "high",
                         "label": "High (100y)",
                         "value": "high",
-                        "fillColor": "rgba(229, 57, 53, 0.18)",
-                        "lineColor": "rgba(229, 57, 53, 0.55)",
+                        "fillColor": "rgba(229, 57, 53, 0.10)",
+                        "lineColor": "rgba(229, 57, 53, 0.34)",
                     },
                     {
                         "id": "medium",
                         "label": "Medium (50y+)",
                         "value": "medium",
-                        "fillColor": "rgba(255, 183, 77, 0.16)",
-                        "lineColor": "rgba(245, 124, 0, 0.48)",
+                        "fillColor": "rgba(255, 183, 77, 0.08)",
+                        "lineColor": "rgba(245, 124, 0, 0.30)",
                     },
                 ],
-                "defaultFillColor": "rgba(30, 136, 229, 0.15)",
+                "defaultFillColor": "rgba(30, 136, 229, 0.09)",
             }
         },
     )
@@ -174,8 +217,8 @@ def test_build_map_plot_uses_flood_risk_bands_and_hover_metadata():
     high = next(
         t for t in traces if t.get("name") == "Flood zones (polygons) - High (100y)"
     )
-    assert high.get("fillcolor") == "rgba(229, 57, 53, 0.18)"
-    assert high.get("line", {}).get("color") == "rgba(229, 57, 53, 0.55)"
+    assert high.get("fillcolor") == "rgba(229, 57, 53, 0.10)"
+    assert high.get("line", {}).get("color") == "rgba(229, 57, 53, 0.34)"
     text = [x for x in (high.get("text") or []) if isinstance(x, str)]
     assert any("Risk: High (100y)" in x for x in text)
     assert any("Water: Vltava" in x for x in text)
@@ -211,11 +254,15 @@ def test_trace_point_clusters_uses_lighter_density_palette():
     density = next(
         t for t in plot["data"] if t.get("name") == "Places (points) (density)"
     )
-    assert density.get("opacity") == 0.48
+    assert density.get("opacity") == 0.28
     assert density.get("colorscale") == [
-        [0.0, "#fffbe6"],
-        [0.25, "#fff1b8"],
-        [0.5, "#ffe08a"],
-        [0.75, "#f7c65f"],
-        [1.0, "#e8a63c"],
+        [0.0, "#fffef7"],
+        [0.25, "#fff8dd"],
+        [0.5, "#ffefb8"],
+        [0.75, "#f4dda0"],
+        [1.0, "#e7c77a"],
     ]
+    assert density.get("marker", {}).get("line") == {
+        "color": "rgba(138, 111, 44, 0.10)",
+        "width": 0.15,
+    }

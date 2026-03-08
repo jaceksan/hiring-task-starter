@@ -4,24 +4,6 @@
 registry:
   includes: []
   commands:
-    fix_backend:
-      argv:
-      - make
-      - fix-backend
-      cwd: '{workspace_root}'
-      timeout_sec: 1200
-    fix_frontend:
-      argv:
-      - make
-      - fix-frontend
-      cwd: '{workspace_root}'
-      timeout_sec: 1200
-    fix_all:
-      argv:
-      - make
-      - fix-all
-      cwd: '{workspace_root}'
-      timeout_sec: 1800
     lint_backend:
       argv:
       - make
@@ -74,5 +56,11 @@ registry:
       - test-e2e-frontend
       cwd: '{workspace_root}'
       timeout_sec: 3600
+    test_integration_backend:
+      argv:
+      - make
+      - test-integration-backend
+      cwd: '{workspace_root}'
+      timeout_sec: 1800
   processors: {}
 version: 1

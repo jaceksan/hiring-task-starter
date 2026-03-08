@@ -151,11 +151,23 @@ class TelemetryStore:
         )
 
         out: list[dict[str, Any]] = []
-        for engine_v, endpoint_v, n, avg_ms, p50, p95, p99, avg_bytes, hit_rate in rows:
+        for (
+            engine_v,
+            endpoint_v,
+            prompt_type,
+            n,
+            avg_ms,
+            p50,
+            p95,
+            p99,
+            avg_bytes,
+            hit_rate,
+        ) in rows:
             out.append(
                 {
                     "engine": engine_v,
                     "endpoint": endpoint_v,
+                    "promptType": prompt_type,
                     "n": int(n),
                     "avgTotalMs": _safe_float(avg_ms),
                     "p50TotalMs": _safe_float(p50),
@@ -195,6 +207,7 @@ class TelemetryStore:
             ts_ms,
             engine_v,
             endpoint_v,
+            prompt_type,
             total_ms,
             payload_bytes,
             cache_hit,
@@ -212,6 +225,7 @@ class TelemetryStore:
                     "tsMs": int(ts_ms),
                     "engine": engine_v,
                     "endpoint": endpoint_v,
+                    "promptType": prompt_type,
                     "totalMs": _safe_float(total_ms),
                     "payloadKB": (int(payload_bytes) / 1024.0)
                     if payload_bytes is not None

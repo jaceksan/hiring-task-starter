@@ -277,7 +277,9 @@ def build_geo_index(bundle: LayerBundle) -> GeoIndex:
 
 def is_point_in_union(point: PointFeature, union_poly: Polygon | MultiPolygon) -> bool:
     try:
-        return bool(union_poly.contains(Point(point.lon, point.lat)))
+        # `covers` includes boundary points; `contains` would exclude points lying
+        # exactly on flood polygon boundaries and produce surprising counts.
+        return bool(union_poly.covers(Point(point.lon, point.lat)))
     except Exception:
         return False
 

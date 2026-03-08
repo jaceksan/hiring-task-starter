@@ -67,6 +67,12 @@ layers:
             track_grade5: 15.5
             pedestrian: 15.5
             bridleway: 15.5
+          maxCandidatesByZoom:
+            7.5: 700
+            9.0: 1200
+            10.5: 1800
+            12.0: 2600
+            24.0: 4000
     style:
       line:
         color: "rgba(55, 71, 79, 0.55)"
@@ -84,43 +90,56 @@ layers:
         classColumn: flood_risk_level
         geometryColumn: geometry
         propertyColumns: [water_name, source_fclass]
-        minZoomForGeometry: 11.5
+        minZoomForGeometry: 10.0
+        renderPolicy:
+          minZoomForGeometryByClass:
+            extreme: 6.0
+            very_high: 6.5
+            high: 7.0
+            medium: 8.0
+            low: 9.5
+          maxCandidatesByZoom:
+            7.5: 200
+            9.0: 350
+            10.5: 600
+            12.0: 900
+            24.0: 1600
     style:
-      fillcolor: "rgba(30, 136, 229, 0.15)"
+      fillcolor: "rgba(30, 136, 229, 0.09)"
       line:
-        color: "rgba(30, 136, 229, 0.45)"
+        color: "rgba(30, 136, 229, 0.28)"
         width: 1
     metadata:
       floodRisk:
-        property: fclass
-        waterEntityProperty: name
-        defaultFillColor: "rgba(30, 136, 229, 0.15)"
+        property: flood_risk_level
+        waterEntityProperty: water_name
+        defaultFillColor: "rgba(30, 136, 229, 0.09)"
         bands:
           - id: extreme
             label: "Extreme"
             value: extreme
-            fillColor: "rgba(183, 28, 28, 0.22)"
-            lineColor: "rgba(183, 28, 28, 0.62)"
+            fillColor: "rgba(183, 28, 28, 0.14)"
+            lineColor: "rgba(183, 28, 28, 0.42)"
           - id: very_high
             label: "Very High"
             value: very_high
-            fillColor: "rgba(211, 47, 47, 0.20)"
-            lineColor: "rgba(211, 47, 47, 0.58)"
+            fillColor: "rgba(211, 47, 47, 0.12)"
+            lineColor: "rgba(211, 47, 47, 0.38)"
           - id: high
             label: "High"
             value: high
-            fillColor: "rgba(229, 57, 53, 0.18)"
-            lineColor: "rgba(229, 57, 53, 0.55)"
+            fillColor: "rgba(229, 57, 53, 0.10)"
+            lineColor: "rgba(229, 57, 53, 0.34)"
           - id: medium
             label: "Medium"
             value: medium
-            fillColor: "rgba(255, 183, 77, 0.16)"
-            lineColor: "rgba(245, 124, 0, 0.48)"
+            fillColor: "rgba(255, 183, 77, 0.08)"
+            lineColor: "rgba(245, 124, 0, 0.30)"
           - id: low
             label: "Low"
             value: low
-            fillColor: "rgba(30, 136, 229, 0.10)"
-            lineColor: "rgba(30, 136, 229, 0.40)"
+            fillColor: "rgba(30, 136, 229, 0.05)"
+            lineColor: "rgba(30, 136, 229, 0.24)"
 
   - id: places
     title: "Places (points)"

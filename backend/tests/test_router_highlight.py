@@ -127,10 +127,15 @@ def test_escape_roads_prompt_returns_points_and_roads_highlights():
     assert any(h.layer_id == "roads" for h in resp.highlights)
 
 
-def test_count_prompt_returns_points_and_active_flood_zone_highlights():
+def test_count_prompt_returns_points_and_only_matching_flood_zone_highlights():
     flood = PolygonFeature(
         id="f1",
         rings=[[(0.0, 0.0), (2.0, 0.0), (2.0, 2.0), (0.0, 2.0), (0.0, 0.0)]],
+        props={"flood_risk_level": "high"},
+    )
+    flood_without_places = PolygonFeature(
+        id="f2",
+        rings=[[(10.0, 10.0), (12.0, 10.0), (12.0, 12.0), (10.0, 12.0), (10.0, 10.0)]],
         props={"flood_risk_level": "high"},
     )
     places = [
@@ -143,7 +148,7 @@ def test_count_prompt_returns_points_and_active_flood_zone_highlights():
                 id="flood_zones",
                 kind="polygons",
                 title="Flood",
-                features=[flood],
+                features=[flood, flood_without_places],
                 style={},
             ),
             Layer(
@@ -178,9 +183,74 @@ def test_count_prompt_returns_points_and_active_flood_zone_highlights():
     assert resp.highlight is not None
     assert resp.highlight.layer_id == "places"
     assert resp.highlight.feature_ids == {"p_in"}
+    assert resp.highlight.title == "Flooded places"
     assert resp.highlights is not None
-    assert any(h.layer_id == "places" and h.feature_ids == {"p_in"} for h in resp.highlights)
-    assert any(h.layer_id == "flood_zones" and h.feature_ids == {"f1"} for h in resp.highlights)
+    assert resp.focus_map is True
+    assert any(
+        h.layer_id == "places"
+        and h.feature_ids == {"p_in"}
+        and h.mode == "prompt"
+        for h in resp.highlights
+    )
+    assert any(
+        h.layer_id == "flood_zones"
+        and h.feature_ids == {"f1"}
+        and h.title == "Flood zones with flooded places"
+        and h.mode == "context"
+        for h in resp.highlights
+    )
+
+
+def test_count_prompt_counts_boundary_points_as_flooded():
+    flood = PolygonFeature(
+        id="f1",
+        rings=[[(0.0, 0.0), (2.0, 0.0), (2.0, 2.0), (0.0, 2.0), (0.0, 0.0)]],
+        props={"flood_risk_level": "high"},
+    )
+    places = [
+        PointFeature(id="p_boundary", lon=0.0, lat=1.0, props={"name": "Boundary"}),
+        PointFeature(id="p_out", lon=5.0, lat=5.0, props={"name": "Outside"}),
+    ]
+    bundle = LayerBundle(
+        layers=[
+            Layer(
+                id="flood_zones",
+                kind="polygons",
+                title="Flood",
+                features=[flood],
+                style={},
+            ),
+            Layer(
+                id="places", kind="points", title="Places", features=places, style={}
+            ),
+        ]
+    )
+    index = build_geo_index(bundle)
+    routing = ScenarioRouting(
+        primaryPointsLayerId="places",
+        maskPolygonsLayerId="flood_zones",
+        pointLabelSingular="place",
+        pointLabelPlural="places",
+        maskLabel="flood zones",
+        showLayersKeywords=["show layers"],
+        countKeywords=["how many"],
+        maskKeywords=["flood"],
+        recommendKeywords=["recommend"],
+        proximity=[],
+        highlightRules=[],
+    )
+    resp = route_prompt(
+        "how many places are flooded?",
+        layers=bundle,
+        index=index,
+        aoi=BBox(min_lon=-1, min_lat=-1, max_lon=6, max_lat=6),
+        routing=routing,
+        request_context={"floodRiskLevel": "high"},
+    )
+    assert resp.highlight is not None
+    assert resp.highlight.feature_ids == {"p_boundary"}
+    assert resp.count_stats is not None
+    assert resp.count_stats.get("floodedCount") == 1
 
 
 def test_safest_prompt_respects_selected_flood_zones():

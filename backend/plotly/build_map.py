@@ -164,12 +164,13 @@ def build_map_plot(
 
     center = view_center or {"lat": 0.0, "lon": 0.0}
     zoom = float(view_zoom) if view_zoom is not None else 2.0
+    focus_applied = False
 
     if focus_map and active_highlights:
         selected: list[PointFeature] = []
         for hl_req in active_highlights:
             selected.extend(
-                selected_points(layers, hl_req.layer_id, hl_req.feature_ids)
+                selected_points(src, hl_req.layer_id, hl_req.feature_ids)
             )
         if selected:
             fit_center, fit_zoom = fit_view_to_points(selected, viewport=viewport)
@@ -180,14 +181,21 @@ def build_map_plot(
                 zoom = max(fit_zoom, min_zoom)
             else:
                 center, zoom = fit_center, fit_zoom
+            focus_applied = True
+
+    visible_highlights = [
+        h
+        for h, hs in zip(active_highlights, highlight_stats, strict=False)
+        if int(hs.get("rendered") or 0) > 0
+    ]
 
     meta: dict[str, Any] = {}
-    if active_highlights:
+    if visible_highlights:
         meta["highlight"] = {
-            "layerId": active_highlights[0].layer_id,
-            "featureIds": sorted(active_highlights[0].feature_ids),
-            "title": active_highlights[0].title or "Highlighted",
-            "mode": active_highlights[0].mode,
+            "layerId": visible_highlights[0].layer_id,
+            "featureIds": sorted(visible_highlights[0].feature_ids),
+            "title": visible_highlights[0].title or "Highlighted",
+            "mode": visible_highlights[0].mode,
         }
         meta["highlights"] = [
             {
@@ -196,7 +204,7 @@ def build_map_plot(
                 "title": h.title or "Highlighted",
                 "mode": h.mode,
             }
-            for h in active_highlights
+            for h in visible_highlights
         ]
 
     # Basic stats for HUD/telemetry.
@@ -228,6 +236,7 @@ def build_map_plot(
         "highlightRequested": highlight_requested,
         "highlightRendered": highlight_rendered,
         "highlightOverlays": highlight_stats,
+        "focusApplied": focus_applied,
         "lineVertices": line_vertices,
         "polyVertices": poly_vertices,
     }

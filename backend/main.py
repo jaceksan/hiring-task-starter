@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from api.invoke_stream import (
+    _flooded_count_approximation,
     _apply_lod_cached,
     _engine,
     _resolve_engine_name_for_scenario,
@@ -142,6 +143,19 @@ def _roads_source_cap_reached(
             return False
     except Exception:
         return False
+    return False
+
+
+def _is_flooded_count_refresh(
+    highlights: list[dict], *, primary_points_layer_id: str
+) -> bool:
+    for raw in highlights:
+        if not isinstance(raw, dict):
+            continue
+        layer_id = str(raw.get("layerId") or "")
+        title = str(raw.get("title") or "").strip().lower()
+        if layer_id == primary_points_layer_id and "flooded" in title:
+            return True
     return False
 
 
@@ -304,6 +318,20 @@ def plot(body: ApiPlotRequest):
                 selected_zone_ids=selected_zone_ids,
             )
         )
+    count_stats: dict[str, object] | None = None
+    if _is_flooded_count_refresh(
+        payload_highlights, primary_points_layer_id=scenario.routing.primaryPointsLayerId
+    ):
+        approximate, reasons = _flooded_count_approximation(
+            result.stats if isinstance(result.stats, dict) else None,
+            points_layer_id=scenario.routing.primaryPointsLayerId,
+            mask_layer_id=scenario.routing.maskPolygonsLayerId,
+        )
+        count_stats = {
+            "promptType": "flooded_count",
+            "approximate": bool(approximate),
+            "approximationReason": ", ".join(reasons) if reasons else None,
+        }
 
     selected_road_types = normalize_road_types(body.roadHighlightTypes)
     roads_layer = aoi_layers.get("roads")
@@ -425,6 +453,9 @@ def plot(body: ApiPlotRequest):
         payload["layout"]["meta"]["stats"]["roadHighlightControl"] = road_filter_status
         payload["layout"]["meta"]["stats"]["placeControl"] = place_filter_stats
         payload["layout"]["meta"]["stats"]["floodSelection"] = flood_filter_stats
+        if count_stats is not None:
+            payload["layout"]["meta"]["stats"]["promptType"] = "flooded_count"
+            payload["layout"]["meta"]["stats"]["countStats"] = count_stats
         if getattr(result, "stats", None):
             payload["layout"]["meta"]["stats"]["engineStats"] = result.stats
         payload["layout"]["meta"]["stats"]["timingsMs"] = {

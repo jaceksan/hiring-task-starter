@@ -4,7 +4,7 @@
 	types-all types-backend types-frontend \
 	test-all test-backend test-frontend \
 	test-integration-all test-integration-backend test-integration-frontend \
-	test-e2e-frontend \
+	test-e2e-frontend test-e2e-frontend-smoke test-e2e-frontend-full \
 	fix-backend fix-frontend fix-all
 
 help:
@@ -25,7 +25,8 @@ help:
 		"  test-integration-all     Run integration tests (where available)" \
 		"  test-integration-backend Run backend integration tests" \
 		"  test-integration-frontend Run frontend integration tests (Playwright e2e)" \
-		"  test-e2e-frontend        Run frontend Playwright e2e" \
+		"  test-e2e-frontend        Run frontend Playwright smoke e2e" \
+		"  test-e2e-frontend-full   Run full frontend Playwright e2e" \
 		"  fix-backend      Auto-fix backend (ruff format + ruff check --fix)" \
 		"  fix-frontend     Auto-fix frontend (biome check --write)" \
 		"  fix-all          Auto-fix backend + frontend" \
@@ -84,6 +85,14 @@ test-integration-frontend:
 	@$(MAKE) test-e2e-frontend
 
 test-e2e-frontend:
+	@$(MAKE) frontend-deps
+	@cd frontend && E2E_FAST=1 npm run -s e2e:smoke
+
+test-e2e-frontend-smoke:
+	@$(MAKE) frontend-deps
+	@cd frontend && E2E_FAST=1 npm run -s e2e:smoke
+
+test-e2e-frontend-full:
 	@$(MAKE) frontend-deps
 	@cd frontend && E2E_FAST=1 npm run -s e2e
 

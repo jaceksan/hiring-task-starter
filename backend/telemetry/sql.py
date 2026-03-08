@@ -19,6 +19,7 @@ SUMMARY_SQL_TEMPLATE = """
 SELECT
   engine,
   endpoint,
+  try_cast(json_extract_string(stats_json, '$.promptType') AS TEXT) AS prompt_type,
   COUNT(*) AS n,
   AVG(try_cast(json_extract(stats_json, '$.timingsMs.total') AS DOUBLE)) AS avg_total_ms,
   quantile_cont(try_cast(json_extract(stats_json, '$.timingsMs.total') AS DOUBLE), 0.50) AS p50_total_ms,
@@ -28,8 +29,8 @@ SELECT
   AVG(CASE WHEN try_cast(json_extract(stats_json, '$.cache.cacheHit') AS BOOLEAN) THEN 1 ELSE 0 END) AS cache_hit_rate
 FROM events
 {where_sql}
-GROUP BY engine, endpoint
-ORDER BY engine, endpoint
+GROUP BY engine, endpoint, prompt_type
+ORDER BY engine, endpoint, prompt_type
 """
 
 SLOWEST_SQL_TEMPLATE = """
@@ -37,6 +38,7 @@ SELECT
   ts_ms,
   engine,
   endpoint,
+  try_cast(json_extract_string(stats_json, '$.promptType') AS TEXT) AS prompt_type,
   try_cast(json_extract(stats_json, '$.timingsMs.total') AS DOUBLE) AS total_ms,
   try_cast(json_extract(stats_json, '$.payloadBytes') AS BIGINT) AS payload_bytes,
   try_cast(json_extract(stats_json, '$.cache.cacheHit') AS BOOLEAN) AS cache_hit,

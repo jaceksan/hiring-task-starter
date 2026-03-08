@@ -27,6 +27,16 @@ domains:
   - frontend/e2e/**
   - frontend/playwright.config.*
   root_depth: 1
+- id: scenario_config
+  description: Scenario YAML changes that affect real GeoParquet behavior
+  match_globs:
+  - scenarios/**/*.yaml
+  root_depth: 1
+- id: validation_config
+  description: Repository-owned validation configuration
+  match_globs:
+  - .aida/**/*.yaml
+  root_depth: 1
 - id: repo
   description: Repository-level build orchestration changes
   match_globs:

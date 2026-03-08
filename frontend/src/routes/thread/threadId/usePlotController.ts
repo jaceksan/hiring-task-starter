@@ -51,13 +51,14 @@ export function usePlotController(args: {
 	const lastPlotRefreshKeyRef = useRef<string | null>(null);
 	const invokeBusyRef = useRef(false);
 	const relayoutRafRef = useRef<number | null>(null);
+	const suppressPlotRefreshUntilRef = useRef(0);
 
 	const [plotData, setPlotData] = useState<Pick<PlotParams, "data" | "layout">>(
 		() => {
-			const firstMessageWithData = threadMessages.find((message) =>
-				Boolean(message.data),
-			);
-			const maybe = firstMessageWithData?.data as unknown;
+			const latestMessageWithData = [...threadMessages]
+				.reverse()
+				.find((message) => Boolean(message.data));
+			const maybe = latestMessageWithData?.data as unknown;
 			if (maybe && typeof maybe === "object") {
 				return maybe as Pick<PlotParams, "data" | "layout">;
 			}
@@ -143,7 +144,7 @@ export function usePlotController(args: {
 						: "Highlighted";
 				const mode =
 					typeof h.mode === "string" && h.mode.length > 0 ? h.mode : undefined;
-				if (mode !== "prompt") continue;
+				if (mode === "road_filter") continue;
 				out.push({ layerId, featureIds: ids as string[], title, mode });
 			}
 			if (out.length > 0) return out;
@@ -164,7 +165,7 @@ export function usePlotController(args: {
 			typeof one.mode === "string" && one.mode.length > 0
 				? one.mode
 				: undefined;
-		if (mode && mode !== "prompt") return [];
+		if (mode === "road_filter") return [];
 		return [{ layerId, featureIds: ids as string[], title, mode }];
 	}, [plotData.layout]);
 
@@ -191,6 +192,18 @@ export function usePlotController(args: {
 		}
 	}, []);
 
+	const suppressPlotRefresh = useCallback(
+		(durationMs: number) => {
+			suppressPlotRefreshUntilRef.current = Math.max(
+				suppressPlotRefreshUntilRef.current,
+				Date.now() + Math.max(0, durationMs),
+			);
+			lastPlotRefreshKeyRef.current = null;
+			abortPlotRefresh();
+		},
+		[abortPlotRefresh],
+	);
+
 	const schedulePlotRefresh = useCallback(
 		(next: {
 			center: MapCenter;
@@ -199,6 +212,7 @@ export function usePlotController(args: {
 			floodRiskLevel?: FloodRiskLevel;
 			selectedFloodZoneIds?: string[];
 			selectedPlaceCategories?: PlaceCategoryId[];
+			highlightsOverride?: HighlightPayload[];
 		}) => {
 			if (invokeBusyRef.current) return;
 			const effectiveFloodRiskLevel = next.floodRiskLevel ?? floodRiskLevel;
@@ -206,6 +220,10 @@ export function usePlotController(args: {
 				next.selectedFloodZoneIds ?? selectedFloodZoneIds;
 			const effectiveSelectedPlaceCategories =
 				next.selectedPlaceCategories ?? selectedPlaceCategories;
+			const effectiveHighlights =
+				next.highlightsOverride ?? currentHighlightRef.current();
+			const now = Date.now();
+			if (now < suppressPlotRefreshUntilRef.current) return;
 
 			const key = JSON.stringify({
 				s: scenarioId,
@@ -215,6 +233,18 @@ export function usePlotController(args: {
 				pc: [...new Set(effectiveSelectedPlaceCategories)].sort(),
 				z: Math.round(next.zoom * 10) / 10,
 				rt: [...new Set(roadHighlightTypes)].sort(),
+				hl: effectiveHighlights
+					.map((h) => ({
+						layerId: h.layerId,
+						title: h.title,
+						mode: h.mode ?? "",
+						featureIds: [...new Set(h.featureIds)].sort(),
+					}))
+					.sort((a, b) =>
+						`${a.layerId}:${a.title}:${a.mode}`.localeCompare(
+							`${b.layerId}:${b.title}:${b.mode}`,
+						),
+					),
 				b: {
 					minLon: Math.round(next.bbox.minLon * 10_000) / 10_000,
 					minLat: Math.round(next.bbox.minLat * 10_000) / 10_000,
@@ -252,7 +282,7 @@ export function usePlotController(args: {
 									placeCategories: effectiveSelectedPlaceCategories,
 								},
 							},
-							highlights: currentHighlightRef.current(),
+							highlights: effectiveHighlights,
 							roadHighlightTypes,
 							engine,
 							scenarioId,
@@ -318,6 +348,24 @@ export function usePlotController(args: {
 			selectedPlaceCategories,
 		],
 	);
+
+	const clearPromptHighlights = useCallback(() => {
+		setPlotData((prev) => {
+			const layout = asRecord(prev.layout) ?? {};
+			const meta = asRecord(layout.meta) ?? {};
+			const nextMeta = { ...meta };
+			delete nextMeta.highlight;
+			delete nextMeta.highlights;
+			return {
+				...prev,
+				layout: {
+					...(prev.layout ?? {}),
+					meta: nextMeta,
+				},
+			} as Pick<PlotParams, "data" | "layout">;
+		});
+		lastPlotRefreshKeyRef.current = null;
+	}, []);
 
 	const readViewFromPlotDom = useCallback((): {
 		center: MapCenter | null;
@@ -428,11 +476,10 @@ export function usePlotController(args: {
 			const { center, zoom } = mapViewRef.current;
 			const bbox = calcBboxFromCenterZoom(center, zoom, viewport);
 			setMapView((prev) => ({ ...prev, bbox }));
-			schedulePlotRefresh({ center, zoom, bbox });
 		});
 		ro.observe(el);
 		return () => ro.disconnect();
-	}, [getViewportSize, schedulePlotRefresh]);
+	}, [getViewportSize]);
 
 	useEffect(() => {
 		return () => {
@@ -453,7 +500,9 @@ export function usePlotController(args: {
 		getCurrentBbox,
 		getStats,
 		schedulePlotRefresh,
+		clearPromptHighlights,
 		abortPlotRefresh,
+		suppressPlotRefresh,
 		getAuthoritativeMapContext,
 		setInvokeBusy,
 		onRelayout,

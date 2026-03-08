@@ -128,9 +128,19 @@ def query_geoparquet_layer_bbox(
     # tens of thousands of WKB geometries only to drop most of them later.
     hard_cap = None
     if kind == "lines":
-        # Lines (roads) are by far the densest layer; keep a strict cap to ensure
-        # /plot refreshes remain interactive even on worst-case AOIs.
-        hard_cap = 9_000
+        # Lines (roads) are typically the dominant decode bottleneck.
+        # Keep a much stricter adaptive cap at lower zooms where detail is less useful.
+        z = float(view_zoom)
+        if z < 8.0:
+            hard_cap = 1_200
+        elif z < 10.0:
+            hard_cap = 2_000
+        elif z < 12.0:
+            hard_cap = 3_200
+        elif z < 14.0:
+            hard_cap = 5_000
+        else:
+            hard_cap = 7_000
     elif kind == "polygons":
         hard_cap = 5_000
     if hard_cap is not None:

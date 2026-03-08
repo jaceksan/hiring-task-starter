@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Any
 
 from shapely.geometry import LineString, Point
 
@@ -31,6 +32,7 @@ class AgentResponse:
     highlight: Highlight | None = None
     highlights: list[Highlight] | None = None
     focus_map: bool = False
+    count_stats: dict[str, Any] | None = None
 
 
 def route_prompt(
@@ -175,6 +177,7 @@ def _count_points_in_mask(
     u = union_from_polygons(active_zones)
     in_mask = [pt for pt in pts if is_point_in_union(pt, u)]
     out_mask = [pt for pt in pts if not is_point_in_union(pt, u)]
+    matched_zone_ids = _zone_ids_with_points(active_zones, in_mask)
     highlights: list[Highlight] = []
     if in_mask:
         highlights.append(
@@ -185,12 +188,12 @@ def _count_points_in_mask(
                 mode="prompt",
             )
         )
-    if active_zones:
+    if matched_zone_ids:
         highlights.append(
             Highlight(
                 layer_id=mask_layer.id,
-                feature_ids={zone.id for zone in active_zones},
-                title="Active flood zones",
+                feature_ids=matched_zone_ids,
+                title="Flood zones with flooded places",
                 mode="context",
             )
         )
@@ -203,7 +206,33 @@ def _count_points_in_mask(
         highlight=primary_highlight,
         highlights=highlights or None,
         focus_map=bool(in_mask),
+        count_stats={
+            "promptType": "flooded_count",
+            "floodedCount": len(in_mask),
+            "outsideCount": len(out_mask),
+            "activeZoneCount": len(active_zones),
+            "matchedZoneCount": len(matched_zone_ids),
+            "floodedFeatureIds": sorted(pt.id for pt in in_mask),
+            "matchedZoneIds": sorted(matched_zone_ids),
+        },
     )
+
+
+def _zone_ids_with_points(
+    zones: list[object], points: list[PointFeature]
+) -> set[str]:
+    if not zones or not points:
+        return set()
+
+    matched: set[str] = set()
+    for zone in zones:
+        zone_id = getattr(zone, "id", "")
+        if not zone_id:
+            continue
+        zone_union = union_from_polygons([zone])
+        if any(is_point_in_union(pt, zone_union) for pt in points):
+            matched.add(zone_id)
+    return matched
 
 
 def _apply_highlight_rule(

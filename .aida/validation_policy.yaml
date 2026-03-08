@@ -11,13 +11,15 @@ validation_policy:
     pipeline: frontend_fast
   - domain: frontend_e2e
     pipeline: frontend_e2e
+  - domain: scenario_config
+    pipeline: backend_integration_smoke
+  - domain: validation_config
+    pipeline: repo_fast
   - domain: repo
     pipeline: repo_fast
   pipelines:
     backend_fast:
       steps:
-      - command_id: fix_backend
-        processor_id: passthrough
       - command_id: lint_backend
         processor_id: passthrough
       - command_id: types_backend
@@ -26,26 +28,26 @@ validation_policy:
         processor_id: pytest
     frontend_fast:
       steps:
-      - command_id: fix_frontend
-        processor_id: passthrough
       - command_id: lint_frontend
         processor_id: passthrough
       - command_id: types_frontend
         processor_id: passthrough
     frontend_e2e:
       steps:
-      - command_id: fix_frontend
-        processor_id: passthrough
       - command_id: lint_frontend
         processor_id: passthrough
       - command_id: types_frontend
         processor_id: passthrough
       - command_id: test_e2e_frontend
         processor_id: passthrough
+    backend_integration_smoke:
+      steps:
+      - command_id: lint_backend
+        processor_id: passthrough
+      - command_id: test_integration_backend
+        processor_id: passthrough
     repo_fast:
       steps:
-      - command_id: fix_all
-        processor_id: passthrough
       - command_id: lint_all
         processor_id: passthrough
       - command_id: types_all

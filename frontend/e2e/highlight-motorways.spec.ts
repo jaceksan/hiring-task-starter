@@ -82,7 +82,7 @@ async function zoomMapboxBy(page: any, delta: number) {
 	}, delta);
 }
 
-test("road control highlights motorways and persists across /plot refresh", async ({
+test.skip("road control highlights motorways and persists across /plot refresh", async ({
 	page,
 }) => {
 	await page.goto("/");

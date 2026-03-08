@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 import pytest
 from agent.router import AgentResponse
@@ -264,4 +265,54 @@ def test_invoke_stream_reports_matched_vs_rendered_when_clipped(monkeypatch):
         return " ".join(parts)
 
     text = asyncio.run(collect_text())
+    assert "placeholder" in text
     assert "Highlights: matched 10, rendering 3 due to budget." in text
+
+
+def test_invoke_stream_emits_flooded_count_stats_in_plot_meta(monkeypatch):
+    def fake_route_prompt(*args, **kwargs):
+        return AgentResponse(
+            message="I found 1 places in flood zones and 2 outside of it.",
+            count_stats={
+                "promptType": "flooded_count",
+                "floodedCount": 1,
+                "outsideCount": 2,
+            },
+        )
+
+    monkeypatch.setattr("api.invoke_stream.route_prompt", fake_route_prompt)
+    thread = ApiThread(
+        id=1,
+        title="t",
+        messages=[
+            ApiMessage(
+                id=1,
+                author=ApiMessageSenderEnum.human,
+                text="how many places are flooded?",
+            )
+        ],
+        map=ApiMapContext(
+            bbox=ApiBbox(minLon=14.22, minLat=49.94, maxLon=14.70, maxLat=50.18),
+            view=ApiMapView(center=ApiCenter(lat=50.0755, lon=14.4378), zoom=12.0),
+        ),
+    )
+
+    async def collect_plot_stats():
+        async for chunk in handle_incoming_message(thread):
+            if not chunk.startswith("event: plot_data"):
+                continue
+            payload_line = chunk.split("\n", 1)[1]
+            if not payload_line.startswith("data:"):
+                continue
+            payload = payload_line.split(":", 1)[1].strip()
+            parsed = json.loads(payload)
+            return (
+                parsed.get("layout", {}).get("meta", {}).get("stats", {}) or {}
+            )
+        return {}
+
+    stats = asyncio.run(collect_plot_stats())
+    assert stats.get("promptType") == "flooded_count"
+    count_stats = stats.get("countStats") or {}
+    assert count_stats.get("floodedCount") == 1
+    assert count_stats.get("outsideCount") == 2

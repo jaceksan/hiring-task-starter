@@ -34,6 +34,7 @@ export type MapViewState = {
 export type TelemetrySummaryRow = {
 	engine?: string;
 	endpoint?: string;
+	promptType?: string;
 	n?: number;
 	p50TotalMs?: number;
 	p95TotalMs?: number;
@@ -45,6 +46,7 @@ export type TelemetrySummaryRow = {
 export type TelemetrySlowestRow = {
 	tsMs?: number;
 	endpoint?: string;
+	promptType?: string;
 	totalMs?: number;
 	viewZoom?: number;
 	payloadKB?: number;
@@ -54,6 +56,14 @@ export type TelemetrySlowestRow = {
 
 export type PlotPerfStats = {
 	engine?: string;
+	promptType?: string;
+	countStats?: {
+		promptType?: string;
+		floodedCount?: number;
+		outsideCount?: number;
+		approximate?: boolean;
+		approximationReason?: string | null;
+	};
 	renderedMarkers?: number;
 	renderedClusters?: number;
 	lineVertices?: number;
@@ -65,6 +75,7 @@ export type PlotPerfStats = {
 		tileZoom?: number;
 		zoomBucket?: number;
 	};
+	focusApplied?: boolean;
 	timingsMs?: {
 		total?: number;
 		engineGet?: number;

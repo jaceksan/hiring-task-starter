@@ -1,18 +1,16 @@
-id: czech_population_infrastructure_large
-title: "Czech Republic: Population & Infrastructure (Large)"
-
-# GeoParquet-backed large scenario (query-on-read via DuckDB `read_parquet()`).
-enabled: true
-dataSize: large
+id: prague_population_infrastructure_test
+title: "Prague: Population & Infrastructure (Test)"
+dataSize: small
+enabled: false
 default: false
 runtime:
   enginePolicy: auto
 
 defaultView:
   center:
-    lat: 49.8175
-    lon: 15.4730
-  zoom: 6.6
+    lat: 50.0755
+    lon: 14.4378
+  zoom: 10.5
 
 examplePrompts:
   - "how many places are flooded?"
@@ -25,7 +23,7 @@ layers:
     kind: lines
     source:
       type: geoparquet
-      path: data/derived/czech_population_infrastructure_large/cz_bbox/roads.parquet
+      path: data/derived/czech_population_infrastructure_large/prague_bbox/roads.parquet
       geoparquet:
         idColumn: osm_id
         nameColumn: COALESCE(ref, name)
@@ -34,8 +32,6 @@ layers:
         propertyColumns: [ref, oneway, maxspeed, bridge, tunnel, code]
         minZoomForGeometry: 11.5
         renderPolicy:
-          # Show a readable “overview” at low zoom by decoding only major road classes,
-          # then progressively allow smaller classes as the user zooms in.
           minZoomForGeometryByClass:
             motorway: 6.0
             motorway_link: 6.0
@@ -47,8 +43,6 @@ layers:
             secondary_link: 7.0
             tertiary: 9.0
             tertiary_link: 9.0
-            # Minor classes are extremely dense in the CZ dataset. Keep them off until very
-            # high zoom; otherwise decoding + JSON serialization become unstable (multi-second).
             residential: 13.5
             unclassified: 13.5
             service: 14.0
@@ -66,15 +60,11 @@ layers:
             track_grade5: 15.5
             pedestrian: 15.5
             bridleway: 15.5
-          # Hard cap of “geometry candidates” before any Python simplification/LOD.
-          # Keys are maxZoom thresholds.
           maxCandidatesByZoom:
-            7.5: 1000
-            9.0: 2000
-            12.0: 4000
-            13.5: 7000
-            15.0: 9000
-            24.0: 9000
+            7.5: 400
+            9.0: 800
+            12.0: 1800
+            24.0: 3200
     style:
       line:
         color: "rgba(55, 71, 79, 0.55)"
@@ -85,16 +75,15 @@ layers:
     kind: polygons
     source:
       type: geoparquet
-      path: data/derived/czech_population_infrastructure_large/cz_bbox/flood_zones.parquet
+      path: data/derived/czech_population_infrastructure_large/prague_bbox/flood_zones.parquet
       geoparquet:
         idColumn: osm_id
         nameColumn: water_name
         classColumn: flood_risk_level
         geometryColumn: geometry
         propertyColumns: [water_name, source_fclass]
-        minZoomForGeometry: 11.5
+        minZoomForGeometry: 10.0
         renderPolicy:
-          # Same idea as roads: show only the most significant water polygons when zoomed out.
           minZoomForGeometryByClass:
             extreme: 6.0
             very_high: 6.5
@@ -102,10 +91,10 @@ layers:
             medium: 8.0
             low: 9.5
           maxCandidatesByZoom:
-            7.5: 600
-            9.0: 1200
-            12.0: 3500
-            24.0: 6000
+            7.5: 150
+            9.0: 300
+            12.0: 700
+            24.0: 1400
     style:
       fillcolor: "rgba(30, 136, 229, 0.09)"
       line:
@@ -113,8 +102,8 @@ layers:
         width: 1
     metadata:
       floodRisk:
-        property: fclass
-        waterEntityProperty: name
+        property: flood_risk_level
+        waterEntityProperty: water_name
         defaultFillColor: "rgba(30, 136, 229, 0.09)"
         bands:
           - id: extreme
@@ -148,7 +137,7 @@ layers:
     kind: points
     source:
       type: geoparquet
-      path: data/derived/czech_population_infrastructure_large/cz_bbox/places.parquet
+      path: data/derived/czech_population_infrastructure_large/prague_bbox/places.parquet
       geoparquet:
         idColumn: osm_id
         nameColumn: name
@@ -156,13 +145,11 @@ layers:
         geometryColumn: geometry
         propertyColumns: [population, place_source, place_category]
         renderPolicy:
-          # Keep the low-zoom overview interactive: this dataset contains *a lot* of place points.
-          # Capping early dramatically reduces backend time spent scanning/reading candidates.
           maxCandidatesByZoom:
-            7.5: 1500
-            9.0: 3000
-            12.0: 8000
-            24.0: 15000
+            7.5: 500
+            9.0: 1000
+            12.0: 2000
+            24.0: 5000
     style:
       marker:
         size: 6

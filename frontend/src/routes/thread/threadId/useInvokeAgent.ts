@@ -6,6 +6,7 @@ import { DB } from "@/lib/db";
 import { isFailure } from "@/lib/result";
 import { streamToAsyncGenerator } from "@/lib/streamToAsyncGenerator";
 import {
+	asRecord,
 	calcBboxFromCenterZoom,
 	getMapboxCenter,
 	getMapboxZoom,
@@ -38,6 +39,7 @@ export function useInvokeAgent(args: {
 	setPlotData: (next: Pick<PlotParams, "data" | "layout">) => void;
 	setMapView: (next: MapViewState) => void;
 	abortPlotRefresh: () => void;
+	suppressPlotRefresh: (durationMs: number) => void;
 	setDrawerOpen: (open: boolean) => void;
 	refetchThread: () => Promise<{ data?: unknown }>;
 }) {
@@ -56,6 +58,7 @@ export function useInvokeAgent(args: {
 		setPlotData,
 		setMapView,
 		abortPlotRefresh,
+		suppressPlotRefresh,
 		setDrawerOpen,
 		refetchThread,
 	} = args;
@@ -69,6 +72,8 @@ export function useInvokeAgent(args: {
 	const mutation = useMutation({
 		mutationKey: ["thread", scenarioId, threadId, "create-message"],
 		mutationFn: async (text: string) => {
+			// Stop any stale /plot refresh immediately when a new prompt starts.
+			abortPlotRefresh();
 			const createMessageResult = DB.threads.messages.create(
 				scenarioId,
 				threadId,
@@ -189,7 +194,7 @@ export function useInvokeAgent(args: {
 						try {
 							// If a background /plot refresh is in-flight, abort it. Otherwise it can
 							// overwrite this authoritative plot update (e.g. highlights "flash" then disappear).
-							abortPlotRefresh();
+							suppressPlotRefresh(1500);
 
 							const plot = JSON.parse(event.data) as Pick<
 								PlotParams,
@@ -206,7 +211,15 @@ export function useInvokeAgent(args: {
 
 							const center = getMapboxCenter(plot.layout);
 							const zoom = getMapboxZoom(plot.layout);
-							if (center && typeof zoom === "number") {
+							const layout = asRecord(plot.layout);
+							const meta = layout ? asRecord(layout.meta) : null;
+							const stats = meta ? asRecord(meta.stats) : null;
+							const focusApplied = stats?.focusApplied === true;
+							const promptType =
+								typeof stats?.promptType === "string" ? stats.promptType : "";
+							const shouldAdoptView =
+								focusApplied && promptType === "flooded_count";
+							if (shouldAdoptView && center && typeof zoom === "number") {
 								const vp = getViewportSize();
 								setMapView({
 									center: { lat: center.lat, lon: center.lon },

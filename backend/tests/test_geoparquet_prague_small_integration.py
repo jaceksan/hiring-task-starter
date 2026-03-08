@@ -9,10 +9,11 @@ def test_duckdb_geoparquet_prague_small_decodes_some_geometries():
     # Small bbox near Prague city center to keep geometry decoding quick.
     aoi = BBox(min_lon=14.41, min_lat=50.07, max_lon=14.47, max_lat=50.10)
     ctx = MapContext(
-        scenario_id="prague_population_infrastructure_small",
+        scenario_id="prague_population_infrastructure_test",
         aoi=aoi,
         view_center={"lat": 50.085, "lon": 14.44},
         view_zoom=12.0,
+        request_context={"placeCategories": ["urban"], "floodRiskLevel": "high"},
     )
 
     res = DuckDBEngine(path=":memory:").get(ctx)

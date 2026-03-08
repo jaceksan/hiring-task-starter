@@ -41,6 +41,42 @@ def _format_place_category_label(raw: Any) -> str:
     return s.replace("_", " ").title()
 
 
+def _point_hover_text(point: PointFeature) -> str:
+    props = point.props or {}
+    return "<br>".join(
+        [
+            *[
+                x
+                for x in [
+                    str(props.get("label") or props.get("name") or "").strip(),
+                    (
+                        f"class: {str(props.get('fclass') or '').strip()}"
+                        if str(props.get("fclass") or "").strip()
+                        else ""
+                    ),
+                    (
+                        "category: "
+                        + _format_place_category_label(props.get("place_category"))
+                        if _format_place_category_label(props.get("place_category"))
+                        else ""
+                    ),
+                    (
+                        f"source: {str(props.get('place_source') or '').strip()}"
+                        if str(props.get("place_source") or "").strip()
+                        else ""
+                    ),
+                    (
+                        f"population: {int(props.get('population') or 0)}"
+                        if int(props.get("population") or 0) > 0
+                        else ""
+                    ),
+                ]
+                if x
+            ],
+        ]
+    )
+
+
 def trace_aoi_bbox(aoi: BBox) -> dict[str, Any]:
     b = aoi.normalized()
     lons = [b.min_lon, b.max_lon, b.max_lon, b.min_lon, b.min_lon]
@@ -366,51 +402,7 @@ def trace_points(layer: Layer) -> dict[str, Any]:
         "lon": [p.lon for p in feats],
         "lat": [p.lat for p in feats],
         "mode": "markers",
-        "text": [
-            "<br>".join(
-                [
-                    *[
-                        x
-                        for x in [
-                            str(
-                                (p.props or {}).get("label")
-                                or (p.props or {}).get("name")
-                                or ""
-                            ).strip(),
-                            (
-                                f"class: {str((p.props or {}).get('fclass') or '').strip()}"
-                                if str((p.props or {}).get("fclass") or "").strip()
-                                else ""
-                            ),
-                            (
-                                "category: "
-                                + _format_place_category_label(
-                                    (p.props or {}).get("place_category")
-                                )
-                                if _format_place_category_label(
-                                    (p.props or {}).get("place_category")
-                                )
-                                else ""
-                            ),
-                            (
-                                f"source: {str((p.props or {}).get('place_source') or '').strip()}"
-                                if str(
-                                    (p.props or {}).get("place_source") or ""
-                                ).strip()
-                                else ""
-                            ),
-                            (
-                                f"population: {int((p.props or {}).get('population') or 0)}"
-                                if int((p.props or {}).get("population") or 0) > 0
-                                else ""
-                            ),
-                        ]
-                        if x
-                    ],
-                ]
-            )
-            for p in feats
-        ],
+        "text": [_point_hover_text(p) for p in feats],
         "marker": {
             "size": int((marker.get("size") if isinstance(marker, dict) else 6) or 6),
             "color": (marker.get("color") if isinstance(marker, dict) else None)
@@ -479,18 +471,18 @@ def trace_point_clusters(layer: Layer, clusters: list[ClusterMarker]) -> dict[st
         "zmin": 0.0,
         "zmax": max(zvals) if zvals else 1.0,
         "colorscale": [
-            [0.0, "#fffbe6"],
-            [0.25, "#fff1b8"],
-            [0.5, "#ffe08a"],
-            [0.75, "#f7c65f"],
-            [1.0, "#e8a63c"],
+            [0.0, "#fffef7"],
+            [0.25, "#fff8dd"],
+            [0.5, "#ffefb8"],
+            [0.75, "#f4dda0"],
+            [1.0, "#e7c77a"],
         ],
-        "marker": {"line": {"color": "rgba(120, 92, 24, 0.16)", "width": 0.2}},
+        "marker": {"line": {"color": "rgba(138, 111, 44, 0.10)", "width": 0.15}},
         "colorbar": {"title": "Places / cell"},
         "customdata": customdata,
         "hovertemplate": "Count in this %{customdata[1]}: %{customdata[0]}<extra></extra>",
         "showscale": True,
-        "opacity": 0.48,
+        "opacity": 0.28,
     }
 
 
@@ -521,12 +513,8 @@ def trace_highlight_layer(layers: LayerBundle, highlight: Highlight) -> dict[str
             "name": highlight.title or "Highlighted",
             "lon": [p.lon for p in selected],
             "lat": [p.lat for p in selected],
-            "mode": "markers+text",
-            "text": [
-                str((p.props or {}).get("label") or (p.props or {}).get("name") or "")
-                for p in selected
-            ],
-            "textposition": "top center",
+            "mode": "markers",
+            "text": [_point_hover_text(p) for p in selected],
             "marker": {"size": 11, "color": "rgba(229, 57, 53, 0.95)"},
             "hovertemplate": "%{text}<extra></extra>",
         }

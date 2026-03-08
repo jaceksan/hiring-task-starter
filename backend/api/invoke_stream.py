@@ -173,6 +173,47 @@ def _apply_lod_cached(
     }
 
 
+def _gp_layer_stats(engine_stats: dict | None, layer_id: str) -> dict[str, object] | None:
+    if not isinstance(engine_stats, dict):
+        return None
+    gp = engine_stats.get("geoparquet")
+    if not isinstance(gp, dict):
+        return None
+    rows = gp.get("layers")
+    if not isinstance(rows, list):
+        return None
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        if str(row.get("layerId") or "") == layer_id:
+            return row
+    return None
+
+
+def _flooded_count_approximation(
+    engine_stats: dict | None, *, points_layer_id: str, mask_layer_id: str | None
+) -> tuple[bool, list[str]]:
+    reasons: list[str] = []
+    for lid in [points_layer_id, mask_layer_id]:
+        if not lid:
+            continue
+        row = _gp_layer_stats(engine_stats, lid)
+        if row is None:
+            continue
+        skipped_reason = str(row.get("skippedReason") or "").strip()
+        if skipped_reason:
+            reasons.append(f"{lid}:{skipped_reason}")
+            continue
+        cap = row.get("cap")
+        if isinstance(cap, dict):
+            effective = cap.get("effectiveLimit")
+            n = row.get("n")
+            if isinstance(effective, (int, float)) and isinstance(n, (int, float)):
+                if float(effective) > 0 and float(n) >= float(effective):
+                    reasons.append(f"{lid}:capped@{int(effective)}")
+    return bool(reasons), reasons
+
+
 def clear_in_memory_caches() -> dict[str, int]:
     """
     Clear in-process caches that can block hot reload of config changes.
@@ -273,6 +314,22 @@ async def handle_incoming_message(thread):
             request_context=ctx.request_context,
         )
         t_route_ms = (time.perf_counter() - t1) * 1000.0
+        count_stats = (
+            dict(response.count_stats)
+            if isinstance(response.count_stats, dict)
+            else None
+        )
+        if (
+            count_stats is not None
+            and str(count_stats.get("promptType") or "") == "flooded_count"
+        ):
+            approximate, reasons = _flooded_count_approximation(
+                result.stats if isinstance(result.stats, dict) else None,
+                points_layer_id=scenario.routing.primaryPointsLayerId,
+                mask_layer_id=scenario.routing.maskPolygonsLayerId,
+            )
+            count_stats["approximate"] = approximate
+            count_stats["approximationReason"] = ", ".join(reasons) if reasons else None
 
         active_highlights = (
             list(response.highlights or [])
@@ -366,6 +423,9 @@ async def handle_incoming_message(thread):
             plot["layout"]["meta"]["stats"]["scenarioDataSize"] = scenario.dataSize
             plot["layout"]["meta"]["stats"]["placeControl"] = place_filter_stats
             plot["layout"]["meta"]["stats"]["floodSelection"] = flood_filter_stats
+            if count_stats is not None:
+                plot["layout"]["meta"]["stats"]["promptType"] = "flooded_count"
+                plot["layout"]["meta"]["stats"]["countStats"] = count_stats
             if getattr(result, "stats", None):
                 plot["layout"]["meta"]["stats"]["engineStats"] = result.stats
             t_json0 = time.perf_counter()
@@ -392,8 +452,9 @@ async def handle_incoming_message(thread):
             req = int(stats.get("highlightRequested") or 0)
             rend = int(stats.get("highlightRendered") or 0)
             if req and rend < req:
+                clipped_note = f"Highlights: matched {req}, rendering {rend} due to budget."
                 stream_message = (
-                    f"Highlights: matched {req}, rendering {rend} due to budget."
+                    f"{stream_message}\n{clipped_note}" if stream_message else clipped_note
                 )
         except Exception:
             pass
