@@ -2,25 +2,15 @@
 
 The order of items below is the priority order (top = highest). Each item has up to three concise sub-bullets; when needed, the last sub-bullet links to a detail file in `backlog/`.
 
-- **P1 — Demo simplification reset: make one cohesive flood demo fully working**
-  - Keep one layer set only (`places`, `flood_zones`, `roads`) and two scenarios only (small Prague + big CZ), both backed by complete data.
-  - Improve visualization/UX: flood risk polygon shading, many more places, and metadata display for all layers (incl. roads and flood-zone water entity naming where available).
-  - Details: [`backlog/0050-demo-simplification-reset.md`](backlog/0050-demo-simplification-reset.md)
-
 - **P2 — Highlighting roadmap (make the CZ “flood” demo fully working)**
-  - Fix highlight persistence under caps (highlighted features must not disappear when zooming out).
-  - Add a “flooded places → escape roads” demo flow, with clear UX around partial results.
+  - The CZ experience is stable for “How many places are flooded?”, but remaining supported questions are not validated yet.
+  - Test all remaining questions, then remove weak ones or update their behavior so each supported question works reliably end-to-end.
   - Details: [`backlog/0101-highlighting-roadmap.md`](backlog/0101-highlighting-roadmap.md)
 
 - **P2 — Scenario B: implement MVT/vector-tile scenario (massive layers)**
   - Add backend tile endpoint + per-layer tile query policy; render in frontend as a vector tile overlay.
   - Decide/implement geometry preprocessing to avoid problematic WKB variants (e.g. `UNKNOWN M`) and keep tiles deterministic.
   - Details: [`backlog/0200-mvt-scenario.md`](backlog/0200-mvt-scenario.md)
-
-- **P2 — Replace small layers in the largest scenario with larger equivalents (same use case)**
-  - Prefer water + places; download larger datasets if they exist and update `scenario.yaml` accordingly.
-  - Re-measure end-to-end refresh and payload sizes after the swap.
-  - Details: [`backlog/0201-larger-layers.md`](backlog/0201-larger-layers.md)
 
 - **P3 — Evaluate GeoArrow for the GeoParquet/DuckDB pipeline**
   - Explore whether Arrow-native geometry transport/decoding can reduce WKB decode cost and Python overhead.

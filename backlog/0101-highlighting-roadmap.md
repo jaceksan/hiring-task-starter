@@ -2,7 +2,11 @@
 
 ### Status
 
-In progress (do not mark completed until manually verified on the large CZ scenario).
+In progress.
+
+Current state:
+- “How many places are flooded?” is now reasonably stable in the CZ scenario.
+- Other supported questions still need validation and possible simplification.
 
 ### Key UX invariant
 
@@ -10,14 +14,12 @@ Never silently render an incomplete highlight when LOD/budgets are involved.
 
 ### Next steps
 
-- Make highlight behavior **deterministic** under budgets:
-  - larger (separate) budget for highlight overlays, or deterministic subsample
-  - always message: “matched X, rendering Y due to budget”
-- Support multiple highlight overlays (IDs preserved across plot refresh).
-- Clarify highlight modes (question-triggered vs static toggles).
-- Add follow-up demos:
-  - “escape roads near highlighted places” (YAML-driven)
-  - polygon “intensity” shading
+- Enumerate every currently supported question and run manual verification on CZ.
+- For failing/weak questions:
+  - either simplify/remove them from the supported set, or
+  - update behavior/UX until they are deterministic and reliable.
+- Keep highlight behavior deterministic under budgets and always communicate when rendering is capped.
+- Keep map focus + highlight persistence consistent across refreshes for all supported questions.
 
 ### Expected behavior (agreed contract)
 

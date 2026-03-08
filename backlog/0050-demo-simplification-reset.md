@@ -1,5 +1,15 @@
 ## Demo simplification reset
 
+### Status
+
+Completed.
+
+### Outcome note
+
+- Demo scope was simplified to one cohesive flood story around `places`, `flood_zones`, and `roads`.
+- Prague + CZ scenarios are in place, with larger data now incorporated for the main layers.
+- This item is removed from `BACKLOG.md`; follow-up work continues under focused roadmap items.
+
 ### Goal
 
 Simplify the demo into one coherent story that is reliable, visually clear, and easy to explain.
