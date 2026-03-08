@@ -20,6 +20,7 @@ import { asRecord, calcBboxFromCenterZoom } from "./threadId/plotlyMapUtils";
 import { TelemetryPanel } from "./threadId/TelemetryPanel";
 import type {
 	FloodRiskLevel,
+	InspectMode,
 	PlaceCategoryId,
 	PlotPerfStats,
 } from "./threadId/types";
@@ -33,6 +34,12 @@ const FLOOD_RISK_LEVELS: { id: FloodRiskLevel; label: string }[] = [
 	{ id: "high", label: "High+" },
 	{ id: "medium", label: "Medium+" },
 	{ id: "any", label: "All risks" },
+];
+const INSPECT_MODES: { id: InspectMode; label: string }[] = [
+	{ id: "auto", label: "Auto" },
+	{ id: "places", label: "Places" },
+	{ id: "flood_zones", label: "Flood zones" },
+	{ id: "roads", label: "Roads" },
 ];
 
 const PRETTY_PLACE_CATEGORY_LABELS: Record<string, string> = {
@@ -145,6 +152,7 @@ function RouteComponent() {
 	const [selectedPlaceCategories, setSelectedPlaceCategories] = useState<
 		PlaceCategoryId[]
 	>(DEFAULT_PLACE_CATEGORIES);
+	const [inspectMode, setInspectMode] = useState<InspectMode>("auto");
 	const [knownPlaceCategories, setKnownPlaceCategories] = useState<
 		PlaceCategoryId[]
 	>(DEFAULT_PLACE_CATEGORIES);
@@ -287,6 +295,7 @@ function RouteComponent() {
 		floodRiskLevel,
 		selectedFloodZoneIds,
 		selectedPlaceCategories,
+		inspectMode,
 		roadHighlightTypes: [],
 		onPlotRefreshStats,
 	});
@@ -306,6 +315,7 @@ function RouteComponent() {
 			floodRiskLevel,
 			selectedFloodZoneIds,
 			selectedPlaceCategories,
+			inspectMode,
 			autoMinimizeChat,
 			mapView,
 			getCurrentBbox,
@@ -436,6 +446,7 @@ function RouteComponent() {
 			floodRiskLevel: FloodRiskLevel;
 			selectedFloodZoneIds: string[];
 			selectedPlaceCategories: PlaceCategoryId[];
+			inspectMode: InspectMode;
 		}>,
 		opts?: { keepHighlights?: boolean },
 	) => {
@@ -457,6 +468,7 @@ function RouteComponent() {
 				overrides?.selectedFloodZoneIds ?? selectedFloodZoneIds,
 			selectedPlaceCategories:
 				overrides?.selectedPlaceCategories ?? selectedPlaceCategories,
+			inspectMode: overrides?.inspectMode ?? inspectMode,
 			highlightsOverride: keepHighlights ? undefined : [],
 		});
 	};
@@ -513,6 +525,31 @@ function RouteComponent() {
 					{controlsOpen && (
 						<>
 							<div>
+								<div className="font-semibold">Inspect</div>
+								<div className="text-muted-foreground mt-0.5 mb-2">
+									Deterministic hover priority for map metadata.
+								</div>
+								<div className="space-y-1.5">
+									{INSPECT_MODES.map((item) => (
+										<label
+											key={item.id}
+											className="flex items-center justify-between gap-2 cursor-pointer"
+										>
+											<span>{item.label}</span>
+											<input
+												type="radio"
+												name="inspect-mode"
+												checked={inspectMode === item.id}
+												onChange={() => {
+													setInspectMode(item.id);
+													refreshUsingCurrentView({ inspectMode: item.id });
+												}}
+											/>
+										</label>
+									))}
+								</div>
+							</div>
+							<div className="mt-3 pt-2 border-t border-border">
 								<div className="font-semibold">Flood risk</div>
 						<div className="text-muted-foreground mt-0.5 mb-2">
 							Used for flood-zone filtering in requests.

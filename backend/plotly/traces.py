@@ -126,6 +126,7 @@ def _trace_polygons(
     hover_label: str | None = None,
     water_entity_property: str | None = None,
     show_legend: bool = True,
+    enable_hover: bool = True,
 ) -> dict[str, Any]:
     lons: list[float | None] = []
     lats: list[float | None] = []
@@ -164,7 +165,7 @@ def _trace_polygons(
             feature_id=f.id,
         )
 
-    return {
+    trace = {
         "type": "scattermapbox",
         "name": layer_name,
         "lon": lons,
@@ -179,11 +180,15 @@ def _trace_polygons(
             "width": int(line_width),
         },
         "showlegend": show_legend,
-        "hovertemplate": "%{text}<extra></extra>",
     }
+    if enable_hover:
+        trace["hovertemplate"] = "%{text}<extra></extra>"
+    else:
+        trace["hoverinfo"] = "skip"
+    return trace
 
 
-def trace_polygons(layer: Layer) -> list[dict[str, Any]]:
+def trace_polygons(layer: Layer, *, enable_hover: bool = True) -> list[dict[str, Any]]:
     feats = [f for f in layer.features if isinstance(f, PolygonFeature)]
     style = layer.style or {}
     line = style.get("line") or {}
@@ -206,6 +211,7 @@ def trace_polygons(layer: Layer) -> list[dict[str, Any]]:
                 fill_color=default_fill,
                 line_color=default_line,
                 line_width=default_width,
+                enable_hover=enable_hover,
             )
         ]
 
@@ -218,6 +224,7 @@ def trace_polygons(layer: Layer) -> list[dict[str, Any]]:
                 fill_color=default_fill,
                 line_color=default_line,
                 line_width=default_width,
+                enable_hover=enable_hover,
             )
         ]
     risk_prop = risk_prop.strip()
@@ -243,6 +250,7 @@ def trace_polygons(layer: Layer) -> list[dict[str, Any]]:
                 line_color=default_line,
                 line_width=default_width,
                 water_entity_property=water_prop,
+                enable_hover=enable_hover,
             )
         ]
 
@@ -271,6 +279,7 @@ def trace_polygons(layer: Layer) -> list[dict[str, Any]]:
                 line_color=default_line,
                 line_width=default_width,
                 water_entity_property=water_prop,
+                enable_hover=enable_hover,
             )
         ]
 
@@ -315,6 +324,7 @@ def trace_polygons(layer: Layer) -> list[dict[str, Any]]:
                 hover_label=f"Risk: {label}",
                 water_entity_property=water_prop,
                 show_legend=True,
+                enable_hover=enable_hover,
             )
         )
 
@@ -329,6 +339,7 @@ def trace_polygons(layer: Layer) -> list[dict[str, Any]]:
                 hover_label="Risk: Other",
                 water_entity_property=water_prop,
                 show_legend=True,
+                enable_hover=enable_hover,
             )
         )
 
@@ -340,11 +351,12 @@ def trace_polygons(layer: Layer) -> list[dict[str, Any]]:
             line_color=default_line,
             line_width=default_width,
             water_entity_property=water_prop,
+            enable_hover=enable_hover,
         )
     ]
 
 
-def trace_lines(layer: Layer) -> dict[str, Any]:
+def trace_lines(layer: Layer, *, enable_hover: bool = True) -> dict[str, Any]:
     lons: list[float | None] = []
     lats: list[float | None] = []
     texts: list[str | None] = []
@@ -375,7 +387,7 @@ def trace_lines(layer: Layer) -> dict[str, Any]:
 
     style = layer.style or {}
     line = style.get("line") or {}
-    return {
+    trace = {
         "type": "scattermapbox",
         "name": layer.title,
         "lon": lons,
@@ -386,32 +398,42 @@ def trace_lines(layer: Layer) -> dict[str, Any]:
             or "rgba(67, 160, 71, 0.9)",
             "width": int((line.get("width") if isinstance(line, dict) else 2) or 2),
         },
-        "text": texts,
-        "hovertemplate": "%{text}<extra></extra>",
     }
+    if enable_hover:
+        trace["text"] = texts
+        trace["hovertemplate"] = "%{text}<extra></extra>"
+    else:
+        trace["hoverinfo"] = "skip"
+    return trace
 
 
-def trace_points(layer: Layer) -> dict[str, Any]:
+def trace_points(layer: Layer, *, enable_hover: bool = True) -> dict[str, Any]:
     feats = [f for f in layer.features if isinstance(f, PointFeature)]
     style = layer.style or {}
     marker = style.get("marker") or {}
-    return {
+    trace = {
         "type": "scattermapbox",
         "name": layer.title,
         "lon": [p.lon for p in feats],
         "lat": [p.lat for p in feats],
         "mode": "markers",
-        "text": [_point_hover_text(p) for p in feats],
         "marker": {
             "size": int((marker.get("size") if isinstance(marker, dict) else 6) or 6),
             "color": (marker.get("color") if isinstance(marker, dict) else None)
             or "rgba(255, 193, 7, 0.75)",
         },
-        "hovertemplate": "%{text}<extra></extra>",
     }
+    if enable_hover:
+        trace["text"] = [_point_hover_text(p) for p in feats]
+        trace["hovertemplate"] = "%{text}<extra></extra>"
+    else:
+        trace["hoverinfo"] = "skip"
+    return trace
 
 
-def trace_point_clusters(layer: Layer, clusters: list[ClusterMarker]) -> dict[str, Any]:
+def trace_point_clusters(
+    layer: Layer, clusters: list[ClusterMarker], *, enable_hover: bool = True
+) -> dict[str, Any]:
     counts = [
         int(c.exact_count if c.exact_count is not None else c.count) for c in clusters
     ]
@@ -460,7 +482,7 @@ def trace_point_clusters(layer: Layer, clusters: list[ClusterMarker]) -> dict[st
         zvals.append(float(max(1, counts[i])))
         customdata.append([counts[i], region_label])
 
-    return {
+    trace = {
         "type": "choroplethmapbox",
         "name": f"{layer.title} (density)",
         "geojson": {"type": "FeatureCollection", "features": features},
@@ -478,11 +500,17 @@ def trace_point_clusters(layer: Layer, clusters: list[ClusterMarker]) -> dict[st
         ],
         "marker": {"line": {"color": "rgba(138, 111, 44, 0.06)", "width": 0.1}},
         "colorbar": {"title": "Places / cell"},
-        "customdata": customdata,
-        "hovertemplate": "Count in this %{customdata[1]}: %{customdata[0]}<extra></extra>",
         "showscale": True,
         "opacity": 0.2,
     }
+    if enable_hover:
+        trace["customdata"] = customdata
+        trace["hovertemplate"] = (
+            "Count in this %{customdata[1]}: %{customdata[0]}<extra></extra>"
+        )
+    else:
+        trace["hoverinfo"] = "skip"
+    return trace
 
 
 def selected_points(

@@ -269,3 +269,35 @@ def test_trace_point_clusters_uses_lighter_density_palette():
         "color": "rgba(138, 111, 44, 0.06)",
         "width": 0.1,
     }
+
+
+def test_build_map_plot_respects_inspect_mode_hover_priority():
+    bundle = LayerBundle(
+        layers=[
+            Layer(
+                id="roads",
+                kind="lines",
+                title="Roads (lines)",
+                features=[
+                    LineFeature(
+                        id="r1",
+                        coords=[(14.39, 50.07), (14.42, 50.09)],
+                        props={"name": "Road 1", "fclass": "primary"},
+                    )
+                ],
+                style={},
+            ),
+            Layer(
+                id="places",
+                kind="points",
+                title="Places (points)",
+                features=[PointFeature(id="p1", lon=14.4, lat=50.08, props={"name": "A"})],
+                style={},
+            ),
+        ]
+    )
+    plot = build_map_plot(bundle, inspect_mode="places")
+    roads = next(t for t in plot["data"] if t.get("name") == "Roads (lines)")
+    places = next(t for t in plot["data"] if t.get("name") == "Places (points)")
+    assert roads.get("hoverinfo") == "skip"
+    assert places.get("hovertemplate") == "%{text}<extra></extra>"

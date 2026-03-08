@@ -38,11 +38,24 @@ def build_map_plot(
     focus_map: bool = False,
     clusters: list[ClusterMarker] | None = None,
     cluster_layer_id: str | None = None,
+    inspect_mode: str = "auto",
 ) -> dict[str, Any]:
     traces: list[dict[str, Any]] = []
 
     if aoi is not None:
         traces.append(trace_aoi_bbox(aoi))
+
+    def hover_for(kind: str) -> bool:
+        mode = str(inspect_mode or "auto").strip().lower()
+        if mode == "auto":
+            return True
+        if mode == "places":
+            return kind == "points"
+        if mode == "flood_zones":
+            return kind == "polygons"
+        if mode == "roads":
+            return kind == "lines"
+        return True
 
     clustered_layer_present = bool(
         clusters is not None
@@ -55,21 +68,25 @@ def build_map_plot(
     if clustered_layer_present:
         for layer in layers.of_kind("points"):
             if clusters is not None and cluster_layer_id and layer.id == cluster_layer_id:
-                traces.append(trace_point_clusters(layer, clusters))
+                traces.append(
+                    trace_point_clusters(
+                        layer, clusters, enable_hover=hover_for("points")
+                    )
+                )
             else:
-                traces.append(trace_points(layer))
+                traces.append(trace_points(layer, enable_hover=hover_for("points")))
         for layer in layers.of_kind("polygons"):
-            traces.extend(trace_polygons(layer))
+            traces.extend(trace_polygons(layer, enable_hover=hover_for("polygons")))
         for layer in layers.of_kind("lines"):
-            traces.append(trace_lines(layer))
+            traces.append(trace_lines(layer, enable_hover=hover_for("lines")))
     else:
         # Default map browsing: polygons -> lines -> points.
         for layer in layers.of_kind("polygons"):
-            traces.extend(trace_polygons(layer))
+            traces.extend(trace_polygons(layer, enable_hover=hover_for("polygons")))
         for layer in layers.of_kind("lines"):
-            traces.append(trace_lines(layer))
+            traces.append(trace_lines(layer, enable_hover=hover_for("lines")))
         for layer in layers.of_kind("points"):
-            traces.append(trace_points(layer))
+            traces.append(trace_points(layer, enable_hover=hover_for("points")))
 
     # Highlight overlay should not silently disappear due to LOD/caps.
     # Build overlays from the raw (pre-LOD) layer bundle when available, but
@@ -253,6 +270,7 @@ def build_map_plot(
         "highlightRendered": highlight_rendered,
         "highlightOverlays": highlight_stats,
         "focusApplied": focus_applied,
+        "inspectMode": inspect_mode,
         "lineVertices": line_vertices,
         "polyVertices": poly_vertices,
     }

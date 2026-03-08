@@ -20,6 +20,7 @@ from geo.aoi import BBox
 from geo.tiles import tile_zoom_for_view_zoom, tiles_for_bbox
 from lod.policy import apply_lod
 from lod.points import density_grid_size_m, grid_size_m
+from map_context import parse_request_inspect_mode
 from place.selection import (
     filter_points_layer_by_category,
     parse_request_place_categories,
@@ -285,6 +286,7 @@ async def handle_incoming_message(thread):
             ctx.request_context
         )
         place_categories = parse_request_place_categories(ctx.request_context)
+        inspect_mode = parse_request_inspect_mode(ctx.request_context)
         place_filter_stats: dict[str, object] | None = None
         if scenario.routing.primaryPointsLayerId:
             aoi_layers, place_filter_stats = filter_points_layer_by_category(
@@ -414,6 +416,7 @@ async def handle_incoming_message(thread):
             focus_map=response.focus_map,
             clusters=beer_clusters,
             cluster_layer_id=scenario.plot.highlightLayerId,
+            inspect_mode=inspect_mode,
         )
         t_plot_ms = (time.perf_counter() - t3) * 1000.0
         try:
@@ -423,6 +426,7 @@ async def handle_incoming_message(thread):
             plot["layout"]["meta"]["stats"]["scenarioDataSize"] = scenario.dataSize
             plot["layout"]["meta"]["stats"]["placeControl"] = place_filter_stats
             plot["layout"]["meta"]["stats"]["floodSelection"] = flood_filter_stats
+            plot["layout"]["meta"]["stats"]["inspectMode"] = inspect_mode
             if count_stats is not None:
                 plot["layout"]["meta"]["stats"]["promptType"] = "flooded_count"
                 plot["layout"]["meta"]["stats"]["countStats"] = count_stats

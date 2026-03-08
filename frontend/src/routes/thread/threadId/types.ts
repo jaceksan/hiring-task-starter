@@ -10,6 +10,7 @@ export type FloodRiskLevel =
 	| "low"
 	| "any";
 export type PlaceCategoryId = string;
+export type InspectMode = "auto" | "places" | "flood_zones" | "roads";
 
 export type FloodSelectionStats = {
 	mode?: "aoi" | "selected";
@@ -56,6 +57,7 @@ export type TelemetrySlowestRow = {
 
 export type PlotPerfStats = {
 	engine?: string;
+	inspectMode?: InspectMode;
 	promptType?: string;
 	countStats?: {
 		promptType?: string;

@@ -15,6 +15,7 @@ import type {
 	BBox,
 	FloodRiskLevel,
 	MapViewState,
+	InspectMode,
 	PlaceCategoryId,
 	ViewportSize,
 } from "./types";
@@ -26,6 +27,7 @@ export function useInvokeAgent(args: {
 	floodRiskLevel: FloodRiskLevel;
 	selectedFloodZoneIds: string[];
 	selectedPlaceCategories: PlaceCategoryId[];
+	inspectMode: InspectMode;
 	autoMinimizeChat: boolean;
 	mapView: MapViewState;
 	getCurrentBbox: () => BBox;
@@ -50,6 +52,7 @@ export function useInvokeAgent(args: {
 		floodRiskLevel,
 		selectedFloodZoneIds,
 		selectedPlaceCategories,
+		inspectMode,
 		autoMinimizeChat,
 		mapView,
 		getCurrentBbox,
@@ -115,6 +118,7 @@ export function useInvokeAgent(args: {
 							floodRiskLevel,
 							selectedFloodZoneIds,
 							placeCategories: selectedPlaceCategories,
+							inspectMode,
 						},
 					},
 					engine,

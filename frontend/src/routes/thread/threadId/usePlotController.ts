@@ -12,6 +12,7 @@ import type {
 	FloodRiskLevel,
 	MapCenter,
 	MapViewState,
+	InspectMode,
 	PlaceCategoryId,
 	PlotPerfStats,
 	ViewportSize,
@@ -31,6 +32,7 @@ export function usePlotController(args: {
 	floodRiskLevel: FloodRiskLevel;
 	selectedFloodZoneIds: string[];
 	selectedPlaceCategories: PlaceCategoryId[];
+	inspectMode: InspectMode;
 	roadHighlightTypes: string[];
 	onPlotRefreshStats?: (stats: PlotPerfStats | null) => void;
 }) {
@@ -41,6 +43,7 @@ export function usePlotController(args: {
 		floodRiskLevel,
 		selectedFloodZoneIds,
 		selectedPlaceCategories,
+		inspectMode,
 		roadHighlightTypes,
 		onPlotRefreshStats,
 	} = args;
@@ -212,6 +215,7 @@ export function usePlotController(args: {
 			floodRiskLevel?: FloodRiskLevel;
 			selectedFloodZoneIds?: string[];
 			selectedPlaceCategories?: PlaceCategoryId[];
+			inspectMode?: InspectMode;
 			highlightsOverride?: HighlightPayload[];
 		}) => {
 			if (invokeBusyRef.current) return;
@@ -220,6 +224,7 @@ export function usePlotController(args: {
 				next.selectedFloodZoneIds ?? selectedFloodZoneIds;
 			const effectiveSelectedPlaceCategories =
 				next.selectedPlaceCategories ?? selectedPlaceCategories;
+			const effectiveInspectMode = next.inspectMode ?? inspectMode;
 			const effectiveHighlights =
 				next.highlightsOverride ?? currentHighlightRef.current();
 			const now = Date.now();
@@ -231,6 +236,7 @@ export function usePlotController(args: {
 				r: effectiveFloodRiskLevel,
 				zones: [...new Set(effectiveSelectedFloodZoneIds)].sort(),
 				pc: [...new Set(effectiveSelectedPlaceCategories)].sort(),
+				im: effectiveInspectMode,
 				z: Math.round(next.zoom * 10) / 10,
 				rt: [...new Set(roadHighlightTypes)].sort(),
 				hl: effectiveHighlights
@@ -280,6 +286,7 @@ export function usePlotController(args: {
 									floodRiskLevel: effectiveFloodRiskLevel,
 									selectedFloodZoneIds: effectiveSelectedFloodZoneIds,
 									placeCategories: effectiveSelectedPlaceCategories,
+									inspectMode: effectiveInspectMode,
 								},
 							},
 							highlights: effectiveHighlights,
@@ -346,6 +353,7 @@ export function usePlotController(args: {
 			scenarioId,
 			selectedFloodZoneIds,
 			selectedPlaceCategories,
+			inspectMode,
 		],
 	);
 

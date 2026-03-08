@@ -21,11 +21,13 @@ from engine.duckdb_impl.geoparquet.decode import (
 )
 from engine.duckdb_impl.geoparquet.points import query_geoparquet_points_layer_bbox
 from engine.duckdb_impl.geoparquet.policy import (
+    choose_road_classes_by_budget,
     allowed_classes,
     choose_by_max_zoom,
     order_by,
 )
 from engine.duckdb_impl.geoparquet.sql import (
+    query_class_counts,
     query_candidate_ids,
     query_geometry_rows_for_ids,
     query_geometry_rows_no_policy,
@@ -160,6 +162,7 @@ def query_geoparquet_layer_bbox(
         "effectiveLimit": int(cand_limit),
         "cappedBy": capped_by,
     }
+    road_budget_meta: dict[str, Any] | None = None
 
     t_db0 = time.perf_counter()
     if not policy_enabled:
@@ -181,6 +184,55 @@ def query_geoparquet_layer_bbox(
             "candLimit": int(cand_limit),
         }
     else:
+        effective_allow = allow
+        if kind == "lines" and cols.class_col and allow:
+            class_counts = query_class_counts(
+                conn,
+                path=str(path),
+                where_sql=where_sql,
+                where_params=where_params,
+                class_col=cols.class_col,
+                allow_classes=allow,
+            )
+            effective_allow, road_budget_meta = choose_road_classes_by_budget(
+                class_counts=class_counts,
+                allowed_classes=allow,
+                cap=cand_limit,
+            )
+            if (
+                road_budget_meta
+                and road_budget_meta.get("oversizedFirstGroup")
+                and not order_by_sql
+            ):
+                # Keep selection deterministic when the top-priority class group exceeds
+                # cap and we need to sample it with LIMIT.
+                order_by_sql = f"CAST({cols.id_col} AS VARCHAR) ASC"
+            if effective_allow is not None and len(effective_allow) == 0:
+                layer = Layer(
+                    id=layer_id,
+                    kind=kind,
+                    title=title,
+                    features=[],
+                    style=style or {},
+                    metadata=metadata or {},
+                )
+                return layer, base_stats(
+                    layer_id=layer_id,
+                    kind=kind,
+                    view_zoom=float(view_zoom),
+                    n=0,
+                    duckdb_ms=0.0,
+                    decode_ms=0.0,
+                    total_ms=(time.perf_counter() - t0) * 1000.0,
+                    cap=cap_meta,
+                    policy={
+                        "enabled": True,
+                        "allowedClasses": 0,
+                        "candLimit": int(cand_limit),
+                        "classBudget": road_budget_meta,
+                    },
+                )
+
         ids = query_candidate_ids(
             conn,
             path=str(path),
@@ -188,7 +240,7 @@ def query_geoparquet_layer_bbox(
             where_params=where_params,
             id_col=cols.id_col,
             class_col=cols.class_col,
-            allow_classes=allow,
+            allow_classes=effective_allow,
             name_expr=n_expr,
             class_expr=c_expr,
             order_by_sql=order_by_sql,
@@ -214,8 +266,9 @@ def query_geoparquet_layer_bbox(
                 cap=cap_meta,
                 policy={
                     "enabled": True,
-                    "allowedClasses": len(allow or []),
+                    "allowedClasses": len(effective_allow or []),
                     "candLimit": int(cand_limit),
+                    "classBudget": road_budget_meta,
                 },
             )
         rows = query_geometry_rows_for_ids(
@@ -233,8 +286,9 @@ def query_geoparquet_layer_bbox(
         )
         policy_meta = {
             "enabled": True,
-            "allowedClasses": len(allow or []),
+            "allowedClasses": len(effective_allow or []),
             "candLimit": int(cand_limit),
+            "classBudget": road_budget_meta,
         }
     t_db_ms = (time.perf_counter() - t_db0) * 1000.0
 

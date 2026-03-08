@@ -185,6 +185,38 @@ def query_candidate_ids(
     return [str(r[0]) for r in rows if r and r[0]]
 
 
+def query_class_counts(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    path: str,
+    where_sql: str,
+    where_params: tuple[float, float, float, float],
+    class_col: str,
+    allow_classes: set[str] | None,
+) -> dict[str, int]:
+    class_filter_sql = ""
+    params: list[Any] = [str(path), *where_params]
+    if allow_classes:
+        class_filter_sql = f" AND CAST({class_col} AS VARCHAR) = ANY(?)"
+        params.append(sorted(allow_classes))
+    rows = conn.execute(
+        f"""
+        SELECT CAST({class_col} AS VARCHAR) AS cls, CAST(COUNT(*) AS BIGINT) AS n
+          FROM read_parquet(?)
+         WHERE {where_sql}{class_filter_sql}
+         GROUP BY cls
+        """,
+        params,
+    ).fetchall()
+    out: dict[str, int] = {}
+    for cls, n in rows:
+        key = str(cls or "").strip()
+        if not key:
+            continue
+        out[key] = int(n or 0)
+    return out
+
+
 def query_geometry_rows_for_ids(
     conn: duckdb.DuckDBPyConnection,
     *,

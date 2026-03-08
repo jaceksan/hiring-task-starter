@@ -27,6 +27,7 @@ from flood.selection import filter_flood_layer_for_request, parse_request_flood_
 from geo.aoi import BBox
 from layers.types import Layer
 from lod.points import density_grid_size_m, grid_size_m
+from map_context import parse_request_inspect_mode
 from place.selection import (
     filter_points_layer_by_category,
     parse_request_place_categories,
@@ -93,6 +94,7 @@ class ApiRequestContext(BaseModel):
     selectedFloodZoneIds: list[str] | None = None
     placeCategories: list[str] | None = None
     placeSourceTypes: list[str] | None = None
+    inspectMode: Literal["auto", "places", "flood_zones", "roads"] | None = None
 
 
 class ApiMapContext(BaseModel):
@@ -301,6 +303,7 @@ def plot(body: ApiPlotRequest):
         ctx.request_context
     )
     place_categories = parse_request_place_categories(ctx.request_context)
+    inspect_mode = parse_request_inspect_mode(ctx.request_context)
     place_filter_stats: dict[str, object] | None = None
     if scenario.routing.primaryPointsLayerId:
         aoi_layers, place_filter_stats = filter_points_layer_by_category(
@@ -437,6 +440,7 @@ def plot(body: ApiPlotRequest):
         focus_map=False,
         clusters=beer_clusters,
         cluster_layer_id=scenario.plot.highlightLayerId,
+        inspect_mode=inspect_mode,
     )
     t_plot_ms = (time.perf_counter() - t2) * 1000.0
 
@@ -453,6 +457,7 @@ def plot(body: ApiPlotRequest):
         payload["layout"]["meta"]["stats"]["roadHighlightControl"] = road_filter_status
         payload["layout"]["meta"]["stats"]["placeControl"] = place_filter_stats
         payload["layout"]["meta"]["stats"]["floodSelection"] = flood_filter_stats
+        payload["layout"]["meta"]["stats"]["inspectMode"] = inspect_mode
         if count_stats is not None:
             payload["layout"]["meta"]["stats"]["promptType"] = "flooded_count"
             payload["layout"]["meta"]["stats"]["countStats"] = count_stats
