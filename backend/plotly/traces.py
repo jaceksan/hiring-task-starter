@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import math
 from typing import Any
 
 from pyproj import Transformer
@@ -458,7 +457,7 @@ def trace_point_clusters(layer: Layer, clusters: list[ClusterMarker]) -> dict[st
             }
         )
         locations.append(feature_id)
-        zvals.append(float(math.log1p(max(1, counts[i]))))
+        zvals.append(float(max(1, counts[i])))
         customdata.append([counts[i], region_label])
 
     return {
@@ -468,7 +467,7 @@ def trace_point_clusters(layer: Layer, clusters: list[ClusterMarker]) -> dict[st
         "locations": locations,
         "featureidkey": "properties.id",
         "z": zvals,
-        "zmin": 0.0,
+        "zmin": 1.0,
         "zmax": max(zvals) if zvals else 1.0,
         "colorscale": [
             [0.0, "#fffef7"],
