@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import time
 from enum import Enum
-from typing import Literal
+from typing import Any, Literal, cast
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,7 +25,7 @@ from engine.duckdb_impl.geoparquet.cluster_counts import (
 from engine.types import LayerBundle, MapContext
 from flood.selection import filter_flood_layer_for_request, parse_request_flood_context
 from geo.aoi import BBox
-from layers.types import Layer
+from layers.types import Layer, LineFeature, PointFeature, PolygonFeature
 from lod.points import density_grid_size_m, grid_size_m
 from map_context import parse_request_inspect_mode
 from place.selection import (
@@ -46,7 +46,7 @@ from telemetry.singleton import get_store, reset_store
 app = FastAPI()
 
 app.add_middleware(
-    CORSMiddleware,
+    cast(Any, CORSMiddleware),
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
@@ -281,11 +281,32 @@ def plot(body: ApiPlotRequest):
                             fid = getattr(f, "id", "")
                             if fid:
                                 merged[fid] = f
+                        ordered_features = [
+                            merged[k] for k in sorted(merged.keys()) if k
+                        ]
+                        if layer.kind == "points":
+                            typed_features = [
+                                f
+                                for f in ordered_features
+                                if isinstance(f, PointFeature)
+                            ]
+                        elif layer.kind == "lines":
+                            typed_features = [
+                                f
+                                for f in ordered_features
+                                if isinstance(f, LineFeature)
+                            ]
+                        else:
+                            typed_features = [
+                                f
+                                for f in ordered_features
+                                if isinstance(f, PolygonFeature)
+                            ]
                         base_layers[i] = Layer(
                             id=layer.id,
                             kind=layer.kind,
                             title=layer.title,
-                            features=[merged[k] for k in sorted(merged.keys()) if k],
+                            features=typed_features,
                             style=layer.style,
                             metadata=layer.metadata,
                         )
@@ -323,7 +344,8 @@ def plot(body: ApiPlotRequest):
         )
     count_stats: dict[str, object] | None = None
     if _is_flooded_count_refresh(
-        payload_highlights, primary_points_layer_id=scenario.routing.primaryPointsLayerId
+        payload_highlights,
+        primary_points_layer_id=scenario.routing.primaryPointsLayerId,
     ):
         approximate, reasons = _flooded_count_approximation(
             result.stats if isinstance(result.stats, dict) else None,
@@ -365,6 +387,7 @@ def plot(body: ApiPlotRequest):
         highlight_feature_ids_by_layer=highlight_ids_by_layer or None,
     )
     t_lod_ms = (time.perf_counter() - t1) * 1000.0
+    points_cfg = None
     if (
         engine_name == "duckdb"
         and beer_clusters is not None
@@ -390,13 +413,14 @@ def plot(body: ApiPlotRequest):
                 )
         except Exception:
             try:
-                beer_clusters = enrich_clusters_with_exact_counts(
-                    path=resolve_repo_path(points_cfg.source.path),
-                    aoi=aoi,
-                    clusters=beer_clusters,
-                    grid_m=grid_size_m(ctx.view_zoom),
-                    place_category_filter=place_categories,
-                )
+                if points_cfg is not None and points_cfg.source.type == "geoparquet":
+                    beer_clusters = enrich_clusters_with_exact_counts(
+                        path=resolve_repo_path(points_cfg.source.path),
+                        aoi=aoi,
+                        clusters=beer_clusters,
+                        grid_m=grid_size_m(ctx.view_zoom),
+                        place_category_filter=place_categories,
+                    )
             except Exception:
                 pass
 

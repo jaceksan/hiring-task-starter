@@ -14,8 +14,8 @@ import {
 import type {
 	BBox,
 	FloodRiskLevel,
-	MapViewState,
 	InspectMode,
+	MapViewState,
 	PlaceCategoryId,
 	ViewportSize,
 } from "./types";

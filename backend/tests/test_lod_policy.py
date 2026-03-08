@@ -34,7 +34,9 @@ def test_cluster_points_reduces_count_when_over_budget():
     assert clusters is not None
     assert len(clusters) < len(points)
     assert len(clusters) <= 50
-    assert lod_layers.get("points").features == points  # clusters only affect rendering
+    points_layer = lod_layers.get("points")
+    assert points_layer is not None
+    assert points_layer.features == points  # clusters only affect rendering
 
 
 def test_line_simplification_respects_vertex_budget():
@@ -79,7 +81,13 @@ def test_roads_layer_keeps_all_segments_under_line_lod():
     )
     layers = LayerBundle(
         layers=[
-            Layer(id="roads", kind="lines", title="Roads", features=[line_a, line_b], style={})
+            Layer(
+                id="roads",
+                kind="lines",
+                title="Roads",
+                features=[line_a, line_b],
+                style={},
+            )
         ]
     )
     lod_layers, _clusters = apply_lod(

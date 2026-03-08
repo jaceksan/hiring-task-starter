@@ -296,7 +296,9 @@ def test_build_map_plot_respects_inspect_mode_hover_priority():
                 id="places",
                 kind="points",
                 title="Places (points)",
-                features=[PointFeature(id="p1", lon=14.4, lat=50.08, props={"name": "A"})],
+                features=[
+                    PointFeature(id="p1", lon=14.4, lat=50.08, props={"name": "A"})
+                ],
                 style={},
             ),
         ]

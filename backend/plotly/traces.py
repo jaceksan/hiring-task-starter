@@ -317,6 +317,8 @@ def trace_polygons(layer: Layer, *, enable_hover: bool = True) -> list[dict[str,
                     break
             # Numeric range match.
             if bucket["min"] is not None or bucket["max"] is not None:
+                if raw is None:
+                    continue
                 try:
                     numeric = float(raw)
                 except (TypeError, ValueError):
@@ -408,7 +410,7 @@ def trace_lines(layer: Layer, *, enable_hover: bool = True) -> dict[str, Any]:
 
     style = layer.style or {}
     line = style.get("line") or {}
-    trace = {
+    trace: dict[str, Any] = {
         "type": "scattermapbox",
         "name": layer.title,
         "lon": lons,
@@ -432,7 +434,7 @@ def trace_points(layer: Layer, *, enable_hover: bool = True) -> dict[str, Any]:
     feats = [f for f in layer.features if isinstance(f, PointFeature)]
     style = layer.style or {}
     marker = style.get("marker") or {}
-    trace = {
+    trace: dict[str, Any] = {
         "type": "scattermapbox",
         "name": layer.title,
         "lon": [p.lon for p in feats],

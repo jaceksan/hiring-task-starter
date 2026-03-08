@@ -18,7 +18,7 @@ help:
 		"  lint-frontend            Verify frontend (no writes; biome check)" \
 		"  types-all                Run typechecks (where available)" \
 		"  types-frontend           Run frontend typechecks" \
-		"  types-backend            Run backend typechecks (currently no-op)" \
+		"  types-backend            Run backend typechecks (ty)" \
 		"  test-all                 Run tests (where available)" \
 		"  test-backend             Run backend unit tests (excludes integration)" \
 		"  test-frontend            Run frontend tests (currently no-op)" \
@@ -62,7 +62,7 @@ lint-frontend:
 types-all: types-backend types-frontend
 
 types-backend:
-	@:
+	@cd backend && uv run ty check .
 
 types-frontend:
 	@$(MAKE) frontend-deps

@@ -23,10 +23,13 @@ def test_telemetry_store_writes_rows(tmp_path, monkeypatch):
     store.flush(timeout_s=2.0)
 
     # Use the existing connection; DuckDB disallows opening the same file with different configs.
-    n = int(store.conn.execute("select count(*) from events").fetchone()[0])
+    count_row = store.conn.execute("select count(*) from events").fetchone()
+    assert count_row is not None
+    n = int(count_row[0])
     assert n == 1
 
     row = store.conn.execute("select endpoint, engine from events limit 1").fetchone()
+    assert row is not None
     assert row[0] == "/plot"
     assert row[1] == "in_memory"
 

@@ -174,7 +174,9 @@ def _apply_lod_cached(
     }
 
 
-def _gp_layer_stats(engine_stats: dict | None, layer_id: str) -> dict[str, object] | None:
+def _gp_layer_stats(
+    engine_stats: dict | None, layer_id: str
+) -> dict[str, object] | None:
     if not isinstance(engine_stats, dict):
         return None
     gp = engine_stats.get("geoparquet")
@@ -207,7 +209,8 @@ def _flooded_count_approximation(
             continue
         cap = row.get("cap")
         if isinstance(cap, dict):
-            effective = cap.get("effectiveLimit")
+            cap_map = {str(k): v for k, v in cap.items()}
+            effective = cap_map.get("effectiveLimit")
             n = row.get("n")
             if isinstance(effective, (int, float)) and isinstance(n, (int, float)):
                 if float(effective) > 0 and float(n) >= float(effective):
@@ -367,6 +370,7 @@ async def handle_incoming_message(thread):
             highlight_feature_ids_by_layer=highlight_ids_by_layer or None,
         )
         t_lod_ms = (time.perf_counter() - t2) * 1000.0
+        points_cfg = None
         if (
             engine_name == "duckdb"
             and beer_clusters is not None
@@ -392,13 +396,17 @@ async def handle_incoming_message(thread):
                     )
             except Exception:
                 try:
-                    beer_clusters = enrich_clusters_with_exact_counts(
-                        path=resolve_repo_path(points_cfg.source.path),
-                        aoi=aoi,
-                        clusters=beer_clusters,
-                        grid_m=grid_size_m(ctx.view_zoom),
-                        place_category_filter=place_categories,
-                    )
+                    if (
+                        points_cfg is not None
+                        and points_cfg.source.type == "geoparquet"
+                    ):
+                        beer_clusters = enrich_clusters_with_exact_counts(
+                            path=resolve_repo_path(points_cfg.source.path),
+                            aoi=aoi,
+                            clusters=beer_clusters,
+                            grid_m=grid_size_m(ctx.view_zoom),
+                            place_category_filter=place_categories,
+                        )
                 except Exception:
                     pass
 
@@ -456,9 +464,13 @@ async def handle_incoming_message(thread):
             req = int(stats.get("highlightRequested") or 0)
             rend = int(stats.get("highlightRendered") or 0)
             if req and rend < req:
-                clipped_note = f"Highlights: matched {req}, rendering {rend} due to budget."
+                clipped_note = (
+                    f"Highlights: matched {req}, rendering {rend} due to budget."
+                )
                 stream_message = (
-                    f"{stream_message}\n{clipped_note}" if stream_message else clipped_note
+                    f"{stream_message}\n{clipped_note}"
+                    if stream_message
+                    else clipped_note
                 )
         except Exception:
             pass

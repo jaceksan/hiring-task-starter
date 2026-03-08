@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import unary_union
@@ -27,7 +27,7 @@ def parse_request_flood_context(
         if isinstance(request_context, dict)
         else None
     )
-    selected_ids = (
+    selected_ids: set[str] = (
         set(
             str(x).strip()
             for x in raw_selected
@@ -36,7 +36,7 @@ def parse_request_flood_context(
         if isinstance(raw_selected, list)
         else set()
     )
-    return level, selected_ids
+    return cast(FloodRiskLevel, level), selected_ids
 
 
 def _risk_bucket_from_raw(value: Any) -> str | None:

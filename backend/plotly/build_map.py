@@ -67,7 +67,11 @@ def build_map_plot(
     # flood polygons remain legible on top of aggregated place regions.
     if clustered_layer_present:
         for layer in layers.of_kind("points"):
-            if clusters is not None and cluster_layer_id and layer.id == cluster_layer_id:
+            if (
+                clusters is not None
+                and cluster_layer_id
+                and layer.id == cluster_layer_id
+            ):
                 traces.append(
                     trace_point_clusters(
                         layer, clusters, enable_hover=hover_for("points")
@@ -202,9 +206,7 @@ def build_map_plot(
     if focus_map and active_highlights:
         selected: list[PointFeature] = []
         for hl_req in active_highlights:
-            selected.extend(
-                selected_points(src, hl_req.layer_id, hl_req.feature_ids)
-            )
+            selected.extend(selected_points(src, hl_req.layer_id, hl_req.feature_ids))
         if selected:
             fit_center, fit_zoom = fit_view_to_points(selected, viewport=viewport)
             if view_zoom is not None:

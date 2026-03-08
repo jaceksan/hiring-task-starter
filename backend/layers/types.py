@@ -32,6 +32,7 @@ class PolygonFeature:
 
 
 LayerFeature: TypeAlias = Union[PointFeature, LineFeature, PolygonFeature]
+LayerFeatures: TypeAlias = list[PointFeature] | list[LineFeature] | list[PolygonFeature]
 
 
 @dataclass(frozen=True)
@@ -46,7 +47,7 @@ class Layer:
     id: str
     kind: GeometryKind
     title: str
-    features: list[LayerFeature]
+    features: LayerFeatures
     # Free-form style hints (e.g. colors/widths) consumed by the Plotly builder.
     style: dict[str, Any] = field(default_factory=dict)
     # Optional semantic layer metadata from scenario YAML (e.g. flood-risk config).

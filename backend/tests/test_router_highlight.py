@@ -187,9 +187,7 @@ def test_count_prompt_returns_points_and_only_matching_flood_zone_highlights():
     assert resp.highlights is not None
     assert resp.focus_map is True
     assert any(
-        h.layer_id == "places"
-        and h.feature_ids == {"p_in"}
-        and h.mode == "prompt"
+        h.layer_id == "places" and h.feature_ids == {"p_in"} and h.mode == "prompt"
         for h in resp.highlights
     )
     assert any(

@@ -34,7 +34,9 @@ export function PerfPanel(props: {
 					variant="ghost"
 					className="h-6 px-2 text-[11px]"
 					onClick={() => setOpen((prev) => !prev)}
-					title={open ? "Collapse performance panel" : "Expand performance panel"}
+					title={
+						open ? "Collapse performance panel" : "Expand performance panel"
+					}
 				>
 					{open ? (
 						<>
@@ -47,65 +49,74 @@ export function PerfPanel(props: {
 					)}
 				</Button>
 			</div>
-			{open && <div className="space-y-0.5 text-muted-foreground">
-				<div>
-					engine:{" "}
-					<span className="text-foreground">
-						{stats.engine ?? fallbackEngine}
-					</span>
-				</div>
-				<div>
-					markers:{" "}
-					<span className="text-foreground">
-						{stats.renderedMarkers ?? "?"}
-					</span>{" "}
-					(clusters:{" "}
-					<span className="text-foreground">{stats.renderedClusters ?? 0}</span>
-					)
-				</div>
-				<div>
-					vertices:{" "}
-					<span className="text-foreground">L{stats.lineVertices ?? "?"}</span>{" "}
-					/{" "}
-					<span className="text-foreground">P{stats.polyVertices ?? "?"}</span>
-				</div>
-				{stats.cache && (
+			{open && (
+				<div className="space-y-0.5 text-muted-foreground">
 					<div>
-						cache:{" "}
+						engine:{" "}
 						<span className="text-foreground">
-							{stats.cache.cacheHit ? "hit" : "miss"}
-						</span>{" "}
-						(tiles {stats.cache.tilesUsed ?? "?"}, z{" "}
-						{stats.cache.tileZoom ?? "?"}, zb {stats.cache.zoomBucket ?? "?"})
-					</div>
-				)}
-				{typeof stats.payloadBytes === "number" && (
-					<div>
-						payload:{" "}
-						<span className="text-foreground">
-							{Math.round(stats.payloadBytes / 1024)}KB
+							{stats.engine ?? fallbackEngine}
 						</span>
 					</div>
-				)}
-				{stats.timingsMs && (
 					<div>
-						ms: <span className="text-foreground">{t?.total ?? "?"}</span> (get{" "}
-						{t?.engineGet ?? "?"}, lod {t?.lod ?? "?"}, plot {t?.plot ?? "?"}
-						{typeof t?.jsonSerialize === "number"
-							? `, json ${t.jsonSerialize}`
-							: ""}
+						markers:{" "}
+						<span className="text-foreground">
+							{stats.renderedMarkers ?? "?"}
+						</span>{" "}
+						(clusters:{" "}
+						<span className="text-foreground">
+							{stats.renderedClusters ?? 0}
+						</span>
 						)
 					</div>
-				)}
-				{bottleneck && (
 					<div>
-						bottleneck:{" "}
+						vertices:{" "}
 						<span className="text-foreground">
-							{bottleneck.label} {bottleneck.v.toFixed(1)}ms
+							L{stats.lineVertices ?? "?"}
+						</span>{" "}
+						/{" "}
+						<span className="text-foreground">
+							P{stats.polyVertices ?? "?"}
 						</span>
 					</div>
-				)}
-			</div>}
+					{stats.cache && (
+						<div>
+							cache:{" "}
+							<span className="text-foreground">
+								{stats.cache.cacheHit ? "hit" : "miss"}
+							</span>{" "}
+							(tiles {stats.cache.tilesUsed ?? "?"}, z{" "}
+							{stats.cache.tileZoom ?? "?"}, zb {stats.cache.zoomBucket ?? "?"})
+						</div>
+					)}
+					{typeof stats.payloadBytes === "number" && (
+						<div>
+							payload:{" "}
+							<span className="text-foreground">
+								{Math.round(stats.payloadBytes / 1024)}KB
+							</span>
+						</div>
+					)}
+					{stats.timingsMs && (
+						<div>
+							ms: <span className="text-foreground">{t?.total ?? "?"}</span>{" "}
+							(get {t?.engineGet ?? "?"}, lod {t?.lod ?? "?"}, plot{" "}
+							{t?.plot ?? "?"}
+							{typeof t?.jsonSerialize === "number"
+								? `, json ${t.jsonSerialize}`
+								: ""}
+							)
+						</div>
+					)}
+					{bottleneck && (
+						<div>
+							bottleneck:{" "}
+							<span className="text-foreground">
+								{bottleneck.label} {bottleneck.v.toFixed(1)}ms
+							</span>
+						</div>
+					)}
+				</div>
+			)}
 		</div>
 	);
 }

@@ -551,117 +551,123 @@ function RouteComponent() {
 							</div>
 							<div className="mt-3 pt-2 border-t border-border">
 								<div className="font-semibold">Flood risk</div>
-						<div className="text-muted-foreground mt-0.5 mb-2">
-							Used for flood-zone filtering in requests.
-						</div>
-						<div className="text-[11px] text-muted-foreground mb-2">
-							Mode: {floodMode === "selected" ? "Selected" : "AOI"} (
-							{floodModeCount})
-						</div>
-						<div className="space-y-1.5">
-							{FLOOD_RISK_LEVELS.map((item) => (
-								<label
-									key={item.id}
-									className="flex items-center justify-between gap-2 cursor-pointer"
-								>
-									<span>{item.label}</span>
-									<input
-										type="radio"
-										name="flood-risk-level"
-										checked={floodRiskLevel === item.id}
-										onChange={() => {
-											setFloodRiskLevel(item.id);
+								<div className="text-muted-foreground mt-0.5 mb-2">
+									Used for flood-zone filtering in requests.
+								</div>
+								<div className="text-[11px] text-muted-foreground mb-2">
+									Mode: {floodMode === "selected" ? "Selected" : "AOI"} (
+									{floodModeCount})
+								</div>
+								<div className="space-y-1.5">
+									{FLOOD_RISK_LEVELS.map((item) => (
+										<label
+											key={item.id}
+											className="flex items-center justify-between gap-2 cursor-pointer"
+										>
+											<span>{item.label}</span>
+											<input
+												type="radio"
+												name="flood-risk-level"
+												checked={floodRiskLevel === item.id}
+												onChange={() => {
+													setFloodRiskLevel(item.id);
+													refreshUsingCurrentView(
+														{ floodRiskLevel: item.id },
+														{ keepHighlights: false },
+													);
+												}}
+											/>
+										</label>
+									))}
+								</div>
+								{selectedFloodZoneIds.length > 0 && (
+									<Button
+										size="sm"
+										variant="ghost"
+										className="h-7 px-2 mt-2"
+										onClick={() => {
+											setSelectedFloodZoneIds([]);
 											refreshUsingCurrentView(
-												{ floodRiskLevel: item.id },
+												{ selectedFloodZoneIds: [] },
 												{ keepHighlights: false },
 											);
 										}}
-									/>
-								</label>
-							))}
-						</div>
-						{selectedFloodZoneIds.length > 0 && (
-							<Button
-								size="sm"
-								variant="ghost"
-								className="h-7 px-2 mt-2"
-								onClick={() => {
-									setSelectedFloodZoneIds([]);
-									refreshUsingCurrentView(
-										{ selectedFloodZoneIds: [] },
-										{ keepHighlights: false },
-									);
-								}}
-							>
-								Clear selected zones ({selectedFloodZoneIds.length})
-							</Button>
-						)}
+									>
+										Clear selected zones ({selectedFloodZoneIds.length})
+									</Button>
+								)}
 							</div>
 							<div className="mt-3 pt-2 border-t border-border">
 								<div className="font-semibold">Places</div>
-						<div className="text-muted-foreground mt-0.5 mb-2">
-							Show/hide place categories.
-						</div>
-						{knownPlaceCategories.length > 0 && (
-							<div className="flex gap-1 mb-2">
-								<Button
-									size="sm"
-									variant="ghost"
-									className="h-6 px-2 text-[11px]"
-									onClick={() => {
-										setSelectedPlaceCategories([]);
-										refreshUsingCurrentView(
-											{ selectedPlaceCategories: [] },
-											{ keepHighlights: false },
-										);
-									}}
-								>
-									None
-								</Button>
-								<Button
-									size="sm"
-									variant="ghost"
-									className="h-6 px-2 text-[11px]"
-									onClick={() => {
-										setSelectedPlaceCategories([...knownPlaceCategories]);
-										refreshUsingCurrentView({
-											selectedPlaceCategories: [...knownPlaceCategories],
-										}, { keepHighlights: false });
-									}}
-								>
-									All
-								</Button>
-							</div>
-						)}
-						<div className="space-y-1.5">
-							{knownPlaceCategories.map((item) => (
-								<label
-									key={item}
-									className="flex items-center justify-between gap-2 cursor-pointer"
-								>
-									<span>{prettyPlaceCategoryLabel(item)}</span>
-									<input
-										type="checkbox"
-										checked={selectedPlaceCategories.includes(item)}
-										onChange={(e) => {
-											const checked = e.currentTarget.checked;
-											setSelectedPlaceCategories((prev) => {
-												const next = new Set(prev);
-												if (checked) next.add(item);
-												else next.delete(item);
-												const out = knownPlaceCategories.filter((id) =>
-													next.has(id),
+								<div className="text-muted-foreground mt-0.5 mb-2">
+									Show/hide place categories.
+								</div>
+								{knownPlaceCategories.length > 0 && (
+									<div className="flex gap-1 mb-2">
+										<Button
+											size="sm"
+											variant="ghost"
+											className="h-6 px-2 text-[11px]"
+											onClick={() => {
+												setSelectedPlaceCategories([]);
+												refreshUsingCurrentView(
+													{ selectedPlaceCategories: [] },
+													{ keepHighlights: false },
 												);
-												refreshUsingCurrentView({
-													selectedPlaceCategories: out,
-												}, { keepHighlights: false });
-												return out;
-											});
-										}}
-									/>
-								</label>
-							))}
-						</div>
+											}}
+										>
+											None
+										</Button>
+										<Button
+											size="sm"
+											variant="ghost"
+											className="h-6 px-2 text-[11px]"
+											onClick={() => {
+												setSelectedPlaceCategories([...knownPlaceCategories]);
+												refreshUsingCurrentView(
+													{
+														selectedPlaceCategories: [...knownPlaceCategories],
+													},
+													{ keepHighlights: false },
+												);
+											}}
+										>
+											All
+										</Button>
+									</div>
+								)}
+								<div className="space-y-1.5">
+									{knownPlaceCategories.map((item) => (
+										<label
+											key={item}
+											className="flex items-center justify-between gap-2 cursor-pointer"
+										>
+											<span>{prettyPlaceCategoryLabel(item)}</span>
+											<input
+												type="checkbox"
+												checked={selectedPlaceCategories.includes(item)}
+												onChange={(e) => {
+													const checked = e.currentTarget.checked;
+													setSelectedPlaceCategories((prev) => {
+														const next = new Set(prev);
+														if (checked) next.add(item);
+														else next.delete(item);
+														const out = knownPlaceCategories.filter((id) =>
+															next.has(id),
+														);
+														refreshUsingCurrentView(
+															{
+																selectedPlaceCategories: out,
+															},
+															{ keepHighlights: false },
+														);
+														return out;
+													});
+												}}
+											/>
+										</label>
+									))}
+								</div>
 							</div>
 						</>
 					)}

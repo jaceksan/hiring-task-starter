@@ -10,9 +10,9 @@ import {
 import type {
 	BBox,
 	FloodRiskLevel,
+	InspectMode,
 	MapCenter,
 	MapViewState,
-	InspectMode,
 	PlaceCategoryId,
 	PlotPerfStats,
 	ViewportSize,

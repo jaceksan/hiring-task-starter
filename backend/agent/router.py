@@ -14,7 +14,7 @@ from flood.selection import (
 )
 from geo.aoi import BBox
 from geo.index import GeoIndex, is_point_in_union, transformer_4326_to_3857
-from layers.types import Layer, LayerBundle, LineFeature, PointFeature
+from layers.types import Layer, LayerBundle, LineFeature, PointFeature, PolygonFeature
 from plotly.build_map import Highlight
 from scenarios.types import ScenarioHighlightRule, ScenarioRouting
 
@@ -188,7 +188,7 @@ def _count_points_in_mask(
                 mode="prompt",
             )
         )
-    if matched_zone_ids:
+    if matched_zone_ids and mask_layer is not None:
         highlights.append(
             Highlight(
                 layer_id=mask_layer.id,
@@ -219,7 +219,7 @@ def _count_points_in_mask(
 
 
 def _zone_ids_with_points(
-    zones: list[object], points: list[PointFeature]
+    zones: list[PolygonFeature], points: list[PointFeature]
 ) -> set[str]:
     if not zones or not points:
         return set()

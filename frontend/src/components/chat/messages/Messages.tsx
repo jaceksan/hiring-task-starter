@@ -2,7 +2,10 @@ import { cn } from "@/lib/utils";
 
 const Container = ({ className, ...props }: React.ComponentProps<"div">) => (
 	<div
-		className={cn("flex flex-col p-1 gap-0.5 min-h-full text-[13px]", className)}
+		className={cn(
+			"flex flex-col p-1 gap-0.5 min-h-full text-[13px]",
+			className,
+		)}
 		{...props}
 	/>
 );

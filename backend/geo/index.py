@@ -85,7 +85,7 @@ class GeoIndex:
             key = (int(z), int(x), int(y))
             cached = self._tile_slice_cache.get(key)
             if cached is None:
-                tb = BBox(*tile_bbox_as_tuple(z, x, y))  # type: ignore[arg-type]
+                tb = BBox(*tile_bbox_as_tuple(z, x, y))
                 cached = self.slice_layers(tb, decimals=decimals)
                 _bounded_cache_put(self._tile_slice_cache, key, cached, max_items=256)
 
@@ -229,13 +229,13 @@ def build_geo_index(bundle: LayerBundle) -> GeoIndex:
         if kind == "points":
             geoms = [
                 Point(float(getattr(f, "lon")), float(getattr(f, "lat"))) for f in feats
-            ]  # type: ignore[arg-type]
+            ]
             idx._layer_geoms[layer.id] = geoms
             idx._layer_tree[layer.id] = STRtree(geoms) if geoms else STRtree([])
 
             # projected tree
             pts_3857: list[Point] = []
-            for f in feats:  # type: ignore[assignment]
+            for f in feats:
                 if not isinstance(f, PointFeature):
                     continue
                 x, y = transformer_4326_to_3857().transform(f.lon, f.lat)

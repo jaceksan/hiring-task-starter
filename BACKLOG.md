@@ -18,11 +18,6 @@ The order of items below is the priority order (top = highest). Each item has up
   - Identify the smallest experiment that provides signal (one layer, one query path).
   - Details: [`backlog/0300-geoarrow-evaluation.md`](backlog/0300-geoarrow-evaluation.md)
 
-- **P3 — Adopt backend type checking with Astral “ty”**
-  - Add `ty` to backend tooling, run it in CI/local `make` targets, and fix reported issues.
-  - Decide the “typed enough” bar (modules required to be clean vs allowed exceptions).
-  - Details: [`backlog/0301-backend-ty-typechecking.md`](backlog/0301-backend-ty-typechecking.md)
-
 - **P4 — Preserve a readable project context snapshot (ex-`PROJECT_CONTEXT.md`)**
   - Keep architecture/decisions documented without bloating `BACKLOG.md`.
   - Update it only when decisions change materially (scenario strategy, engine interfaces, perf approach).

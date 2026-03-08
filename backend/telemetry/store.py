@@ -163,6 +163,11 @@ class TelemetryStore:
             avg_bytes,
             hit_rate,
         ) in rows:
+            avg_payload_kb = (
+                (_safe_float(avg_bytes) or 0.0) / 1024.0
+                if avg_bytes is not None
+                else None
+            )
             out.append(
                 {
                     "engine": engine_v,
@@ -173,9 +178,7 @@ class TelemetryStore:
                     "p50TotalMs": _safe_float(p50),
                     "p95TotalMs": _safe_float(p95),
                     "p99TotalMs": _safe_float(p99),
-                    "avgPayloadKB": _safe_float(avg_bytes) / 1024.0
-                    if avg_bytes is not None
-                    else None,
+                    "avgPayloadKB": avg_payload_kb,
                     "cacheHitRate": _safe_float(hit_rate),
                 }
             )

@@ -10,6 +10,7 @@ from main import (
     ApiBbox,
     ApiCenter,
     ApiMapContext,
+    ApiRequestContext,
     ApiMapView,
     ApiMessage,
     ApiMessageSenderEnum,
@@ -94,7 +95,7 @@ def test_invoke_stream_passes_request_context_to_router(monkeypatch):
         map=ApiMapContext(
             bbox=ApiBbox(minLon=14.22, minLat=49.94, maxLon=14.70, maxLat=50.18),
             view=ApiMapView(center=ApiCenter(lat=50.0755, lon=14.4378), zoom=12.0),
-            context={"floodRiskLevel": "medium"},
+            context=ApiRequestContext(floodRiskLevel="medium"),
         ),
     )
 
@@ -306,9 +307,7 @@ def test_invoke_stream_emits_flooded_count_stats_in_plot_meta(monkeypatch):
                 continue
             payload = payload_line.split(":", 1)[1].strip()
             parsed = json.loads(payload)
-            return (
-                parsed.get("layout", {}).get("meta", {}).get("stats", {}) or {}
-            )
+            return parsed.get("layout", {}).get("meta", {}).get("stats", {}) or {}
         return {}
 
     stats = asyncio.run(collect_plot_stats())

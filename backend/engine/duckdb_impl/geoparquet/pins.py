@@ -22,14 +22,14 @@ from engine.duckdb_impl.geoparquet.sql import (
     query_points_rows_for_ids,
 )
 from geo.aoi import BBox
-from layers.types import Layer
+from layers.types import GeometryKind, Layer
 
 
 def query_geoparquet_layer_pinned_ids(
     conn: duckdb.DuckDBPyConnection,
     *,
     layer_id: str,
-    kind: str,
+    kind: GeometryKind,
     title: str,
     style: dict[str, Any],
     metadata: dict[str, Any],

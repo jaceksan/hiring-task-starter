@@ -53,9 +53,13 @@ dependencies = [
 dev = [
     "pytest>=9.0.2",
     "ruff>=0.9.6",
+    "ty>=0.0.21",
 ]
 
 [tool.pytest.ini_options]
 markers = [
     "integration: tests that depend on larger local fixtures or slow geometry decoding",
 ]
+
+[tool.ty.environment]
+extra-paths = ["."]

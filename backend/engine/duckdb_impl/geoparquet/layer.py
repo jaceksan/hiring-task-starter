@@ -34,14 +34,14 @@ from engine.duckdb_impl.geoparquet.sql import (
 )
 from engine.duckdb_impl.geoparquet.stats import base_stats
 from geo.aoi import BBox
-from layers.types import Layer
+from layers.types import GeometryKind, Layer
 
 
 def query_geoparquet_layer_bbox(
     conn: duckdb.DuckDBPyConnection,
     *,
     layer_id: str,
-    kind: str,
+    kind: GeometryKind,
     title: str,
     style: dict[str, Any],
     metadata: dict[str, Any],
